@@ -1,0 +1,25 @@
+#version 460
+#extension GL_EXT_ray_tracing : enable
+#extension GL_EXT_scalar_block_layout : enable
+#extension GL_GOOGLE_include_directive : enable
+#include "common.glsl"
+#include "cube.glsl"
+
+hitAttributeEXT vec3 attributes;
+
+layout(binding = 2, set = 0, scalar) buffer Primitives { Primitive p[]; } primitives;
+
+void main()
+{
+    Ray ray = Ray(gl_WorldRayOriginEXT, gl_WorldRayDirectionEXT);
+
+    Primitive primitive = primitives.p[gl_InstanceID];
+    
+    ray.origin = ray.origin - primitive.center;
+    float t = raymarch(ray);
+    if (t > 0.0)
+    {
+        uint hit_kind = 0;
+        reportIntersectionEXT(t, hit_kind);
+    }
+}
