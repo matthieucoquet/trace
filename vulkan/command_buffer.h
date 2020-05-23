@@ -1,6 +1,9 @@
 #pragma once
 #include "common.h"
 
+namespace vulkan
+{
+
 class One_time_command_buffer
 {
 public:
@@ -35,3 +38,5 @@ protected:
     vk::CommandPool m_command_pool;
     vk::Queue m_queue;
 };
+
+}

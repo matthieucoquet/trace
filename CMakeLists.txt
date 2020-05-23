@@ -12,69 +12,57 @@ project (trace)
 find_package(glfw3 CONFIG REQUIRED)
 find_package(glm CONFIG REQUIRED)
 find_package(Vulkan REQUIRED)
-# find_package(Stb REQUIRED)
+find_package(OpenXR CONFIG REQUIRED)
+
+# import shaderc as a module
+# Should switch to a config when shaderc supports it
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
+find_package(shaderc MODULE REQUIRED)
 
 add_executable (trace)
 target_sources(trace PRIVATE main.cpp
-                                acceleration_structure.cpp acceleration_structure.h
-                                context.cpp context.h
-                                engine.cpp engine.h
-                                raytracing_pipeline.cpp raytracing_pipeline.h
-                                renderer.cpp renderer.h
-                                scene.cpp scene.h
-                                swapchain.cpp swapchain.h
-                                vr.cpp vr.h
-                                window.cpp window.h
-                                common.h
-                                allocation.cpp allocation.h
-                                command_buffer.h
-                                shader_types.h
-                                )
+                             vulkan/acceleration_structure.cpp vulkan/acceleration_structure.h
+                             vulkan/allocation.cpp vulkan/allocation.h
+                             vulkan/command_buffer.h
+                             vulkan/common.h
+                             vulkan/context.cpp vulkan/context.h
+                             vulkan/raytracing_pipeline.cpp vulkan/raytracing_pipeline.h
+                             vulkan/renderer.cpp vulkan/renderer.h
+                             vulkan/shader_compile.cpp vulkan/shader_compile.h
+                             vulkan/swapchain.cpp vulkan/swapchain.h
 
-# We don't want to use the target Vulkan::Vulkan
-# because this target would link against the static Vulkan library
-# vulkan-hpp use explicit dynamic linking so we just need to give the include dir here
+                             vr/context.cpp vr/context.h
+                             vr/session.cpp vr/session.h
+                             vr/common.h
+
+                             engine.cpp engine.h
+                             scene.cpp scene.h
+                             window.cpp window.h
+                             shader_types.h
+ )
+
+# We don't want to use the target Vulkan::Vulkan and xr::openxr_loader
+# because this target would link against the static Vulkan/OpenXR library
+# vulkan-hpp/openxr-hpp use explicit dynamic linking so we just need to give the include dir here
 # See vk::DynamicLoader in vulkan.hpp for more details
 target_include_directories(trace SYSTEM PUBLIC ${Vulkan_INCLUDE_DIR}
-                                                  ${CMAKE_CURRENT_SOURCE_DIR}/include)
-target_link_libraries(trace PRIVATE glm glfw)
+                                               ${CMAKE_CURRENT_SOURCE_DIR}
+                                               ${CMAKE_CURRENT_SOURCE_DIR}/include)
+
+target_link_libraries(trace PRIVATE glm glfw OpenXR::headers shaderc::shaderc_combined)
 target_compile_features(trace PRIVATE cxx_std_20)
+
+get_filename_component(shader_locations shaders ABSOLUTE)
+set_source_files_properties(vulkan/shader_compile.cpp PROPERTIES COMPILE_DEFINITIONS SHADER_SOURCE="${shader_locations}")
 
 if(MSVC)
     set_target_properties(trace PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY $<TARGET_FILE_DIR:trace>)
     target_compile_options(trace PRIVATE /experimental:external /external:anglebrackets /external:W0)
     target_compile_options(trace PRIVATE /W4 /WX /permissive- /w15038)
     target_compile_options(trace PRIVATE /EHsc)
-    target_compile_options(trace PUBLIC /Zc:preprocessor)
+    target_compile_options(trace PRIVATE /Zc:preprocessor)
 endif()
 
-### Shaders ###
-# Raygen and miss shaders
-get_filename_component(raygen_shader shaders/raygen.rgen ABSOLUTE)
-get_filename_component(miss_shader shaders/miss.rmiss ABSOLUTE)
-set(general_shaders ${raygen_shader} ${miss_shader})
-add_custom_target(general_shader ALL
-        COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:trace>/shaders
-        COMMAND glslc.exe ${raygen_shader} -o $<TARGET_FILE_DIR:trace>/shaders/raygen.spv
-        COMMAND glslc.exe ${miss_shader} -o $<TARGET_FILE_DIR:trace>/shaders/miss.spv
-        SOURCES ${general_shaders}
-        COMMENT "Compile miss and raygen shaders"  VERBATIM
-)
-
-# Pair of intersection and closest hit shaders
-file(GLOB_RECURSE hit_shaders shaders/*.rchit)
-get_filename_component(common_shader shaders/common.glsl ABSOLUTE)
-foreach(shader ${hit_shaders})
-    #get_filename_component(name_group ${file_shader} NAME)
-    get_filename_component(name_group ${shader} NAME_WE)
-    get_filename_component(chit_shader shaders/${name_group}.rchit ABSOLUTE)
-    get_filename_component(int_shader shaders/${name_group}.rint ABSOLUTE)
-    get_filename_component(group_common_shader shaders/${name_group}.glsl ABSOLUTE)
-    add_custom_target(${name_group} ALL
-            COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:trace>/shaders
-            COMMAND glslc.exe ${chit_shader} -o $<TARGET_FILE_DIR:trace>/shaders/${name_group}_chit.spv
-            COMMAND glslc.exe ${int_shader} -o $<TARGET_FILE_DIR:trace>/shaders/${name_group}_int.spv
-            SOURCES ${chit_shader} ${int_shader} ${group_common_shader} ${common_shader}
-            COMMENT "Compile shader ${file_shader}"  VERBATIM
-    )
-endforeach()
+### Create empty target for shaders ###
+file(GLOB_RECURSE shader_list shaders/*)
+add_custom_target(shaders ALL SOURCES ${shader_list})

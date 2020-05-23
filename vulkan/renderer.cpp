@@ -2,17 +2,21 @@
 #include "context.h"
 #include "command_buffer.h"
 
+namespace vulkan
+{
+
 Renderer::Renderer(Context& context, Scene& scene) :
 	m_device(context.device),
 	m_queue(context.graphics_queue),
-    m_swapchain(context),  // TODO: Make sure swapchain image have correct usage. transfer_dest or other ??
-    m_pipeline(context),
-    m_blas(context, scene.aabbs_buffer.buffer, static_cast<uint32_t>(scene.aabbs.size())),
-    m_tlas(context, m_blas, scene)
+	m_command_pool(context.command_pool),
+	m_swapchain(context),  // TODO: Make sure swapchain image have correct usage. transfer_dest or other ??
+	m_pipeline(context),
+	m_blas(context, scene.aabbs_buffer.buffer, static_cast<uint32_t>(scene.aabbs.size())),
+	m_tlas(context, m_blas, scene)
 {
 	create_storage_image(context);
 	create_descriptor_sets(scene);
-	create_command_buffers(context);
+	create_command_buffers();
 	create_synchronization();
 }
 
@@ -27,9 +31,9 @@ Renderer::~Renderer()
 	}
 	m_device.destroyImageView(m_image_view);
 	m_device.destroyDescriptorPool(m_descriptor_pool);
-	/*for (auto& command_buffer : m_command_buffers) {
-		m_device.freeCommandBuffers(command_pool ? , command_buffer);
-	}*/
+	for (auto& command_buffer : m_command_buffers) {
+		m_device.freeCommandBuffers(m_command_pool, command_buffer);
+	}
 }
 
 void Renderer::step()
@@ -53,13 +57,13 @@ void Renderer::step()
 	m_device.resetFences(m_fence_in_flight[m_current_frame]);
 	m_queue.submit(
 		vk::SubmitInfo()
-			.setWaitSemaphoreCount(1)
-			.setPWaitSemaphores(&m_semaphore_available_in_flight[m_current_frame])
-			.setPWaitDstStageMask(&wait_stages)
-			.setCommandBufferCount(1)
-			.setPCommandBuffers(&m_command_buffers[image_id])
-			.setSignalSemaphoreCount(1)
-			.setPSignalSemaphores(&m_semaphore_finished_in_flight[m_current_frame]), 
+		.setWaitSemaphoreCount(1)
+		.setPWaitSemaphores(&m_semaphore_available_in_flight[m_current_frame])
+		.setPWaitDstStageMask(&wait_stages)
+		.setCommandBufferCount(1)
+		.setPCommandBuffers(&m_command_buffers[image_id])
+		.setSignalSemaphoreCount(1)
+		.setPSignalSemaphores(&m_semaphore_finished_in_flight[m_current_frame]),
 		m_fence_in_flight[m_current_frame]);
 
 	auto present_result = m_queue.presentKHR(vk::PresentInfoKHR()
@@ -74,10 +78,10 @@ void Renderer::step()
 	m_current_frame = (m_current_frame + 1u) % max_frames_in_flight;
 }
 
-void Renderer::create_command_buffers(Context& context)
+void Renderer::create_command_buffers(/*Context& context*/)
 {
 	auto command_buffers = m_device.allocateCommandBuffers(vk::CommandBufferAllocateInfo()
-		.setCommandPool(context.command_pool)
+		.setCommandPool(m_command_pool)
 		.setLevel(vk::CommandBufferLevel::ePrimary)
 		.setCommandBufferCount(Swapchain::image_count));
 	for (size_t i = 0u; i < Swapchain::image_count; i++) {
@@ -164,40 +168,40 @@ void Renderer::create_command_buffers(Context& context)
 			m_storage_image.image, vk::ImageLayout::eTransferSrcOptimal,
 			m_swapchain.images[framebuffer_id], vk::ImageLayout::eTransferDstOptimal,
 			vk::ImageCopy()
-				.setSrcOffset(vk::Offset3D(0, 0, 0))
-				.setSrcSubresource(vk::ImageSubresourceLayers()
-					.setAspectMask(vk::ImageAspectFlagBits::eColor)
-					.setMipLevel(0u)
-					.setLayerCount(1u)
-					.setBaseArrayLayer(0u))
-				.setDstOffset(vk::Offset3D(0, 0, 0))
-				.setDstSubresource(vk::ImageSubresourceLayers()
-					.setAspectMask(vk::ImageAspectFlagBits::eColor)
-					.setMipLevel(0u)
-					.setLayerCount(1u)
-					.setBaseArrayLayer(0u))
-				.setExtent(vk::Extent3D(m_swapchain.extent, 1u))
+			.setSrcOffset(vk::Offset3D(0, 0, 0))
+			.setSrcSubresource(vk::ImageSubresourceLayers()
+				.setAspectMask(vk::ImageAspectFlagBits::eColor)
+				.setMipLevel(0u)
+				.setLayerCount(1u)
+				.setBaseArrayLayer(0u))
+			.setDstOffset(vk::Offset3D(0, 0, 0))
+			.setDstSubresource(vk::ImageSubresourceLayers()
+				.setAspectMask(vk::ImageAspectFlagBits::eColor)
+				.setMipLevel(0u)
+				.setLayerCount(1u)
+				.setBaseArrayLayer(0u))
+			.setExtent(vk::Extent3D(m_swapchain.extent, 1u))
 		);
-		
-		//  Swapchian to present
+
+		//  Swapchain to present
 		command_buffer.pipelineBarrier(
 			vk::PipelineStageFlagBits::eTransfer,
 			vk::PipelineStageFlagBits::eBottomOfPipe,  // All command?
-			{}, {}, {}, 
+			{}, {}, {},
 			vk::ImageMemoryBarrier()
-				.setOldLayout(vk::ImageLayout::eTransferDstOptimal)
-				.setNewLayout(vk::ImageLayout::ePresentSrcKHR)
-				.setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-				.setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-				.setImage(m_swapchain.images[framebuffer_id])
-				.setSrcAccessMask(vk::AccessFlagBits::eTransferWrite)
-				.setDstAccessMask({}) // vk::AccessFlagBits::eColorAttachmentWrite ?
-				.setSubresourceRange(vk::ImageSubresourceRange()
-					.setLevelCount(1u)
-					.setLayerCount(1)
-					.setBaseArrayLayer(0)
-					.setBaseMipLevel(0)
-					.setAspectMask(vk::ImageAspectFlagBits::eColor)));
+			.setOldLayout(vk::ImageLayout::eTransferDstOptimal)
+			.setNewLayout(vk::ImageLayout::ePresentSrcKHR)
+			.setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+			.setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+			.setImage(m_swapchain.images[framebuffer_id])
+			.setSrcAccessMask(vk::AccessFlagBits::eTransferWrite)
+			.setDstAccessMask({}) // vk::AccessFlagBits::eColorAttachmentWrite ?
+			.setSubresourceRange(vk::ImageSubresourceRange()
+				.setLevelCount(1u)
+				.setLayerCount(1)
+				.setBaseArrayLayer(0)
+				.setBaseMipLevel(0)
+				.setAspectMask(vk::ImageAspectFlagBits::eColor)));
 
 		//  Img to storage
 		command_buffer.pipelineBarrier(
@@ -225,19 +229,20 @@ void Renderer::create_command_buffers(Context& context)
 }
 
 void Renderer::create_storage_image(Context& context)
-{	
+{
+	// One image per swapchain image?
 	m_storage_image = Allocated_image(
 		vk::ImageCreateInfo()
-			.setImageType(vk::ImageType::e2D)
-			.setExtent(vk::Extent3D(m_swapchain.extent, 1))
-			.setMipLevels(1u)
-			.setArrayLayers(1u)
-			.setFormat(vk::Format::eB8G8R8A8Unorm)
-			.setTiling(vk::ImageTiling::eOptimal)
-			.setInitialLayout(vk::ImageLayout::eUndefined)
-			.setSamples(vk::SampleCountFlagBits::e1)
-			.setSharingMode(vk::SharingMode::eExclusive)
-			.setUsage(vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eStorage),
+		.setImageType(vk::ImageType::e2D)
+		.setExtent(vk::Extent3D(m_swapchain.extent, 1))
+		.setMipLevels(1u)
+		.setArrayLayers(1u)
+		.setFormat(vk::Format::eB8G8R8A8Unorm)
+		.setTiling(vk::ImageTiling::eOptimal)
+		.setInitialLayout(vk::ImageLayout::eUndefined)
+		.setSamples(vk::SampleCountFlagBits::e1)
+		.setSharingMode(vk::SharingMode::eExclusive)
+		.setUsage(vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eStorage),
 		VMA_MEMORY_USAGE_GPU_ONLY,
 		m_device, context.allocator);
 
@@ -335,7 +340,7 @@ void Renderer::create_descriptor_sets(Scene& scene)
 			.setDescriptorType(vk::DescriptorType::eStorageBuffer)
 			.setDescriptorCount(1)
 			.setPBufferInfo(&primitives_info)
-	}, {});
+		}, {});
 }
 
 void Renderer::create_synchronization()
@@ -347,4 +352,15 @@ void Renderer::create_synchronization()
 		m_fence_in_flight[i] = m_device.createFence(vk::FenceCreateInfo().setFlags(vk::FenceCreateFlagBits::eSignaled));
 		m_fence_swapchain_in_flight[i] = vk::Fence();
 	}
+}
+
+void Renderer::reload_pipeline(Context& context)
+{
+	for (auto& command_buffer : m_command_buffers) {
+		m_device.freeCommandBuffers(m_command_pool, command_buffer);
+	}
+	m_pipeline.reload(context);
+	create_command_buffers();
+}
+
 }

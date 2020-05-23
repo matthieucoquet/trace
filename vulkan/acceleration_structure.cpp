@@ -4,6 +4,9 @@
 #include "command_buffer.h"
 #include "scene.h"
 
+namespace vulkan
+{
+
 Acceleration_structure::Acceleration_structure(Context& context) :
     m_device(context.device),
     m_allocator(context.allocator)
@@ -25,9 +28,9 @@ Allocated_buffer Acceleration_structure::allocate_scratch_buffer() const
 
     return Allocated_buffer(
         vk::BufferCreateInfo()
-            .setSize(memory_requirement.memoryRequirements.size)
-            .setUsage(vk::BufferUsageFlagBits::eShaderDeviceAddress | vk::BufferUsageFlagBits::eRayTracingKHR)
-            .setSharingMode(vk::SharingMode::eExclusive),
+        .setSize(memory_requirement.memoryRequirements.size)
+        .setUsage(vk::BufferUsageFlagBits::eShaderDeviceAddress | vk::BufferUsageFlagBits::eRayTracingKHR)
+        .setSharingMode(vk::SharingMode::eExclusive),
         VMA_MEMORY_USAGE_GPU_ONLY, m_device, m_allocator);
 }
 
@@ -41,8 +44,8 @@ void Acceleration_structure::allocate_object_memory()
     VmaAllocationCreateInfo alloc_create_info{
         .usage = VMA_MEMORY_USAGE_GPU_ONLY
     };
-    vmaAllocateMemory(m_allocator, 
-        reinterpret_cast<const VkMemoryRequirements*>(&memory_requirement.memoryRequirements), 
+    vmaAllocateMemory(m_allocator,
+        reinterpret_cast<const VkMemoryRequirements*>(&memory_requirement.memoryRequirements),
         &alloc_create_info, &m_allocation, nullptr);
 
     VmaAllocationInfo allocation_info;
@@ -135,17 +138,17 @@ Tlas::Tlas(Context& context, const Blas& blas, const Scene& scene) :
             std::array<float, 4>{ 1.0f, 0.0f, 0.0f, scene.primitives[i].center.x },
                 std::array<float, 4>{ 0.0f, 1.0f, 0.0f, scene.primitives[i].center.y },
                 std::array<float, 4>{ 0.0f, 0.0f, 1.0f, scene.primitives[i].center.z }
-            }))
+        }))
             .setMask(0xFF)
             .setInstanceCustomIndex(i)
             .setInstanceShaderBindingTableRecordOffset(static_cast<std::underlying_type_t<Object_kind>>(scene.kinds[i]))
             .setAccelerationStructureReference(blas.structure_address));
     }
-    
+
     m_instance_buffer = Allocated_buffer(
         vk::BufferCreateInfo()
-            .setSize(sizeof(vk::AccelerationStructureInstanceKHR) * nb_instances)
-            .setUsage(vk::BufferUsageFlagBits::eShaderDeviceAddress | vk::BufferUsageFlagBits::eRayTracingKHR),
+        .setSize(sizeof(vk::AccelerationStructureInstanceKHR) * nb_instances)
+        .setUsage(vk::BufferUsageFlagBits::eShaderDeviceAddress | vk::BufferUsageFlagBits::eRayTracingKHR),
         instances.data(),
         context.device, context.allocator, context.command_pool, context.graphics_queue);
     vk::DeviceAddress instance_buffer_address = m_device.getBufferAddress(vk::BufferDeviceAddressInfo().setBuffer(m_instance_buffer.buffer));
@@ -157,7 +160,7 @@ Tlas::Tlas(Context& context, const Blas& blas, const Scene& scene) :
             .setInstances(vk::AccelerationStructureGeometryInstancesDataKHR()
                 .setArrayOfPointers(false)
                 .setData(vk::DeviceOrHostAddressConstKHR().setDeviceAddress(instance_buffer_address))
-                ));
+            ));
     vk::AccelerationStructureGeometryKHR* pointer_acceleration_structure_geometry = &acceleration_structure_geometry;
     auto build_info_offset = vk::AccelerationStructureBuildOffsetInfoKHR()
         .setPrimitiveCount(nb_instances)
@@ -181,4 +184,6 @@ Tlas::Tlas(Context& context, const Blas& blas, const Scene& scene) :
         .setScratchData(scratch_address),
         &build_info_offset);
     command_buffer.submit_and_wait_idle();
+}
+
 }

@@ -2,6 +2,9 @@
 #include "command_buffer.h"
 #include <utility>
 
+namespace vulkan
+{
+
 Allocated_buffer::Allocated_buffer(Allocated_buffer&& other) noexcept :
     buffer(other.buffer),
     m_device(other.m_device),
@@ -35,8 +38,8 @@ Allocated_buffer::Allocated_buffer(vk::BufferCreateInfo buffer_info, const void*
 {
     Allocated_buffer staged_buffer(
         vk::BufferCreateInfo()
-            .setSize(buffer_info.size)
-            .setUsage(vk::BufferUsageFlagBits::eTransferSrc),
+        .setSize(buffer_info.size)
+        .setUsage(vk::BufferUsageFlagBits::eTransferSrc),
         VMA_MEMORY_USAGE_CPU_ONLY,
         device, allocator);
 
@@ -67,7 +70,7 @@ void Allocated_buffer::allocate(VmaAllocator allocator, VmaMemoryUsage memory_us
     VmaAllocationCreateInfo allocation_info{ .usage = memory_usage };
 
     VkBuffer c_buffer;
-    VkResult result = vmaCreateBuffer(allocator, &c_buffer_info, &allocation_info, &c_buffer, &m_allocation, nullptr);
+    [[maybe_unused]] VkResult result = vmaCreateBuffer(allocator, &c_buffer_info, &allocation_info, &c_buffer, &m_allocation, nullptr);
     assert(result == VK_SUCCESS);
     buffer = c_buffer;
 }
@@ -108,7 +111,9 @@ Allocated_image::Allocated_image(vk::ImageCreateInfo image_info, VmaMemoryUsage 
     VmaAllocationCreateInfo allocation_info{ .usage = memory_usage };
 
     VkImage c_image;
-    VkResult result = vmaCreateImage(allocator, &c_image_info, &allocation_info, &c_image, &m_allocation, nullptr);
+    [[maybe_unused]] VkResult result = vmaCreateImage(allocator, &c_image_info, &allocation_info, &c_image, &m_allocation, nullptr);
     assert(result == VK_SUCCESS);
     image = c_image;
+}
+
 }

@@ -3,24 +3,18 @@
 #include <iostream>
 
 constexpr bool verbose = false;
-constexpr unsigned int initial_width = 1280u;
-constexpr unsigned int initial_height = 720u;
+constexpr unsigned int initial_width = 1800u;
+constexpr unsigned int initial_height = 900;
 
-//void framebuffer_resize_callback(GLFWwindow* window, int width, int height) 
-//{
-//    auto app = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
-//    app->framebuffer_resize = true;
-//    app->framebuffer_minimized = (width == 0 || height == 0);
-//}
-
-Window::Window()
+Window::Window(void* user_pointer, GLFWkeyfun keyboard_callback)
 {
     glfwInit();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
     m_window = glfwCreateWindow(initial_width, initial_height, "Vulkan Renderer", nullptr, nullptr);
-    //glfwSetWindowUserPointer(m_window, this);
-    //glfwSetFramebufferSizeCallback(m_window, framebuffer_resize_callback);
+
+    glfwSetWindowUserPointer(m_window, user_pointer);
+    glfwSetKeyCallback(m_window, keyboard_callback);
 }
 
 Window::~Window()

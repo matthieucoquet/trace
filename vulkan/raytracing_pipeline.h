@@ -2,6 +2,10 @@
 #include "common.h"
 #include "allocation.h"
 #include <filesystem>
+#include "shader_compile.h"
+
+namespace vulkan
+{
 
 class Context;
 
@@ -20,9 +24,14 @@ public:
     Raytracing_pipeline& operator=(const Raytracing_pipeline& other) = default;
     Raytracing_pipeline& operator=(Raytracing_pipeline&& other) = default;
     ~Raytracing_pipeline();
+
+    void reload(Context& context);
 private:
     vk::Device m_device;
+    Shader_compile shader_compiler;
 
     void create_shader_binding_table(Context& context, uint32_t group_count);  // TODO should be here ?
-    vk::ShaderModule shader_module_from_file(std::filesystem::path path) const;
+    void create_pipeline(Context& context);
 };
+
+}

@@ -2,8 +2,12 @@
 #include "common.h"
 #include "allocation.h"
 
+class Scene; 
+
+namespace vulkan
+{
+
 class Context;
-class Scene;
 
 class Acceleration_structure
 {
@@ -51,3 +55,5 @@ public:
 protected:
     Allocated_buffer m_instance_buffer;
 };
+
+}

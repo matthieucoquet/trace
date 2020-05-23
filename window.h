@@ -1,5 +1,5 @@
 #pragma once
-#include "common.h"
+#include "vulkan/common.h"
 
 class Window
 {
@@ -7,7 +7,7 @@ public:
     bool framebuffer_resize = false;
     bool framebuffer_minimized = false;
 
-    Window();
+    Window(void* user_pointer, GLFWkeyfun keyboard_callback);
     Window(const Window& other) = delete;
     Window(Window&& other) = delete;
     Window& operator=(const Window& other) = delete;

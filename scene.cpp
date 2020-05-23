@@ -1,29 +1,34 @@
 #include "scene.h"
-#include "context.h"
+#include "vulkan/context.h"
 
-Scene::Scene(Context& context)
+Scene::Scene(vulkan::Context& context)
 {
-    primitives.emplace_back(Primitive{ .center = glm::vec3(2.0f, -1.0f, 0.0f) });
-    primitives.emplace_back(Primitive{ .center = glm::vec3(-2.0f, -1.0f, 0.0f) });
-    primitives.emplace_back(Primitive{ .center = glm::vec3(2.0f, 1.0f, 0.0f) });
-    primitives.emplace_back(Primitive{ .center = glm::vec3(-2.0f, 1.0f, 0.0f) });
-    kinds.emplace_back(Object_kind::cube);
-    kinds.emplace_back(Object_kind::sphere);
-    kinds.emplace_back(Object_kind::sphere);
-    kinds.emplace_back(Object_kind::cube);
+    for (unsigned int i = 0u; i < 16u; i++) {
+        for (unsigned int j = 0u; j < 16u; j++) {
+            primitives.emplace_back(Primitive{ .center = glm::vec3(-15.0f + 2.0f * i, 2.0f, -15.0f + 2.0f * j) });
+            kinds.emplace_back(Object_kind::sphere);
+        }
+    }
+
+    for (unsigned int i = 0u; i < 16u; i++) {
+        for (unsigned int j = 0u; j < 16u; j++) {
+            primitives.emplace_back(Primitive{ .center = glm::vec3(-15.0f + 2.0f * i, 5.0f, -15.0f + 2.0f * j) });
+            kinds.emplace_back(Object_kind::cube);
+        }
+    }
 
     aabbs.emplace_back(- 1.0f, - 1.0f, - 1.0f, 1.0f, 1.0f, 1.0f);
-    aabbs_buffer = Allocated_buffer(
+    aabbs_buffer = vulkan::Allocated_buffer(
         vk::BufferCreateInfo()
             .setSize(sizeof(Aabb) * aabbs.size())
-            .setUsage(vk::BufferUsageFlagBits::eShaderDeviceAddress | vk::BufferUsageFlagBits::eRayTracingKHR),  // No other usage ?
+            .setUsage(vk::BufferUsageFlagBits::eShaderDeviceAddress | vk::BufferUsageFlagBits::eRayTracingKHR),
         aabbs.data(),
         context.device, context.allocator, context.command_pool, context.graphics_queue);
 
-    primitives_buffer = Allocated_buffer(
+    primitives_buffer = vulkan::Allocated_buffer(
         vk::BufferCreateInfo()
         .setSize(sizeof(Primitive) * primitives.size())
-        .setUsage(vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eRayTracingKHR),  // No other usage ?
+        .setUsage(vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eRayTracingKHR),
         primitives.data(),
         context.device, context.allocator, context.command_pool, context.graphics_queue);
 

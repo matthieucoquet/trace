@@ -14,7 +14,7 @@ void main()
     Ray ray = Ray(gl_WorldRayOriginEXT, gl_WorldRayDirectionEXT);
 
     Primitive primitive = primitives.p[gl_InstanceID];
-    
+
     ray.origin = ray.origin - primitive.center;
     float t = raymarch(ray);
     if (t > 0.0)

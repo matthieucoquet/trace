@@ -6,7 +6,9 @@ float sd_box(in vec3 position, in vec3 half_sides)
 
 float map(in vec3 position)
 {
-    return sd_box(position, vec3(0.7)) - 0.1;
+    float d = sd_box(position, vec3(0.4)) - 0.3;
+    d -= 0.05 * pow(abs(position.y), 2.0);
+    return d + 0.001;
 }
 
 float raymarch(in Ray ray)
@@ -28,8 +30,8 @@ vec3 normal(in vec3 position)
     vec2 e = vec2(1.0, -1.0) * 0.5773;
     const float eps = 0.0025;
     return normalize(
-        e.xyy * map(position + e.xyy * eps).x + 
-		e.yyx * map(position + e.yyx * eps).x + 
-		e.yxy * map(position + e.yxy * eps).x + 
-		e.xxx * map(position + e.xxx * eps).x);
+        e.xyy * map(position + e.xyy * eps).x +
+        e.yyx * map(position + e.yyx * eps).x +
+        e.yxy * map(position + e.yxy * eps).x +
+        e.xxx * map(position + e.xxx * eps).x);
 }

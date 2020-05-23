@@ -1,6 +1,9 @@
 #pragma once
 #include "common.h"
 
+namespace vulkan
+{
+
 class Allocated_buffer
 {
 public:
@@ -40,3 +43,5 @@ private:
     VmaAllocator m_allocator{};
     VmaAllocation m_allocation{};
 };
+
+}

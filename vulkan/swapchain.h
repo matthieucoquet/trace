@@ -2,6 +2,9 @@
 #include "common.h"
 #include <array>
 
+namespace vulkan
+{
+
 class Context;
 
 class Swapchain
@@ -26,3 +29,5 @@ private:
 
     void create_image_views();
 };
+
+}

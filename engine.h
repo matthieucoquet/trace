@@ -1,10 +1,12 @@
 #pragma once
-#include "common.h"
+#include "vulkan/common.h"
 
 #include "window.h"
-#include "context.h"
-#include "renderer.h"
 #include "scene.h"
+#include "vulkan/context.h"
+#include "vulkan/renderer.h"
+#include "vr/context.h"
+#include "vr/session.h"
 
 class Engine
 {
@@ -17,10 +19,21 @@ public:
     ~Engine();
 
     void run();
-    //void reset_renderer();
+
+    bool reload_shaders = false;
 private:
+    using Clock = std::chrono::steady_clock;
+    using Time_point = std::chrono::time_point<std::chrono::steady_clock>;
+    using Duration = std::chrono::duration<float, std::milli>;
+
     Window m_window;
-    Context m_context;
+    //vr::Context m_vr_context;
+    vulkan::Context m_vulkan_context;
     Scene m_scene;
-    Renderer m_renderer;
+    vulkan::Renderer m_renderer;
+    //vr::Session m_session;
+
+    Time_point m_previous_clock;
+
+    void reset_renderer();
 };

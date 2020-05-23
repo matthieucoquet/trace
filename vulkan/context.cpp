@@ -1,19 +1,23 @@
 #define VMA_IMPLEMENTATION  // VMA implementation: Need to be define before any header
 #include "context.h"
 #include "window.h"
-#include "vk_helpers/debug_callback.h"
+#include "vr/context.h"
+#include "debug_callback.h"
 
 #include <iostream>
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
+namespace vulkan
+{
+
 constexpr bool verbose = false;
 
-Context::Context(Window& window)
+Context::Context(Window& window, vr::Context* vr_context)
 {
-    init_instance(window);
+    init_instance(window, vr_context);
     surface = window.create_surface(instance);
-    init_device();
+    init_device(vr_context);
     init_allocator();
 }
 
@@ -27,10 +31,19 @@ Context::~Context()
     instance.destroy();
 }
 
-void Context::init_instance(Window& window)
+void Context::init_instance(Window& window, vr::Context* vr_context)
 {
     auto required_extensions = window.required_extensions();
     required_extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+
+    if (vr_context)
+    {
+        auto vr_required_extensions = vr_context->instance.getVulkanInstanceExtensionsKHR(vr_context->system_id);
+        if (!vr_required_extensions.empty()) {
+            vr_context->splitAndAppend(vr_required_extensions.data(), required_extensions);
+        }
+    }
+
     std::array required_instance_layers{ "VK_LAYER_KHRONOS_validation" };
 
     // Find Vulkan dynamic lib and fetch needed functions to create instance
@@ -38,9 +51,13 @@ void Context::init_instance(Window& window)
     VULKAN_HPP_DEFAULT_DISPATCHER.init(vkGetInstanceProcAddr);
 
     if constexpr (verbose) {
-        std::cout << "Instance extension properties:" << std::endl;
+        std::cout << "Instance extensions:" << std::endl;
         for (const auto& property : vk::enumerateInstanceExtensionProperties()) {
             std::cout << "\t" << property.extensionName << std::endl;
+        }
+        std::cout << "Required instance extensions:" << std::endl;
+        for (const auto& required_extension : required_extensions) {
+            std::cout << "\t" << required_extension << std::endl;
         }
     }
 
@@ -55,7 +72,7 @@ void Context::init_instance(Window& window)
         .setPEnabledValidationFeatures(validation_features.data());
 
     auto app_info = vk::ApplicationInfo()
-        .setPApplicationName("Renderer")
+        .setPApplicationName("trace")
         .setApiVersion(VK_API_VERSION_1_2);
     instance = vk::createInstance(vk::InstanceCreateInfo()
         .setPApplicationInfo(&app_info)
@@ -68,9 +85,9 @@ void Context::init_instance(Window& window)
     m_debug_messenger = instance.createDebugUtilsMessengerEXT(debug_create_info);
 }
 
-void Context::init_device()
+void Context::init_device(vr::Context* vr_context)
 {
-    constexpr std::array required_device_extensions = {
+    std::vector required_device_extensions = {
         VK_KHR_SWAPCHAIN_EXTENSION_NAME,
         VK_KHR_RAY_TRACING_EXTENSION_NAME,
         // The followings are required for VK_KHR_ray_tracing
@@ -78,7 +95,22 @@ void Context::init_device()
         VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME
     };
 
-    for (const auto& potential_physical_device : instance.enumeratePhysicalDevices())
+    std::vector<vk::PhysicalDevice> potential_physical_devices;
+    if (vr_context)
+    {
+        auto vr_required_extensions = vr_context->instance.getVulkanDeviceExtensionsKHR(vr_context->system_id);
+        if (!vr_required_extensions.empty()) {
+            vr_context->splitAndAppend(vr_required_extensions.data(), required_device_extensions);
+        }
+
+        potential_physical_devices.push_back(vr_context->instance.getVulkanGraphicsDeviceKHR(vr_context->system_id, instance));
+    }
+    else
+    {
+        potential_physical_devices = instance.enumeratePhysicalDevices();
+    }
+
+    for (const auto& potential_physical_device : potential_physical_devices)
     {
         auto properties = potential_physical_device.getProperties();
         if constexpr (verbose)
@@ -112,23 +144,27 @@ void Context::init_device()
 
         // Check graphic and present queue family
         auto queue_families_properties = potential_physical_device.getQueueFamilyProperties();
-        uint32_t graphic_and_present_family = 0u;
+        queue_family = 0u;
         for (const auto& property : queue_families_properties)
         {
             if (property.queueFlags & (vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eCompute | vk::QueueFlagBits::eTransfer))
             {
-                if (potential_physical_device.getSurfaceSupportKHR(graphic_and_present_family, surface))
+                if (potential_physical_device.getSurfaceSupportKHR(queue_family, surface))
                     break;
             }
-            graphic_and_present_family++;
+            queue_family++;
         }
-        if (graphic_and_present_family == queue_families_properties.size())
+        if (queue_family == queue_families_properties.size())
             continue;
 
         if constexpr (verbose) {
-            std::cout << "Instance extension properties:" << std::endl;
+            std::cout << "Devices extensions:" << std::endl;
             for (const auto& property : available_extensions) {
                 std::cout << "\t" << property.extensionName << std::endl;
+            }
+            std::cout << "Required device extensions:" << std::endl;
+            for (const auto& required_extension : required_device_extensions) {
+                std::cout << "\t" << required_extension << std::endl;
             }
         }
 
@@ -136,7 +172,7 @@ void Context::init_device()
         physical_device = potential_physical_device;
         float queue_priority = 1.0f;
         auto queue_create_info = vk::DeviceQueueCreateInfo()
-            .setQueueFamilyIndex(graphic_and_present_family)
+            .setQueueFamilyIndex(queue_family)
             .setQueueCount(1u)
             .setPQueuePriorities(&queue_priority);
 
@@ -160,9 +196,9 @@ void Context::init_device()
             .setPpEnabledExtensionNames(required_device_extensions.data()));
         VULKAN_HPP_DEFAULT_DISPATCHER.init(device);
 
-        graphics_queue = device.getQueue(graphic_and_present_family, 0u);
+        graphics_queue = device.getQueue(queue_family, 0u);
         command_pool = device.createCommandPool(vk::CommandPoolCreateInfo()
-            .setQueueFamilyIndex(graphic_and_present_family));
+            .setQueueFamilyIndex(queue_family));
         return;
     }
     throw std::runtime_error("Failed to find a suitable GPU.");
@@ -171,7 +207,7 @@ void Context::init_device()
 void Context::init_allocator()
 {
     // We need to tell VMA the vulkan address from the dynamic dispatcher
-    VmaVulkanFunctions vulkan_functions {
+    VmaVulkanFunctions vulkan_functions{
         .vkGetPhysicalDeviceProperties = VULKAN_HPP_DEFAULT_DISPATCHER.vkGetPhysicalDeviceProperties,
         .vkGetPhysicalDeviceMemoryProperties = VULKAN_HPP_DEFAULT_DISPATCHER.vkGetPhysicalDeviceMemoryProperties,
         .vkAllocateMemory = VULKAN_HPP_DEFAULT_DISPATCHER.vkAllocateMemory,
@@ -196,7 +232,7 @@ void Context::init_allocator()
         .vkGetPhysicalDeviceMemoryProperties2KHR = VULKAN_HPP_DEFAULT_DISPATCHER.vkGetPhysicalDeviceMemoryProperties2KHR
     };
 
-    VmaAllocatorCreateInfo allocator_info {
+    VmaAllocatorCreateInfo allocator_info{
         .flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT,
         .physicalDevice = physical_device,
         .device = device,
@@ -204,4 +240,6 @@ void Context::init_allocator()
         .instance = instance
     };
     vmaCreateAllocator(&allocator_info, &allocator);
+}
+
 }

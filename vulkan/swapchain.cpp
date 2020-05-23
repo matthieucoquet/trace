@@ -3,7 +3,10 @@
 
 #include <algorithm>
 
-Swapchain::Swapchain(Context& context):
+namespace vulkan
+{
+
+Swapchain::Swapchain(Context& context) :
     m_device(context.device)
 {
     constexpr vk::ColorSpaceKHR colorspace{ vk::ColorSpaceKHR::eSrgbNonlinear };
@@ -46,7 +49,7 @@ Swapchain::Swapchain(Context& context):
     auto vec_images = m_device.getSwapchainImagesKHR(swapchain);
     for (size_t i = 0u; i < image_count; i++) {
         images[i] = vec_images[i];
-    } 
+    }
     create_image_views();
 }
 
@@ -74,3 +77,4 @@ void Swapchain::create_image_views()
     }
 }
 
+}
