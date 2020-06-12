@@ -1,12 +1,14 @@
 #pragma once
-#include "vulkan/common.h"
+#include "vulkan/vk_common.h"
 
 #include "window.h"
 #include "scene.h"
 #include "vulkan/context.h"
 #include "vulkan/renderer.h"
-#include "vr/context.h"
+#include "vr/instance.h"
 #include "vr/session.h"
+
+#include <memory>
 
 class Engine
 {
@@ -27,13 +29,13 @@ private:
     using Duration = std::chrono::duration<float, std::milli>;
 
     Window m_window;
-    //vr::Context m_vr_context;
-    vulkan::Context m_vulkan_context;
+    vr::Instance m_vr_instance;
+    vulkan::Context m_context;
     Scene m_scene;
-    vulkan::Renderer m_renderer;
-    //vr::Session m_session;
+    vr::Session m_session;
 
     Time_point m_previous_clock;
 
     void reset_renderer();
 };
+

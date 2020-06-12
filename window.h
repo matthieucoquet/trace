@@ -1,5 +1,5 @@
 #pragma once
-#include "vulkan/common.h"
+#include "vulkan/vk_common.h"
 
 class Window
 {

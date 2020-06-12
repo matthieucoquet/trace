@@ -1,39 +1,57 @@
-#include "context.h"
+#include "instance.h"
 
 #include <iostream>
 
 OPENXR_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
+static XrBool32 debug_callback(
+    XrDebugUtilsMessageSeverityFlagsEXT /*message_severity*/,
+    XrDebugUtilsMessageTypeFlagsEXT /*message_types*/,
+    const XrDebugUtilsMessengerCallbackDataEXT* callback_data,
+    void* /*user_data*/) 
+{
+    std::cout << callback_data->message << std::endl;
+    return XR_TRUE;
+}
+
 namespace vr
 {
 constexpr bool verbose = true;
 
-Context::Context()
+Instance::Instance()
 {
     std::vector<const char*> required_extensions{
         XR_KHR_VULKAN_ENABLE_EXTENSION_NAME
     };
-    auto xrGetInstanceProcAddr = m_dynamic_loader.getProcAddress<PFN_xrGetInstanceProcAddr>("xrGetInstanceProcAddr");
-    OPENXR_HPP_DEFAULT_DISPATCHER.populateBase(xrGetInstanceProcAddr);
+    //auto xrGetInstanceProcAddr = m_dynamic_loader.getProcAddress<PFN_xrGetInstanceProcAddr>("xrGetInstanceProcAddr");
+    //OPENXR_HPP_DEFAULT_DISPATCHER.populateBase(xrGetInstanceProcAddr);
 
     if constexpr (verbose) {
         {
             std::cout << "API layers:" << std::endl;
-            auto properties = xr::enumerateApiLayerProperties();
+            auto properties = xr::enumerateApiLayerProperties(xr::DispatchLoaderStatic());
             for (const auto& property : properties) {
                 std::cout << "\t" << property.layerName << std::endl;
             }
         }
         {
             std::cout << "Available instance extensions:" << std::endl;
-            auto properties = xr::enumerateInstanceExtensionProperties(nullptr);
+            auto properties = xr::enumerateInstanceExtensionProperties(nullptr, xr::DispatchLoaderStatic());
             for (const auto& property : properties) {
                 std::cout << "\t" << property.extensionName << std::endl;
             }
         }
     }
 
+    xr::DebugUtilsMessengerCreateInfoEXT dumci;
+    dumci.messageSeverities = xr::DebugUtilsMessageSeverityFlagBitsEXT::AllBits;
+    dumci.messageTypes = xr::DebugUtilsMessageTypeFlagBitsEXT::AllBits;
+    dumci.userData = nullptr;
+    dumci.userCallback = &debug_callback;
+
     instance = xr::createInstance(xr::InstanceCreateInfo{
+        .next = nullptr,
+        //.next = &dumci,
         .applicationInfo = {
             .applicationName = "trace",
             .applicationVersion = 0,
@@ -44,7 +62,7 @@ Context::Context()
         .enabledApiLayerNames = nullptr,
         .enabledExtensionCount = static_cast<uint32_t>(required_extensions.size()),
         .enabledExtensionNames = required_extensions.data()
-    });
+    }, xr::DispatchLoaderStatic());
     OPENXR_HPP_DEFAULT_DISPATCHER.populateFully(instance);
 
     system_id = instance.getSystem(xr::SystemGetInfo{
@@ -77,16 +95,18 @@ Context::Context()
     }
     if (vulkan_requirements.maxApiVersionSupported.major() == 1 && vulkan_requirements.maxApiVersionSupported.minor() < 2) {
         std::cout << "Max supported: \n\t" << vulkan_requirements.maxApiVersionSupported.major() << "." << vulkan_requirements.maxApiVersionSupported.minor() << std::endl;
-        throw std::runtime_error("OpenXR doesn't support Vulkan 1.2.");
+        //throw std::runtime_error("OpenXR doesn't support Vulkan 1.2.");
     }
 }
 
-Context::~Context()
+Instance::~Instance()
 {
-    instance.destroy();
+    if (instance) {
+        instance.destroy();
+    }
 }
 
-void Context::splitAndAppend(char* new_extensions, std::vector<const char*>& required_extensions) const
+void Instance::splitAndAppend(char* new_extensions, std::vector<const char*>& required_extensions) const
 {
     char* next_extension = new_extensions;
     while (next_extension) {

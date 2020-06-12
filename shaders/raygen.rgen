@@ -1,5 +1,8 @@
 #version 460
 #extension GL_EXT_ray_tracing : enable
+#extension GL_EXT_scalar_block_layout : enable
+#extension GL_GOOGLE_include_directive : enable
+#include "common_primitives.glsl"
 
 layout(binding = 0, set = 0) uniform accelerationStructureEXT topLevelAS;
 layout(binding = 1, set = 0, rgba8) uniform image2D image;
@@ -8,20 +11,29 @@ layout(location = 0) rayPayloadEXT vec3 hit_value;
 
 void main() 
 {
-    vec2 fov = 0.872 * vec2(1.0, -900.0 / 1800.0);  // ~ 50 degrees
+    bool is_right = gl_LaunchIDEXT.x > gl_LaunchSizeEXT.x / 2; 
+    Eye eye = is_right ? scene_global.right : scene_global.left;
+
+    // eye.pose.position
+
+    // v + 2.0 * cross(q.xyz, cross(q.xyz, v) + q.w * v);
 
     const vec2 pixel_center = vec2(gl_LaunchIDEXT.xy) + vec2(0.5);
-    const vec2 in_uv = pixel_center / vec2(gl_LaunchSizeEXT.xy);
-    const vec3 direction = normalize(vec3((in_uv * 2.0 - 1.0) * fov, -1.0));
+    vec2 pixel_uv = pixel_center / vec2(gl_LaunchSizeEXT.xy);
+    pixel_uv.x = pixel_uv.x * 2;
+    pixel_uv.x = is_right ? pixel_uv.x - 1 : pixel_uv.x;
 
-    vec4 origin = vec4(0.0, 4.0, 20.0, 1.0);
+    vec3 direction = vec3(eye.fov.left + pixel_uv.x * (eye.fov.right - eye.fov.left),
+        eye.fov.up + pixel_uv.y * (eye.fov.down - eye.fov.up),
+        -1.0);
+
+    direction = direction + 2.0 * cross(eye.pose.rotation.xyz, cross(eye.pose.rotation.xyz, direction) + eye.pose.rotation.w * direction);
+    direction = normalize(direction);
 
     float tmin = 0.1;
     float tmax = 100.0;
 
     hit_value = vec3(0.0, 0.0, 0.0);
-
-    traceRayEXT(topLevelAS, gl_RayFlagsOpaqueEXT, 0xFF, 0, 0, 0, origin.xyz, tmin, direction.xyz, tmax, 0);
-
+    traceRayEXT(topLevelAS, gl_RayFlagsOpaqueEXT, 0xFF, 0, 0, 0, eye.pose.position, tmin, direction.xyz, tmax, 0);
     imageStore(image, ivec2(gl_LaunchIDEXT.xy), vec4(hit_value, 0.0));
 }

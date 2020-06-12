@@ -2,8 +2,9 @@
 #extension GL_EXT_ray_tracing : enable
 #extension GL_EXT_scalar_block_layout : enable
 #extension GL_GOOGLE_include_directive : enable
-#include "common.glsl"
+#include "common_primitives.glsl"
 #include "sphere.glsl"
+#include "common_raymarch.glsl"
 
 layout(binding = 0, set = 0) uniform accelerationStructureEXT topLevelAS;
 
@@ -35,13 +36,13 @@ void main()
                     0,           // sbtRecordStride
                     0,           // missIndex
                     position,    // ray origin
-                    0.5,         // ray min range
+                    0.1,         // ray min range
                     reflection,  // ray direction
-                    100.0,        // ray max range
+                    10.0,        // ray max range
                     0            // payload (location = 1)
                     );
         }
 
     vec3 spec = hit_value * max(dot(normal, reflection), 0.0);
-    hit_value = (spec + ambient + diffuse) * vec3(0.1, 0.5, 0.2);
+    hit_value = (spec + ambient + diffuse) * vec3(0.5, 0.5, 0.1);
 }

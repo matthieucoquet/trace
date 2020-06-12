@@ -75,6 +75,14 @@ void Allocated_buffer::allocate(VmaAllocator allocator, VmaMemoryUsage memory_us
     buffer = c_buffer;
 }
 
+void Allocated_buffer::copy(const void* data, size_t size)
+{
+    void* mapped;
+    vmaMapMemory(m_allocator, m_allocation, &mapped);
+    memcpy(mapped, data, size);
+    vmaUnmapMemory(m_allocator, m_allocation);
+}
+
 Allocated_image::Allocated_image(Allocated_image&& other) noexcept :
     image(other.image),
     m_device(other.m_device),

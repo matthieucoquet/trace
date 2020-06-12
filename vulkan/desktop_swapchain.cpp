@@ -1,4 +1,4 @@
-#include "swapchain.h"
+#include "desktop_swapchain.h"
 #include "context.h"
 
 #include <algorithm>
@@ -6,7 +6,7 @@
 namespace vulkan
 {
 
-Swapchain::Swapchain(Context& context) :
+Desktop_swapchain::Desktop_swapchain(Context& context) :
     m_device(context.device)
 {
     constexpr vk::ColorSpaceKHR colorspace{ vk::ColorSpaceKHR::eSrgbNonlinear };
@@ -53,7 +53,7 @@ Swapchain::Swapchain(Context& context) :
     create_image_views();
 }
 
-Swapchain::~Swapchain()
+Desktop_swapchain::~Desktop_swapchain()
 {
     for (auto image_view : image_views) {
         m_device.destroyImageView(image_view);
@@ -61,7 +61,7 @@ Swapchain::~Swapchain()
     m_device.destroySwapchainKHR(swapchain);
 }
 
-void Swapchain::create_image_views()
+void Desktop_swapchain::create_image_views()
 {
     for (size_t i = 0u; i < image_count; i++) {
         image_views[i] = m_device.createImageView(vk::ImageViewCreateInfo()

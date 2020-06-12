@@ -19,7 +19,7 @@ Raytracing_pipeline::Raytracing_pipeline(Context& context) :
             .setBinding(0)
             .setDescriptorType(vk::DescriptorType::eAccelerationStructureKHR)
             .setDescriptorCount(1u)
-            .setStageFlags(vk::ShaderStageFlagBits::eRaygenKHR | vk::ShaderStageFlagBits::eClosestHitKHR),
+            .setStageFlags(vk::ShaderStageFlagBits::eRaygenKHR | vk::ShaderStageFlagBits::eClosestHitKHR | vk::ShaderStageFlagBits::eMissKHR),
         vk::DescriptorSetLayoutBinding()
             .setBinding(1)
             .setDescriptorType(vk::DescriptorType::eStorageImage)
@@ -29,7 +29,12 @@ Raytracing_pipeline::Raytracing_pipeline(Context& context) :
             .setBinding(2)
             .setDescriptorType(vk::DescriptorType::eStorageBuffer)
             .setDescriptorCount(1u)
-            .setStageFlags(vk::ShaderStageFlagBits::eIntersectionKHR | vk::ShaderStageFlagBits::eClosestHitKHR)
+            .setStageFlags(vk::ShaderStageFlagBits::eIntersectionKHR | vk::ShaderStageFlagBits::eClosestHitKHR),
+        vk::DescriptorSetLayoutBinding()
+            .setBinding(3)
+            .setDescriptorType(vk::DescriptorType::eUniformBuffer)
+            .setDescriptorCount(1u)
+            .setStageFlags(vk::ShaderStageFlagBits::eRaygenKHR | vk::ShaderStageFlagBits::eIntersectionKHR | vk::ShaderStageFlagBits::eClosestHitKHR)
     };
     descriptor_set_layout = m_device.createDescriptorSetLayout(vk::DescriptorSetLayoutCreateInfo()
         .setBindingCount(static_cast<uint32_t>(array_bindings.size()))

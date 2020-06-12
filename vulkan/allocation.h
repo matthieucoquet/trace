@@ -1,5 +1,5 @@
 #pragma once
-#include "common.h"
+#include "vk_common.h"
 
 namespace vulkan
 {
@@ -18,6 +18,8 @@ public:
     Allocated_buffer(vk::BufferCreateInfo buffer_info, const void* data,
         vk::Device device, VmaAllocator allocator, vk::CommandPool command_pool, vk::Queue queue);
     ~Allocated_buffer();
+
+    void copy(const void* data, size_t size);
 private:
     vk::Device m_device;
     VmaAllocator m_allocator;

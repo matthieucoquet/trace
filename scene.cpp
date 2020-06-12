@@ -31,5 +31,10 @@ Scene::Scene(vulkan::Context& context)
         .setUsage(vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eRayTracingKHR),
         primitives.data(),
         context.device, context.allocator, context.command_pool, context.graphics_queue);
+}
 
+void Scene::step()
+{
+    Duration time_since_start = Clock::now() - m_start_clock;
+    scene_global.time = time_since_start.count();
 }

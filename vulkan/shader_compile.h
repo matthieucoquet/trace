@@ -2,7 +2,7 @@
 
 #include <filesystem>
 #include <shaderc/shaderc.hpp>
-#include "common.h"
+#include "vk_common.h"
 
 namespace vulkan
 {
@@ -17,7 +17,7 @@ class Shader_compile
 {
 public:
 	Shader_compile();
-	vk::ShaderModule compile(vk::Device device, const std::filesystem::path& file_name, shaderc_shader_kind shader_kind, shaderc::CompileOptions options = {});
+	vk::ShaderModule compile(vk::Device device, const std::filesystem::path& file_name, shaderc_shader_kind shader_kind);
 	Shader_group compile_group(vk::Device device, const char* group_name);
 private:
 	shaderc::Compiler m_compiler;

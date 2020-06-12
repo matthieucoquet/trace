@@ -1,7 +1,7 @@
 #define VMA_IMPLEMENTATION  // VMA implementation: Need to be define before any header
 #include "context.h"
 #include "window.h"
-#include "vr/context.h"
+#include "vr/instance.h"
 #include "debug_callback.h"
 
 #include <iostream>
@@ -13,11 +13,11 @@ namespace vulkan
 
 constexpr bool verbose = false;
 
-Context::Context(Window& window, vr::Context* vr_context)
+Context::Context(Window& window, vr::Instance& vr_instance)
 {
-    init_instance(window, vr_context);
+    init_instance(window, vr_instance);
     surface = window.create_surface(instance);
-    init_device(vr_context);
+    init_device(vr_instance);
     init_allocator();
 }
 
@@ -31,17 +31,15 @@ Context::~Context()
     instance.destroy();
 }
 
-void Context::init_instance(Window& window, vr::Context* vr_context)
+void Context::init_instance(Window& window, vr::Instance& vr_instance)
 {
     auto required_extensions = window.required_extensions();
     required_extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 
-    if (vr_context)
-    {
-        auto vr_required_extensions = vr_context->instance.getVulkanInstanceExtensionsKHR(vr_context->system_id);
-        if (!vr_required_extensions.empty()) {
-            vr_context->splitAndAppend(vr_required_extensions.data(), required_extensions);
-        }
+    // Warning: vr_required_extensions hold the memory to the string, should not be destroyed until createInstance
+    auto vr_required_extensions = vr_instance.instance.getVulkanInstanceExtensionsKHR(vr_instance.system_id);
+    if (!vr_required_extensions.empty()) {
+        vr_instance.splitAndAppend(vr_required_extensions.data(), required_extensions);
     }
 
     std::array required_instance_layers{ "VK_LAYER_KHRONOS_validation" };
@@ -85,7 +83,7 @@ void Context::init_instance(Window& window, vr::Context* vr_context)
     m_debug_messenger = instance.createDebugUtilsMessengerEXT(debug_create_info);
 }
 
-void Context::init_device(vr::Context* vr_context)
+void Context::init_device(vr::Instance& vr_instance)
 {
     std::vector required_device_extensions = {
         VK_KHR_SWAPCHAIN_EXTENSION_NAME,
@@ -96,19 +94,14 @@ void Context::init_device(vr::Context* vr_context)
     };
 
     std::vector<vk::PhysicalDevice> potential_physical_devices;
-    if (vr_context)
-    {
-        auto vr_required_extensions = vr_context->instance.getVulkanDeviceExtensionsKHR(vr_context->system_id);
-        if (!vr_required_extensions.empty()) {
-            vr_context->splitAndAppend(vr_required_extensions.data(), required_device_extensions);
-        }
+    auto vr_required_extensions = vr_instance.instance.getVulkanDeviceExtensionsKHR(vr_instance.system_id);
+    if (!vr_required_extensions.empty()) {
+        vr_instance.splitAndAppend(vr_required_extensions.data(), required_device_extensions);
+    }
+    potential_physical_devices.push_back(vr_instance.instance.getVulkanGraphicsDeviceKHR(vr_instance.system_id, instance));
 
-        potential_physical_devices.push_back(vr_context->instance.getVulkanGraphicsDeviceKHR(vr_context->system_id, instance));
-    }
-    else
-    {
-        potential_physical_devices = instance.enumeratePhysicalDevices();
-    }
+    // If no VR
+    //potential_physical_devices = instance.enumeratePhysicalDevices();
 
     for (const auto& potential_physical_device : potential_physical_devices)
     {

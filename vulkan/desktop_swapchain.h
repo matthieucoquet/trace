@@ -1,5 +1,5 @@
 #pragma once
-#include "common.h"
+#include "vk_common.h"
 #include <array>
 
 namespace vulkan
@@ -7,7 +7,7 @@ namespace vulkan
 
 class Context;
 
-class Swapchain
+class Desktop_swapchain
 {
 public:
     static constexpr vk::Format format{ vk::Format::eB8G8R8A8Srgb };
@@ -18,12 +18,12 @@ public:
     std::array<vk::Image, image_count> images;
     std::array<vk::ImageView, image_count> image_views;
 
-    Swapchain(Context& context);
-    Swapchain(const Swapchain& other) = delete;
-    Swapchain(Swapchain&& other) = delete;
-    Swapchain& operator=(const Swapchain& other) = default;
-    Swapchain& operator=(Swapchain&& other) = default;
-    ~Swapchain();
+    Desktop_swapchain(Context& context);
+    Desktop_swapchain(const Desktop_swapchain& other) = delete;
+    Desktop_swapchain(Desktop_swapchain&& other) = delete;
+    Desktop_swapchain& operator=(const Desktop_swapchain& other) = default;
+    Desktop_swapchain& operator=(Desktop_swapchain&& other) = default;
+    ~Desktop_swapchain();
 private:
     vk::Device m_device;
 

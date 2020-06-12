@@ -77,12 +77,12 @@ Shader_compile::Shader_compile():
     m_group_compile_options.SetIncluder(std::make_unique<Includer>(m_base_directory));
 }
 
-vk::ShaderModule Shader_compile::compile(vk::Device device, const std::filesystem::path& file_name, shaderc_shader_kind shader_kind, shaderc::CompileOptions options)
+vk::ShaderModule Shader_compile::compile(vk::Device device, const std::filesystem::path& file_name, shaderc_shader_kind shader_kind)
 {
     auto file_path = m_base_directory / file_name;
 
     auto data = read_file(file_path);
-    auto compile_result = m_compiler.CompileGlslToSpv(data.data(), data.size(), shader_kind, file_path.string().c_str(), options);
+    auto compile_result = m_compiler.CompileGlslToSpv(data.data(), data.size(), shader_kind, file_path.string().c_str(), m_group_compile_options);
     if (compile_result.GetCompilationStatus() != shaderc_compilation_status_success)
     {
         std::cout << compile_result.GetErrorMessage() << std::endl;
@@ -102,8 +102,8 @@ Shader_group Shader_compile::compile_group(vk::Device device, const char* group_
 
     return Shader_group
     {
-        .intersection = compile(device, intersection_path, shaderc_intersection_shader, m_group_compile_options),
-        .closest_hit = compile(device, closest_hit_path, shaderc_closesthit_shader, m_group_compile_options),
+        .intersection = compile(device, intersection_path, shaderc_intersection_shader),
+        .closest_hit = compile(device, closest_hit_path, shaderc_closesthit_shader),
     };
 }
 

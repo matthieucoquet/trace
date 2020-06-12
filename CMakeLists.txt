@@ -24,16 +24,19 @@ target_sources(trace PRIVATE main.cpp
                              vulkan/acceleration_structure.cpp vulkan/acceleration_structure.h
                              vulkan/allocation.cpp vulkan/allocation.h
                              vulkan/command_buffer.h
-                             vulkan/common.h
+                             vulkan/vk_common.h
                              vulkan/context.cpp vulkan/context.h
+                             vulkan/present.cpp vulkan/present.h
                              vulkan/raytracing_pipeline.cpp vulkan/raytracing_pipeline.h
                              vulkan/renderer.cpp vulkan/renderer.h
                              vulkan/shader_compile.cpp vulkan/shader_compile.h
-                             vulkan/swapchain.cpp vulkan/swapchain.h
+                             vulkan/desktop_swapchain.cpp vulkan/desktop_swapchain.h
 
-                             vr/context.cpp vr/context.h
+                             vr/input.cpp vr/input.h
+                             vr/instance.cpp vr/instance.h
                              vr/session.cpp vr/session.h
-                             vr/common.h
+                             vr/vr_swapchain.cpp vr/vr_swapchain.h
+                             vr/vr_common.h
 
                              engine.cpp engine.h
                              scene.cpp scene.h

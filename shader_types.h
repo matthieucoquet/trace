@@ -1,9 +1,10 @@
 #pragma once
-#include "vulkan/common.h"
+#include "vulkan/vk_common.h"
+#include "vr/vr_common.h"
 #define GLM_FORCE_RADIANS
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#include <compare>
+#include <array>
 
 using Aabb = vk::AabbPositionsKHR;
 
@@ -16,4 +17,16 @@ enum class Object_kind : unsigned int
 struct Primitive
 {
     glm::vec3 center;
+};
+
+struct Eye
+{
+    xr::Posef pose = {};
+    xr::Fovf fov = {};
+};
+
+struct Scene_global
+{
+    std::array<Eye, 2> eyes;
+    float time = {};
 };
