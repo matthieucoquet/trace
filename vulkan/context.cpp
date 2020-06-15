@@ -191,7 +191,8 @@ void Context::init_device(vr::Instance& vr_instance)
 
         graphics_queue = device.getQueue(queue_family, 0u);
         command_pool = device.createCommandPool(vk::CommandPoolCreateInfo()
-            .setQueueFamilyIndex(queue_family));
+            .setQueueFamilyIndex(queue_family)
+            .setFlags(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT todo));
         return;
     }
     throw std::runtime_error("Failed to find a suitable GPU.");

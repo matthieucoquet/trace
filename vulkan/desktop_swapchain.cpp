@@ -38,7 +38,7 @@ Desktop_swapchain::Desktop_swapchain(Context& context) :
         .setPresentMode(present_mode)
         .setImageExtent(extent)
         .setImageArrayLayers(1)
-        .setImageUsage(vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferDst) // | vk::ImageUsageFlagBits::eStorage
+        .setImageUsage(vk::ImageUsageFlagBits::eTransferDst)
         .setImageSharingMode(vk::SharingMode::eExclusive)
         .setPreTransform(surface_capabilities.currentTransform)
         .setCompositeAlpha(vk::CompositeAlphaFlagBitsKHR::eOpaque)

@@ -1,5 +1,6 @@
 #pragma once
 #include "vulkan/vk_common.h"
+#include "vulkan/desktop_present.h"
 
 class Window
 {
@@ -19,4 +20,5 @@ public:
     [[nodiscard]] bool step();
 private:
     GLFWwindow* m_window;
+    Desktop_present present;
 };
