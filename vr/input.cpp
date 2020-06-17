@@ -1,4 +1,6 @@
 #include "input.h"
+#include <iostream>
+
 namespace vr
 {
 
@@ -16,13 +18,13 @@ Input::Input(xr::Instance instance, xr::Session session)
     m_select_action = m_action_set.createAction(xr::ActionCreateInfo{ 
         .actionName = "select", 
         .actionType = xr::ActionType::BooleanInput, 
-        .countSubactionPaths = static_cast<uint32_t>(subaction_paths.size()),
+        .countSubactionPaths = static_cast<uint32_t>(m_hand_subaction_paths.size()),
         .subactionPaths = m_hand_subaction_paths.data(),
         .localizedActionName = "Select thing" });
     m_pose_action = m_action_set.createAction(xr::ActionCreateInfo{
         .actionName = "hand_pose",
         .actionType = xr::ActionType::PoseInput,
-        .countSubactionPaths = static_cast<uint32_t>(subaction_paths.size()),
+        .countSubactionPaths = static_cast<uint32_t>(m_hand_subaction_paths.size()),
         .subactionPaths = m_hand_subaction_paths.data(),
         .localizedActionName = "Hand pose" });
 
@@ -52,9 +54,11 @@ bool Input::sync_actions(xr::Session session)
     bool pushed = false;
     for (size_t i = 0u; i < 2u; i++)
     {
-        xr::ActionStateBoolean select_state = session.getActionStateBoolean(xr::ActionStateGetInfo{ m_select_action, m_hand_subaction_paths[i] });
+        xr::ActionStateBoolean select_state = session.getActionStateBoolean(xr::ActionStateGetInfo{
+            .action = m_select_action, 
+            .subactionPath = m_hand_subaction_paths[i] });
         if (select_state.isActive) {
-            pushed |= select_state.currentState;
+            pushed |= select_state.currentState == XR_TRUE;
             std::cout << "pushed" << std::endl;
         }
     }

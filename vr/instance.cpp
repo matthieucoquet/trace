@@ -106,7 +106,7 @@ Instance::~Instance()
     }
 }
 
-void Instance::splitAndAppend(char* new_extensions, std::vector<const char*>& required_extensions) const
+void Instance::split_and_append(char* new_extensions, std::vector<const char*>& required_extensions) const
 {
     char* next_extension = new_extensions;
     while (next_extension) {
@@ -124,6 +124,12 @@ void Instance::splitAndAppend(char* new_extensions, std::vector<const char*>& re
             new_extensions = next_extension + 1;
         }
     }
+}
+
+float Instance::mirror_recommended_ratio() const
+{
+    auto view_configuration_views = instance.enumerateViewConfigurationViews(system_id, xr::ViewConfigurationType::PrimaryStereo);
+    return static_cast<float>(view_configuration_views[0].recommendedImageRectWidth) / view_configuration_views[0].recommendedImageRectHeight;
 }
 
 }

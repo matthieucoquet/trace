@@ -39,7 +39,7 @@ void Context::init_instance(Window& window, vr::Instance& vr_instance)
     // Warning: vr_required_extensions hold the memory to the string, should not be destroyed until createInstance
     auto vr_required_extensions = vr_instance.instance.getVulkanInstanceExtensionsKHR(vr_instance.system_id);
     if (!vr_required_extensions.empty()) {
-        vr_instance.splitAndAppend(vr_required_extensions.data(), required_extensions);
+        vr_instance.split_and_append(vr_required_extensions.data(), required_extensions);
     }
 
     std::array required_instance_layers{ "VK_LAYER_KHRONOS_validation" };
@@ -96,7 +96,7 @@ void Context::init_device(vr::Instance& vr_instance)
     std::vector<vk::PhysicalDevice> potential_physical_devices;
     auto vr_required_extensions = vr_instance.instance.getVulkanDeviceExtensionsKHR(vr_instance.system_id);
     if (!vr_required_extensions.empty()) {
-        vr_instance.splitAndAppend(vr_required_extensions.data(), required_device_extensions);
+        vr_instance.split_and_append(vr_required_extensions.data(), required_device_extensions);
     }
     potential_physical_devices.push_back(vr_instance.instance.getVulkanGraphicsDeviceKHR(vr_instance.system_id, instance));
 
@@ -192,7 +192,7 @@ void Context::init_device(vr::Instance& vr_instance)
         graphics_queue = device.getQueue(queue_family, 0u);
         command_pool = device.createCommandPool(vk::CommandPoolCreateInfo()
             .setQueueFamilyIndex(queue_family)
-            .setFlags(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT todo));
+            .setFlags(vk::CommandPoolCreateFlagBits::eResetCommandBuffer));
         return;
     }
     throw std::runtime_error("Failed to find a suitable GPU.");

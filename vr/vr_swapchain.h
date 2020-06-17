@@ -18,6 +18,7 @@ public:
 
     xr::Swapchain swapchain;
     std::vector<xr::SwapchainImageVulkanKHR> images;
+    std::vector<vk::Image> vk_images;
     std::vector<vk::ImageView> image_views;
     xr::Extent2Di view_extent;  // Not the same as image extent
 
@@ -30,7 +31,6 @@ public:
     ~Swapchain();
 
     [[nodiscard]] uint32_t size() const noexcept { return static_cast<uint32_t>(images.size()); }
-    [[nodiscard]] std::vector<vk::Image> get_vk_images() const;
     [[nodiscard]] vk::Extent2D vk_image_extent() const {
         return vk::Extent2D(view_extent.width * 2u, view_extent.height);
     }

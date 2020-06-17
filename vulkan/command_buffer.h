@@ -1,5 +1,6 @@
 #pragma once
 #include "vk_common.h"
+#include <iostream>
 
 namespace vulkan
 {
@@ -39,39 +40,37 @@ protected:
     vk::Queue m_queue;
 };
 
-class Command_buffer_set
+class Reusable_command_buffers
 {
 public:
     size_t size;
     std::vector<vk::CommandBuffer> command_buffers;
     std::vector<vk::Fence> fences;
 
-    Command_buffer_set(vk::Device device, vk::CommandPool command_pool, vk::Queue queue, size_t buffer_size) :
+    Reusable_command_buffers(vk::Device device, vk::CommandPool command_pool, vk::Queue queue, size_t buffer_size) :
         size(buffer_size),
         m_device(device),
         m_command_pool(command_pool),
         m_queue(queue)
     {
-        m_command_buffers = device.allocateCommandBuffers(vk::CommandBufferAllocateInfo()
+        command_buffers = device.allocateCommandBuffers(vk::CommandBufferAllocateInfo()
             .setCommandPool(command_pool)
             .setLevel(vk::CommandBufferLevel::ePrimary)
-            .setCommandBufferCount(size));
-        //command_buffer = command_buffers.front();
-        //command_buffer.begin(vk::CommandBufferBeginInfo()
-        //    .setFlags(vk::CommandBufferUsageFlagBits::eOneTimeSubmit));
+            .setCommandBufferCount(static_cast<uint32_t>(size)));
+        fences.reserve(size);
         for(size_t i = 0; i < size; i++)
         {
-            m_fences[i] = m_device.createFence(vk::FenceCreateInfo().setFlags(vk::FenceCreateFlagBits::eSignaled));
+            fences.push_back(m_device.createFence(vk::FenceCreateInfo().setFlags(vk::FenceCreateFlagBits::eSignaled)));
         }
     }
 
-    ~Command_buffer_set()
+    ~Reusable_command_buffers()
     {
         for (size_t i = 0; i < size; i++)
         {
-            m_device.destroyFence(m_fences[i]);
+            m_device.destroyFence(fences[i]);
         }
-        m_device.freeCommandBuffers(m_command_pool, m_command_buffers);
+        m_device.freeCommandBuffers(m_command_pool, command_buffers);
     }
 
     size_t find_available()
@@ -81,15 +80,21 @@ public:
         {
             for (size_t i = 0; i < size; i++)
             {
-                if (device.getFenceStatus(m_fences[i]) == success) {
+                if (m_device.getFenceStatus(fences[i]) == vk::Result::eSuccess) {
+                    m_device.resetFences(fences[i]);
                     return i;
                 }
             }
             if (first) {
                 first = false;
-                std::cout << "Warning: no command buffer available, waiting until one get available."
+                std::cout << "Warning: no command buffer available, waiting until one get available." << std::endl;
             }
         }
+    }
+
+    void wait_until_done()
+    {
+        m_device.waitForFences(fences, true, std::numeric_limits<uint64_t>::max());
     }
 
 private:

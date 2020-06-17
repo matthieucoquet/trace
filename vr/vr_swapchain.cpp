@@ -1,5 +1,4 @@
 #include "vr_swapchain.h"
-//#include "vr_context.h"
 #include "vulkan/context.h"
 #include "instance.h"
 #include "session.h"
@@ -22,6 +21,7 @@ Swapchain& Swapchain::operator=(Swapchain&& other)
     }
     swapchain = std::move(other.swapchain);
     images = std::move(other.images);
+    vk_images = std::move(other.vk_images);
     image_views = std::move(other.image_views);
     view_extent = other.view_extent;
     other.swapchain = nullptr;
@@ -74,6 +74,10 @@ Swapchain::Swapchain(Instance& instance, xr::Session& session, vulkan::Context& 
         .arraySize = 1,
         .mipCount = 1 });
     images = swapchain.enumerateSwapchainImages<xr::SwapchainImageVulkanKHR>();
+    vk_images.reserve(images.size());
+    for (const auto& image : images) {
+        vk_images.push_back(image.image);
+    }
     create_image_views();
 }
 
@@ -101,16 +105,6 @@ void Swapchain::create_image_views()
                 .setBaseArrayLayer(0u)
                 .setLayerCount(1u))));
     }
-}
-
-std::vector<vk::Image> Swapchain::get_vk_images() const
-{
-    std::vector<vk::Image> vk_images;
-    vk_images.reserve(images.size());
-    for (const auto& image : images) {
-        vk_images.push_back(image.image);
-    }
-    return vk_images;
 }
 
 }

@@ -13,7 +13,7 @@ void keyboard_callback(GLFWwindow* window, int key, int /*scancode*/, int action
 }
 
 Engine::Engine() :
-    m_window(this, keyboard_callback),
+    m_window(this, keyboard_callback, m_vr_instance.mirror_recommended_ratio()),
     m_context(m_window, m_vr_instance),
     m_scene(m_context),
     m_session(m_vr_instance, m_context, m_scene)

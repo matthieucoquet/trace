@@ -8,9 +8,12 @@
 namespace vr
 {
 constexpr bool verbose = true;
+constexpr size_t size_command_buffers = 4u;
 
 Session::Session(Instance& instance, vulkan::Context& context, Scene& scene) :
-    m_renderer(context, scene)
+    m_renderer(context, scene),
+    m_mirror(context, size_command_buffers),
+    m_command_buffers(context.device, context.command_pool, context.graphics_queue, size_command_buffers)
 {
     auto graphic_binding = xr::GraphicsBindingVulkanKHR{
         .instance = context.instance,
@@ -41,9 +44,6 @@ Session::Session(Instance& instance, vulkan::Context& context, Scene& scene) :
     m_renderer.create_storage_image(context, extent, m_swapchain.required_format, size_swapchain);
     m_renderer.create_uniforms(context, size_swapchain);
     m_renderer.create_descriptor_sets(scene, size_swapchain);
-    auto vk_images = m_swapchain.get_vk_images();
-    m_renderer.create_command_buffers(vk_images, size_swapchain, extent);
-    m_renderer.create_synchronization();
 
     for(size_t eye_id = 0u; eye_id < 2u; eye_id++)
     {
@@ -164,7 +164,14 @@ void Session::draw_frame(Scene& scene)
 
             uint32_t swapchain_index = m_swapchain.swapchain.acquireSwapchainImage({});
             m_swapchain.swapchain.waitSwapchainImage({ .timeout = xr::Duration::infinite() });
-            m_renderer.render(scene, swapchain_index);
+
+            size_t command_buffer_id = m_command_buffers.find_available();
+            auto command_buffer = m_command_buffers.command_buffers[command_buffer_id];
+            m_renderer.update_uniforms(scene, swapchain_index);
+            m_renderer.start_recording(command_buffer, m_swapchain.vk_images[swapchain_index], swapchain_index, m_swapchain.vk_image_extent());
+            m_mirror.copy(command_buffer, m_renderer.storage_images[swapchain_index].image, command_buffer_id, m_swapchain.vk_image_extent());
+            m_renderer.end_recording(command_buffer, m_swapchain.vk_images[swapchain_index], swapchain_index);
+            m_mirror.present(command_buffer, m_command_buffers.fences[command_buffer_id], command_buffer_id);
             m_swapchain.swapchain.releaseSwapchainImage({});
             layers_pointers.push_back(reinterpret_cast<xr::CompositionLayerBaseHeader*>(&composition_layer));
         }

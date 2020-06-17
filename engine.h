@@ -28,8 +28,8 @@ private:
     using Time_point = std::chrono::time_point<std::chrono::steady_clock>;
     using Duration = std::chrono::duration<float, std::milli>;
 
-    Window m_window;
     vr::Instance m_vr_instance;
+    Window m_window;
     vulkan::Context m_context;
     Scene m_scene;
     vr::Session m_session;

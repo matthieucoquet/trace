@@ -3,15 +3,15 @@
 #include <iostream>
 
 constexpr bool verbose = false;
-constexpr unsigned int initial_width = 1800u;
+//constexpr unsigned int initial_width = 1800u;
 constexpr unsigned int initial_height = 900;
 
-Window::Window(void* user_pointer, GLFWkeyfun keyboard_callback)
+Window::Window(void* user_pointer, GLFWkeyfun keyboard_callback, float recommended_ratio)
 {
     glfwInit();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
-    m_window = glfwCreateWindow(initial_width, initial_height, "Vulkan Renderer", nullptr, nullptr);
+    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+    m_window = glfwCreateWindow(static_cast<int>(recommended_ratio * initial_height), initial_height, "Vulkan Renderer", nullptr, nullptr);
 
     glfwSetWindowUserPointer(m_window, user_pointer);
     glfwSetKeyCallback(m_window, keyboard_callback);

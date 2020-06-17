@@ -3,6 +3,8 @@
 #include "scene.h"
 #include "vr_common.h"
 #include "vulkan/renderer.h"
+#include "vulkan/desktop_mirror.h"
+#include "vulkan/command_buffer.h"
 #include "vr_swapchain.h"
 
 namespace vulkan {
@@ -31,10 +33,12 @@ private:
     xr::SystemId m_system_id;
     xr::Space m_stage_space;
     xr::SessionState m_session_state;
-    
+
     Swapchain m_swapchain;
 
     vulkan::Renderer m_renderer;
+    vulkan::Desktop_mirror m_mirror;
+    vulkan::Reusable_command_buffers m_command_buffers;
 
     xr::CompositionLayerProjection composition_layer{};
     std::array<xr::CompositionLayerProjectionView, 2> composition_layer_views;

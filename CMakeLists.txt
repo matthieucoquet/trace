@@ -25,7 +25,7 @@ target_sources(trace PRIVATE main.cpp
                              vulkan/allocation.cpp vulkan/allocation.h
                              vulkan/command_buffer.h
                              vulkan/context.cpp vulkan/context.h
-                             vulkan/desktop_present.cpp vulkan/desktop_present.h
+                             vulkan/desktop_mirror.cpp vulkan/desktop_mirror.h
                              vulkan/desktop_swapchain.cpp vulkan/desktop_swapchain.h
                              vulkan/raytracing_pipeline.cpp vulkan/raytracing_pipeline.h
                              vulkan/renderer.cpp vulkan/renderer.h

@@ -1,6 +1,5 @@
 #pragma once
 #include "vulkan/vk_common.h"
-#include "vulkan/desktop_present.h"
 
 class Window
 {
@@ -8,7 +7,7 @@ public:
     bool framebuffer_resize = false;
     bool framebuffer_minimized = false;
 
-    Window(void* user_pointer, GLFWkeyfun keyboard_callback);
+    Window(void* user_pointer, GLFWkeyfun keyboard_callback, float recommended_ratio);
     Window(const Window& other) = delete;
     Window(Window&& other) = delete;
     Window& operator=(const Window& other) = delete;
@@ -20,5 +19,4 @@ public:
     [[nodiscard]] bool step();
 private:
     GLFWwindow* m_window;
-    Desktop_present present;
 };

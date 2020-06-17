@@ -20,7 +20,8 @@ public:
     Instance& operator=(Instance&& other) = delete;
     ~Instance();
 
-    void splitAndAppend(char* new_extensions, std::vector<const char*>& required_extensions) const;
+    void split_and_append(char* new_extensions, std::vector<const char*>& required_extensions) const;
+    float mirror_recommended_ratio() const;
 private:
     xr::DynamicLoader m_dynamic_loader;
 };

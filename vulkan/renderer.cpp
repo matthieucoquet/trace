@@ -18,182 +18,150 @@ Renderer::Renderer(Context& context, Scene& scene) :
 
 Renderer::~Renderer()
 {
-    /*for (size_t i = 0; i < max_frames_in_flight; i++)
-    {
-        m_device.destroySemaphore(m_semaphore_available_in_flight[i]);
-        m_device.destroySemaphore(m_semaphore_finished_in_flight[i]);
-        m_device.destroyFence(m_fence_in_flight[i]);
-        // Don't need to destroy m_images_in_flight
-    }
-    m_device.destroyImageView(m_image_view);
-    m_device.destroyDescriptorPool(m_descriptor_pool);*/
     for (auto& command_buffer : m_command_buffers) {
         m_device.freeCommandBuffers(m_command_pool, command_buffer);
     }
 }
 
-void Renderer::render(Scene& scene, uint32_t swapchain_index)
+void Renderer::start_recording(vk::CommandBuffer command_buffer, vk::Image swapchain_image, uint32_t swapchain_id, vk::Extent2D extent)
 {
-    update_uniforms(scene, swapchain_index);
+    command_buffer.begin(vk::CommandBufferBeginInfo()
+        .setFlags(vk::CommandBufferUsageFlagBits::eOneTimeSubmit));
 
-    vk::PipelineStageFlags wait_stages = vk::PipelineStageFlagBits::eRayTracingShaderKHR;
-    m_queue.submit(
-        vk::SubmitInfo()
-        .setWaitSemaphoreCount(0u)
-        .setPWaitSemaphores(nullptr)
-        .setPWaitDstStageMask(nullptr)
-        .setCommandBufferCount(1)
-        .setPCommandBuffers(&m_command_buffers[swapchain_index])
-        .setSignalSemaphoreCount(0)
-        .setPSignalSemaphores(nullptr),
-        {});
+    auto raygen_shader_entry = vk::StridedBufferRegionKHR()
+        .setBuffer(m_pipeline.shader_binding_table.buffer)
+        .setOffset(0u)
+        .setStride(m_pipeline.raytracing_properties.shaderGroupHandleSize)
+        .setSize(m_pipeline.raytracing_properties.shaderGroupHandleSize);
+
+    auto miss_shader_entry = vk::StridedBufferRegionKHR()
+        .setBuffer(m_pipeline.shader_binding_table.buffer)
+        .setOffset(m_pipeline.raytracing_properties.shaderGroupHandleSize)
+        .setStride(m_pipeline.raytracing_properties.shaderGroupHandleSize)
+        .setSize(m_pipeline.raytracing_properties.shaderGroupHandleSize);
+
+    auto hit_shader_entry = vk::StridedBufferRegionKHR()
+        .setBuffer(m_pipeline.shader_binding_table.buffer)
+        .setOffset(m_pipeline.raytracing_properties.shaderGroupHandleSize * vk::DeviceSize(2u))
+        .setStride(m_pipeline.raytracing_properties.shaderGroupHandleSize)
+        .setSize(m_pipeline.raytracing_properties.shaderGroupHandleSize * vk::DeviceSize(2u));
+
+    auto callable_shader_entry = vk::StridedBufferRegionKHR();
+
+    command_buffer.bindPipeline(vk::PipelineBindPoint::eRayTracingKHR, m_pipeline.pipeline);
+    command_buffer.bindDescriptorSets(vk::PipelineBindPoint::eRayTracingKHR, m_pipeline.pipeline_layout, 0, m_descriptor_sets[swapchain_id], {});
+
+    //  Swapchain to dst
+    command_buffer.pipelineBarrier(
+        vk::PipelineStageFlagBits::eTopOfPipe,
+        vk::PipelineStageFlagBits::eTransfer,
+        {}, {}, {},
+        vk::ImageMemoryBarrier()
+        .setOldLayout(vk::ImageLayout::eUndefined)  // color ?
+        .setNewLayout(vk::ImageLayout::eTransferDstOptimal)
+        .setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+        .setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+        .setImage(swapchain_image)
+        .setSrcAccessMask({})
+        .setDstAccessMask(vk::AccessFlagBits::eTransferWrite)
+        .setSubresourceRange(vk::ImageSubresourceRange()
+            .setLevelCount(1u)
+            .setLayerCount(1)
+            .setBaseArrayLayer(0)
+            .setBaseMipLevel(0)
+            .setAspectMask(vk::ImageAspectFlagBits::eColor)));
+
+    command_buffer.traceRaysKHR(
+        &raygen_shader_entry,
+        &miss_shader_entry,
+        &hit_shader_entry,
+        &callable_shader_entry,
+        extent.width,
+        extent.height,
+        1u);
+
+    //  Img to source
+    command_buffer.pipelineBarrier(
+        vk::PipelineStageFlagBits::eRayTracingShaderKHR,
+        vk::PipelineStageFlagBits::eTransfer,
+        {}, {}, {},
+        vk::ImageMemoryBarrier()
+        .setOldLayout(vk::ImageLayout::eGeneral)
+        .setNewLayout(vk::ImageLayout::eTransferSrcOptimal)
+        .setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+        .setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+        .setImage(storage_images[swapchain_id].image)
+        .setSrcAccessMask(vk::AccessFlagBits::eShaderWrite)
+        .setDstAccessMask(vk::AccessFlagBits::eTransferRead)
+        .setSubresourceRange(vk::ImageSubresourceRange()
+            .setLevelCount(1u)
+            .setLayerCount(1)
+            .setBaseArrayLayer(0)
+            .setBaseMipLevel(0)
+            .setAspectMask(vk::ImageAspectFlagBits::eColor)));
+
+    command_buffer.copyImage(
+        storage_images[swapchain_id].image, vk::ImageLayout::eTransferSrcOptimal,
+        swapchain_image, vk::ImageLayout::eTransferDstOptimal,
+        vk::ImageCopy()
+        .setSrcOffset(vk::Offset3D(0, 0, 0))
+        .setSrcSubresource(vk::ImageSubresourceLayers()
+            .setAspectMask(vk::ImageAspectFlagBits::eColor)
+            .setMipLevel(0u)
+            .setLayerCount(1u)
+            .setBaseArrayLayer(0u))
+        .setDstOffset(vk::Offset3D(0, 0, 0))
+        .setDstSubresource(vk::ImageSubresourceLayers()
+            .setAspectMask(vk::ImageAspectFlagBits::eColor)
+            .setMipLevel(0u)
+            .setLayerCount(1u)
+            .setBaseArrayLayer(0u))
+        .setExtent(vk::Extent3D(extent, 1u))
+    );
 }
 
-void Renderer::create_command_buffers(/*Context& context*/const std::vector<vk::Image>& images, uint32_t swapchain_size, vk::Extent2D extent)
+void Renderer::end_recording(vk::CommandBuffer command_buffer, vk::Image swapchain_image, uint32_t swapchain_id)
 {
-    m_command_buffers = m_device.allocateCommandBuffers(vk::CommandBufferAllocateInfo()
-        .setCommandPool(m_command_pool)
-        .setLevel(vk::CommandBufferLevel::ePrimary)
-        .setCommandBufferCount(swapchain_size));
-
-    size_t framebuffer_id = 0u;
-    for (auto& command_buffer : m_command_buffers)
-    {
-        command_buffer.begin(vk::CommandBufferBeginInfo());
-
-        auto raygen_shader_entry = vk::StridedBufferRegionKHR()
-            .setBuffer(m_pipeline.shader_binding_table.buffer)
-            .setOffset(0u)
-            .setStride(m_pipeline.raytracing_properties.shaderGroupHandleSize)
-            .setSize(m_pipeline.raytracing_properties.shaderGroupHandleSize);
-
-        auto miss_shader_entry = vk::StridedBufferRegionKHR()
-            .setBuffer(m_pipeline.shader_binding_table.buffer)
-            .setOffset(m_pipeline.raytracing_properties.shaderGroupHandleSize)
-            .setStride(m_pipeline.raytracing_properties.shaderGroupHandleSize)
-            .setSize(m_pipeline.raytracing_properties.shaderGroupHandleSize);
-
-        auto hit_shader_entry = vk::StridedBufferRegionKHR()
-            .setBuffer(m_pipeline.shader_binding_table.buffer)
-            .setOffset(m_pipeline.raytracing_properties.shaderGroupHandleSize * vk::DeviceSize(2u))
-            .setStride(m_pipeline.raytracing_properties.shaderGroupHandleSize)
-            .setSize(m_pipeline.raytracing_properties.shaderGroupHandleSize * vk::DeviceSize(2u));
-
-        auto callable_shader_entry = vk::StridedBufferRegionKHR();
-
-        command_buffer.bindPipeline(vk::PipelineBindPoint::eRayTracingKHR, m_pipeline.pipeline);
-        command_buffer.bindDescriptorSets(vk::PipelineBindPoint::eRayTracingKHR, m_pipeline.pipeline_layout, 0, m_descriptor_sets[framebuffer_id], {});
-
-        //  Swapchain to dst
-        command_buffer.pipelineBarrier(
-            vk::PipelineStageFlagBits::eTopOfPipe,
-            vk::PipelineStageFlagBits::eTransfer,
-            {}, {}, {},
-            vk::ImageMemoryBarrier()
-            .setOldLayout(vk::ImageLayout::eUndefined)
-            .setNewLayout(vk::ImageLayout::eTransferDstOptimal)
-            .setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-            .setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-            .setImage(images[framebuffer_id])
-            .setSrcAccessMask({})
-            .setDstAccessMask(vk::AccessFlagBits::eTransferWrite)
-            .setSubresourceRange(vk::ImageSubresourceRange()
-                .setLevelCount(1u)
-                .setLayerCount(1)
-                .setBaseArrayLayer(0)
-                .setBaseMipLevel(0)
-                .setAspectMask(vk::ImageAspectFlagBits::eColor)));
-
-        command_buffer.traceRaysKHR(
-            &raygen_shader_entry,
-            &miss_shader_entry,
-            &hit_shader_entry,
-            &callable_shader_entry,
-            extent.width,
-            extent.height,
-            1u);
-
-        //  Img to source
-        command_buffer.pipelineBarrier(
-            vk::PipelineStageFlagBits::eRayTracingShaderKHR,
-            vk::PipelineStageFlagBits::eTransfer,
-            {}, {}, {},
-            vk::ImageMemoryBarrier()
-            .setOldLayout(vk::ImageLayout::eGeneral)
-            .setNewLayout(vk::ImageLayout::eTransferSrcOptimal)
-            .setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-            .setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-            .setImage(m_storage_images[framebuffer_id].image)
-            .setSrcAccessMask(vk::AccessFlagBits::eShaderWrite)
-            .setDstAccessMask(vk::AccessFlagBits::eTransferRead)
-            .setSubresourceRange(vk::ImageSubresourceRange()
-                .setLevelCount(1u)
-                .setLayerCount(1)
-                .setBaseArrayLayer(0)
-                .setBaseMipLevel(0)
-                .setAspectMask(vk::ImageAspectFlagBits::eColor)));
-
-        command_buffer.copyImage(
-            m_storage_images[framebuffer_id].image, vk::ImageLayout::eTransferSrcOptimal,
-            images[framebuffer_id], vk::ImageLayout::eTransferDstOptimal,
-            vk::ImageCopy()
-            .setSrcOffset(vk::Offset3D(0, 0, 0))
-            .setSrcSubresource(vk::ImageSubresourceLayers()
-                .setAspectMask(vk::ImageAspectFlagBits::eColor)
-                .setMipLevel(0u)
-                .setLayerCount(1u)
-                .setBaseArrayLayer(0u))
-            .setDstOffset(vk::Offset3D(0, 0, 0))
-            .setDstSubresource(vk::ImageSubresourceLayers()
-                .setAspectMask(vk::ImageAspectFlagBits::eColor)
-                .setMipLevel(0u)
-                .setLayerCount(1u)
-                .setBaseArrayLayer(0u))
-            .setExtent(vk::Extent3D(extent, 1u))
-        );
-
-        //  Img to storage
-        command_buffer.pipelineBarrier(
-            vk::PipelineStageFlagBits::eTransfer,
-            vk::PipelineStageFlagBits::eRayTracingShaderKHR,
-            {}, {}, {},
-            vk::ImageMemoryBarrier()
-            .setOldLayout(vk::ImageLayout::eTransferSrcOptimal)
-            .setNewLayout(vk::ImageLayout::eGeneral)
-            .setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-            .setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-            .setImage(m_storage_images[framebuffer_id].image)
-            .setSrcAccessMask(vk::AccessFlagBits::eTransferRead)
-            .setDstAccessMask(vk::AccessFlagBits::eShaderWrite)
-            .setSubresourceRange(vk::ImageSubresourceRange()
-                .setLevelCount(1u)
-                .setLayerCount(1)
-                .setBaseArrayLayer(0)
-                .setBaseMipLevel(0)
-                .setAspectMask(vk::ImageAspectFlagBits::eColor)));
-
-        //  Swapchain to present
-        command_buffer.pipelineBarrier(
-            vk::PipelineStageFlagBits::eTransfer,
-            vk::PipelineStageFlagBits::eAllCommands,
-            {}, {}, {},
-            vk::ImageMemoryBarrier()
-            .setOldLayout(vk::ImageLayout::eTransferDstOptimal)
-            .setNewLayout(vk::ImageLayout::eColorAttachmentOptimal)
-            .setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-            .setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-            .setImage(images[framebuffer_id])
-            .setSrcAccessMask(vk::AccessFlagBits::eTransferWrite)
-            .setDstAccessMask({})
-            .setSubresourceRange(vk::ImageSubresourceRange()
-                .setLevelCount(1u)
-                .setLayerCount(1)
-                .setBaseArrayLayer(0)
-                .setBaseMipLevel(0)
-                .setAspectMask(vk::ImageAspectFlagBits::eColor)));
-        command_buffer.end();
-        framebuffer_id++;
-    }
+    //  Img to storage
+    command_buffer.pipelineBarrier(
+        vk::PipelineStageFlagBits::eTransfer,
+        vk::PipelineStageFlagBits::eRayTracingShaderKHR,
+        {}, {}, {},
+        vk::ImageMemoryBarrier()
+        .setOldLayout(vk::ImageLayout::eTransferSrcOptimal)
+        .setNewLayout(vk::ImageLayout::eGeneral)
+        .setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+        .setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+        .setImage(storage_images[swapchain_id].image)
+        .setSrcAccessMask(vk::AccessFlagBits::eTransferRead)
+        .setDstAccessMask(vk::AccessFlagBits::eShaderWrite)
+        .setSubresourceRange(vk::ImageSubresourceRange()
+            .setLevelCount(1u)
+            .setLayerCount(1)
+            .setBaseArrayLayer(0)
+            .setBaseMipLevel(0)
+            .setAspectMask(vk::ImageAspectFlagBits::eColor)));
+    //  Swapchain to present
+    command_buffer.pipelineBarrier(
+        vk::PipelineStageFlagBits::eTransfer,
+        vk::PipelineStageFlagBits::eBottomOfPipe,
+        //vk::PipelineStageFlagBits::eAllCommands,
+        {}, {}, {},
+        vk::ImageMemoryBarrier()
+        .setOldLayout(vk::ImageLayout::eTransferDstOptimal)
+        .setNewLayout(vk::ImageLayout::eColorAttachmentOptimal)
+        .setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+        .setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+        .setImage(swapchain_image)
+        .setSrcAccessMask(vk::AccessFlagBits::eTransferWrite)
+        .setDstAccessMask({})
+        .setSubresourceRange(vk::ImageSubresourceRange()
+            .setLevelCount(1u)
+            .setLayerCount(1)
+            .setBaseArrayLayer(0)
+            .setBaseMipLevel(0)
+            .setAspectMask(vk::ImageAspectFlagBits::eColor)));
+    command_buffer.end();
 }
 
 void Renderer::create_uniforms(Context& context, uint32_t swapchain_size)
@@ -212,7 +180,6 @@ void Renderer::create_uniforms(Context& context, uint32_t swapchain_size)
 
 void Renderer::update_uniforms(Scene& scene, uint32_t swapchain_index)
 {
-    //std::cout << scene.time << std::endl;
     m_scene_uniforms[swapchain_index].copy(reinterpret_cast<void*>(&scene.scene_global), sizeof(Scene_global));
 }
 
@@ -297,18 +264,6 @@ void Renderer::create_descriptor_sets(const Scene& scene, uint32_t swapchain_siz
     }
 }
 
-void Renderer::create_synchronization()
-{
-    /*for (size_t i = 0; i < max_frames_in_flight; i++)
-    {
-        m_semaphore_available_in_flight[i] = m_device.createSemaphore({});
-        m_semaphore_finished_in_flight[i] = m_device.createSemaphore({});
-        m_fence_in_flight[i] = m_device.createFence(vk::FenceCreateInfo().setFlags(vk::FenceCreateFlagBits::eSignaled));
-        m_fence_swapchain_in_flight[i] = vk::Fence();
-    }*/
-    //m_render_fence = m_device.createFence(vk::FenceCreateInfo());
-}
-
 void Renderer::create_storage_image(Context& context, vk::Extent2D extent, vk::Format format, uint32_t swapchain_size)
 {
     m_scene_uniforms.reserve(swapchain_size);
@@ -316,8 +271,7 @@ void Renderer::create_storage_image(Context& context, vk::Extent2D extent, vk::F
     One_time_command_buffer command_buffer(m_device, context.command_pool, context.graphics_queue);
     for (uint32_t i = 0; i < swapchain_size; i++)
     {
-        // One image per swapchain image?
-        m_storage_images.emplace_back(
+        storage_images.emplace_back(
             vk::ImageCreateInfo()
             .setImageType(vk::ImageType::e2D)
             .setExtent(vk::Extent3D(extent, 1))
@@ -333,7 +287,7 @@ void Renderer::create_storage_image(Context& context, vk::Extent2D extent, vk::F
             m_device, context.allocator);
 
         m_image_views.push_back(m_device.createImageView(vk::ImageViewCreateInfo()
-            .setImage(m_storage_images.back().image)
+            .setImage(storage_images.back().image)
             .setViewType(vk::ImageViewType::e2D)
             .setFormat(format)
             .setSubresourceRange(vk::ImageSubresourceRange()
@@ -348,7 +302,7 @@ void Renderer::create_storage_image(Context& context, vk::Extent2D extent, vk::F
             .setNewLayout(vk::ImageLayout::eGeneral)
             .setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
             .setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-            .setImage(m_storage_images.back().image)
+            .setImage(storage_images.back().image)
             .setSrcAccessMask({})
             .setDstAccessMask({})
             .setSubresourceRange(vk::ImageSubresourceRange()
@@ -366,13 +320,9 @@ void Renderer::create_storage_image(Context& context, vk::Extent2D extent, vk::F
 }
 
 
-void Renderer::reload_pipeline(Context& /*context*/)
+void Renderer::reload_pipeline(Context& context)
 {
-    /*for (auto& command_buffer : m_command_buffers) {
-        m_device.freeCommandBuffers(m_command_pool, command_buffer);
-    }
     m_pipeline.reload(context);
-    create_command_buffers();*/
 }
 
 }
