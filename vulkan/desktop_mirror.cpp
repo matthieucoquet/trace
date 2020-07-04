@@ -59,7 +59,7 @@ void Desktop_mirror::copy(vk::CommandBuffer& command_buffer, vk::Image vr_image,
         m_swapchain.images[m_image_id],
         vk::ImageLayout::eTransferDstOptimal,
         vk::ImageBlit()
-        .setSrcOffsets({ vk::Offset3D(0, 0, 0), vk::Offset3D(extent.width / 2, extent.height, 1) })
+        .setSrcOffsets({ vk::Offset3D(0, 0, 0), vk::Offset3D(extent.width, extent.height, 1) })
         .setSrcSubresource(vk::ImageSubresourceLayers()
             .setAspectMask(vk::ImageAspectFlagBits::eColor)
             .setMipLevel(0u)

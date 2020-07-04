@@ -5,8 +5,12 @@
 #include "vulkan/renderer.h"
 #include "vulkan/desktop_mirror.h"
 #include "vulkan/command_buffer.h"
+#include "vulkan/imgui_render.h"
+#include "imgui_input.h"
 #include "vr_swapchain.h"
+#include "input.h"
 
+struct GLFWwindow;
 namespace vulkan {
 class Context;
 }
@@ -21,7 +25,7 @@ class Session
 public:
     xr::Session session;
 
-    Session(Instance& instance, vulkan::Context& context, Scene& scene);
+    Session(GLFWwindow* window, xr::Session new_session, Instance& instance, vulkan::Context& context, Scene& scene);
     Session(const Session& other) = delete;
     Session(Session&& other) = delete;
     Session& operator=(Session& other) = delete;
@@ -34,14 +38,20 @@ private:
     xr::Space m_stage_space;
     xr::SessionState m_session_state;
 
-    Swapchain m_swapchain;
+    Input m_input;
+    Swapchain m_main_swapchain;
+    Swapchain m_ui_swapchain;
 
     vulkan::Renderer m_renderer;
     vulkan::Desktop_mirror m_mirror;
     vulkan::Reusable_command_buffers m_command_buffers;
+    Imgui_input m_imgui_input;
+    vulkan::Imgui_render m_imgui_render;
+    bool test_render_demo;
 
-    xr::CompositionLayerProjection composition_layer{};
+    xr::CompositionLayerProjection composition_layer_proj{};
     std::array<xr::CompositionLayerProjectionView, 2> composition_layer_views;
+    xr::CompositionLayerQuad composition_layer_ui{};
 
     void poll_events(xr::Instance instance);
     void draw_frame(Scene& scene);

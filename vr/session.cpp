@@ -10,23 +10,17 @@ namespace vr
 constexpr bool verbose = true;
 constexpr size_t size_command_buffers = 4u;
 
-Session::Session(Instance& instance, vulkan::Context& context, Scene& scene) :
+Session::Session(GLFWwindow* window, xr::Session new_session, Instance& instance, vulkan::Context& context, Scene& scene) :
+    session(new_session),
+    m_input(instance.instance, session),
+    m_main_swapchain(instance, session, context),
+    m_ui_swapchain(session, context, xr::Extent2Di{ .width = 500, .height = 500 }),
     m_renderer(context, scene),
     m_mirror(context, size_command_buffers),
-    m_command_buffers(context.device, context.command_pool, context.graphics_queue, size_command_buffers)
+    m_command_buffers(context.device, context.command_pool, context.graphics_queue, size_command_buffers),
+    m_imgui_input(window),
+    m_imgui_render(context, m_ui_swapchain.vk_view_extent(), m_ui_swapchain.size(), m_ui_swapchain.image_views)
 {
-    auto graphic_binding = xr::GraphicsBindingVulkanKHR{
-        .instance = context.instance,
-        .physicalDevice = context.physical_device,
-        .device = context.device,
-        .queueFamilyIndex = context.queue_family,
-        .queueIndex = 0u
-    };
-    session = instance.instance.createSession(xr::SessionCreateInfo{
-        .next = xr::get(graphic_binding),
-        .systemId = instance.system_id
-    });
-
     if constexpr (verbose) {
         auto reference_spaces = session.enumerateReferenceSpaces();
         std::cout << "XR runtime supported reference spaces:" << std::endl;
@@ -37,38 +31,51 @@ Session::Session(Instance& instance, vulkan::Context& context, Scene& scene) :
     m_stage_space = session.createReferenceSpace(xr::ReferenceSpaceCreateInfo{
         .referenceSpaceType = xr::ReferenceSpaceType::Stage });
 
-    m_swapchain = Swapchain(instance, session, context);
-
-    uint32_t size_swapchain = m_swapchain.size();
-    auto extent = m_swapchain.vk_image_extent();
-    m_renderer.create_storage_image(context, extent, m_swapchain.required_format, size_swapchain);
+    uint32_t size_swapchain = m_main_swapchain.size();
+    auto extent = m_main_swapchain.vk_view_extent();
+    extent.width *= 2;
+    m_renderer.create_storage_image(context, extent, m_main_swapchain.required_format, size_swapchain);
     m_renderer.create_uniforms(context, size_swapchain);
-    m_renderer.create_descriptor_sets(scene, size_swapchain);
+    m_renderer.create_descriptor_sets(scene, context.descriptor_pool, size_swapchain);
 
     for(size_t eye_id = 0u; eye_id < 2u; eye_id++)
     {
         composition_layer_views[eye_id] = xr::CompositionLayerProjectionView{
-            .pose = xr::Posef{},
-            .fov = xr::Fovf{},
-            .subImage = xr::SwapchainSubImage{
-                .swapchain = m_swapchain.swapchain,
-                .imageRect = xr::Rect2Di {
-                    .offset = {},
-                    .extent = m_swapchain.view_extent
+            //.pose = xr::Posef{},
+            //.fov = xr::Fovf{},
+            .subImage = /*xr::SwapchainSubImage*/ {
+                .swapchain = m_main_swapchain.swapchain,
+                .imageRect = {
+                    //.offset = {},
+                    .extent = m_main_swapchain.view_extent
                 },
                 .imageArrayIndex = 0u
             }
         };
     }
     composition_layer_views[1].subImage.imageRect.offset = xr::Offset2Di{
-        .x = m_swapchain.view_extent.width,
+        .x = m_main_swapchain.view_extent.width,
         .y = 0
     };
 
-    composition_layer = xr::CompositionLayerProjection{
+    composition_layer_proj = xr::CompositionLayerProjection{
         .space = m_stage_space,
         .viewCount = 2u,
         .views = composition_layer_views.data()
+    };
+    composition_layer_ui = xr::CompositionLayerQuad{
+        .space = m_stage_space,
+        .eyeVisibility = xr::EyeVisibility::Both,
+        .subImage = /*xr::SwapchainSubImage*/{
+                .swapchain = m_ui_swapchain.swapchain,
+                .imageRect = /*xr::Rect2Di*/ {
+                    //.offset = {},
+                    .extent = m_ui_swapchain.view_extent
+                },
+                .imageArrayIndex = 0u
+            },
+        .pose = /*xr::Posef*/{.position = {0.2f, 1.0f, -0.2f } },
+        .size = /*xr::Extent2Df*/{ .width = 0.2f, .height = 0.2f }
     };
 
 }
@@ -162,18 +169,31 @@ void Session::draw_frame(Scene& scene)
                 composition_layer_views[eye_id].fov = views[eye_id].fov;
             }
 
-            uint32_t swapchain_index = m_swapchain.swapchain.acquireSwapchainImage({});
-            m_swapchain.swapchain.waitSwapchainImage({ .timeout = xr::Duration::infinite() });
-
             size_t command_buffer_id = m_command_buffers.find_available();
             auto command_buffer = m_command_buffers.command_buffers[command_buffer_id];
-            m_renderer.update_uniforms(scene, swapchain_index);
-            m_renderer.start_recording(command_buffer, m_swapchain.vk_images[swapchain_index], swapchain_index, m_swapchain.vk_image_extent());
-            m_mirror.copy(command_buffer, m_renderer.storage_images[swapchain_index].image, command_buffer_id, m_swapchain.vk_image_extent());
-            m_renderer.end_recording(command_buffer, m_swapchain.vk_images[swapchain_index], swapchain_index);
-            m_mirror.present(command_buffer, m_command_buffers.fences[command_buffer_id], command_buffer_id);
-            m_swapchain.swapchain.releaseSwapchainImage({});
-            layers_pointers.push_back(reinterpret_cast<xr::CompositionLayerBaseHeader*>(&composition_layer));
+                uint32_t swapchain_index = m_main_swapchain.swapchain.acquireSwapchainImage({});
+                m_main_swapchain.swapchain.waitSwapchainImage({ .timeout = xr::Duration::infinite() });
+
+                m_renderer.update_uniforms(scene, swapchain_index);
+                m_renderer.start_recording(command_buffer, m_main_swapchain.vk_images[swapchain_index], swapchain_index, m_main_swapchain.vk_view_extent());
+                m_mirror.copy(command_buffer, m_renderer.storage_images[swapchain_index].image, command_buffer_id, m_main_swapchain.vk_view_extent());
+                m_renderer.end_recording(command_buffer, m_main_swapchain.vk_images[swapchain_index], swapchain_index);
+
+                swapchain_index = m_ui_swapchain.swapchain.acquireSwapchainImage({});
+                m_ui_swapchain.swapchain.waitSwapchainImage({ .timeout = xr::Duration::infinite() });
+
+                ImGui::NewFrame();
+                ImGui::ShowDemoWindow(&test_render_demo);
+                ImGui::Render();
+                ImDrawData* draw_data = ImGui::GetDrawData();
+                m_imgui_render.draw(draw_data, command_buffer, swapchain_index);
+                command_buffer.end();
+
+                m_mirror.present(command_buffer, m_command_buffers.fences[command_buffer_id], command_buffer_id);
+                m_main_swapchain.swapchain.releaseSwapchainImage({});
+                m_ui_swapchain.swapchain.releaseSwapchainImage({});
+                layers_pointers.push_back(reinterpret_cast<xr::CompositionLayerBaseHeader*>(&composition_layer_proj));
+                layers_pointers.push_back(reinterpret_cast<xr::CompositionLayerBaseHeader*>(&composition_layer_ui));
         }
 
 

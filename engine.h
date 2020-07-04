@@ -9,6 +9,8 @@
 #include "vr/session.h"
 
 #include <memory>
+#include <optional>
+
 
 class Engine
 {
@@ -32,7 +34,7 @@ private:
     Window m_window;
     vulkan::Context m_context;
     Scene m_scene;
-    vr::Session m_session;
+    std::optional<vr::Session> m_session;  // When set, session is a valid session
 
     Time_point m_previous_clock;
 

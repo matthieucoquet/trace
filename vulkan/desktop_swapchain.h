@@ -16,7 +16,6 @@ public:
     vk::SwapchainKHR swapchain;
     vk::Extent2D extent;
     std::array<vk::Image, image_count> images;
-    std::array<vk::ImageView, image_count> image_views;
 
     Desktop_swapchain(Context& context);
     Desktop_swapchain(const Desktop_swapchain& other) = delete;
@@ -26,8 +25,6 @@ public:
     ~Desktop_swapchain();
 private:
     vk::Device m_device;
-
-    void create_image_views();
 };
 
 }

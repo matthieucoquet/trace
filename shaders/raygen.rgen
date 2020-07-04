@@ -9,31 +9,64 @@ layout(binding = 1, set = 0, rgba8) uniform image2D image;
 
 layout(location = 0) rayPayloadEXT vec3 hit_value;
 
-void main() 
+#define LOW_SIZE 4
+#define HIGH_ANGLE 0.34
+
+vec3 get_direction(vec2 center, Eye eye, bool is_right)
 {
-    bool is_right = gl_LaunchIDEXT.x > gl_LaunchSizeEXT.x / 2; 
-    Eye eye = is_right ? scene_global.right : scene_global.left;
-
-    // eye.pose.position
-
-    // v + 2.0 * cross(q.xyz, cross(q.xyz, v) + q.w * v);
-
-    const vec2 pixel_center = vec2(gl_LaunchIDEXT.xy) + vec2(0.5);
-    vec2 pixel_uv = pixel_center / vec2(gl_LaunchSizeEXT.xy);
+    vec2 pixel_uv = center / (LOW_SIZE * vec2(gl_LaunchSizeEXT.xy));
     pixel_uv.x = pixel_uv.x * 2;
-    pixel_uv.x = is_right ? pixel_uv.x - 1 : pixel_uv.x;
-
-    vec3 direction = vec3(eye.fov.left + pixel_uv.x * (eye.fov.right - eye.fov.left),
-        eye.fov.up + pixel_uv.y * (eye.fov.down - eye.fov.up),
+    pixel_uv.x = is_right ? pixel_uv.x - 1.0 : pixel_uv.x;
+    return vec3(tan(eye.fov.left) + pixel_uv.x * (tan(eye.fov.right) - tan(eye.fov.left)),
+        tan(eye.fov.up) + pixel_uv.y * (tan(eye.fov.down) - tan(eye.fov.up)),
         -1.0);
+}
 
+void shoot_ray(vec3 direction, Eye eye)
+{
     direction = direction + 2.0 * cross(eye.pose.rotation.xyz, cross(eye.pose.rotation.xyz, direction) + eye.pose.rotation.w * direction);
     direction = normalize(direction);
 
     float tmin = 0.1;
     float tmax = 100.0;
 
-    hit_value = vec3(0.0, 0.0, 0.0);
     traceRayEXT(topLevelAS, gl_RayFlagsOpaqueEXT, 0xFF, 0, 0, 0, eye.pose.position, tmin, direction.xyz, tmax, 0);
-    imageStore(image, ivec2(gl_LaunchIDEXT.xy), vec4(hit_value, 0.0));
+}
+
+void main()
+{
+    bool is_right = gl_LaunchIDEXT.x > gl_LaunchSizeEXT.x / 2;
+    //Eye eye = is_right ? scene_global.right : scene_global.left;
+    Eye eye = scene_global.left;
+    if (is_right) {
+        eye = scene_global.right;
+    }
+
+    hit_value = vec3(0.0, 0.0, 0.0);
+
+    const vec2 group_center = LOW_SIZE * (vec2(gl_LaunchIDEXT.xy) + vec2(0.5));
+    vec3 direction = get_direction(group_center, eye, is_right);
+
+    float limit_high = tan(HIGH_ANGLE);
+    if (max(abs(direction.x), abs(direction.y)) > limit_high){
+        shoot_ray(direction, eye);
+        for (int i = 0; i < LOW_SIZE; i++){
+            for (int j = 0; j < LOW_SIZE; j++){
+                ivec2 offset = ivec2(i , j);
+                imageStore(image, ivec2(LOW_SIZE * gl_LaunchIDEXT.xy) + offset, vec4(hit_value, 0.0));    
+            }
+        }
+    }
+    else {
+       for (int i = 0; i < LOW_SIZE; i++){
+            for (int j = 0; j < LOW_SIZE; j++){
+                ivec2 center = ivec2(LOW_SIZE * gl_LaunchIDEXT.xy) + ivec2(i , j);
+                vec2 group_center = vec2(center) + vec2(0.5);
+                vec3 direction = get_direction(group_center, eye, is_right);
+                hit_value = vec3(0.0, 0.0, 0.0);
+                shoot_ray(direction, eye);
+                imageStore(image, center, vec4(hit_value, 0.0));    
+            }
+        }
+    }
 }

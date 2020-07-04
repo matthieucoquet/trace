@@ -13,6 +13,7 @@ find_package(glfw3 CONFIG REQUIRED)
 find_package(glm CONFIG REQUIRED)
 find_package(Vulkan REQUIRED)
 find_package(OpenXR CONFIG REQUIRED)
+find_package(imgui CONFIG REQUIRED)
 
 # import shaderc as a module
 # Should switch to a config when shaderc supports it
@@ -21,12 +22,14 @@ find_package(shaderc MODULE REQUIRED)
 
 add_executable (trace)
 target_sources(trace PRIVATE main.cpp
+
                              vulkan/acceleration_structure.cpp vulkan/acceleration_structure.h
                              vulkan/allocation.cpp vulkan/allocation.h
                              vulkan/command_buffer.h
                              vulkan/context.cpp vulkan/context.h
                              vulkan/desktop_mirror.cpp vulkan/desktop_mirror.h
                              vulkan/desktop_swapchain.cpp vulkan/desktop_swapchain.h
+                             vulkan/imgui_render.cpp vulkan/imgui_render.h
                              vulkan/raytracing_pipeline.cpp vulkan/raytracing_pipeline.h
                              vulkan/renderer.cpp vulkan/renderer.h
                              vulkan/shader_compile.cpp vulkan/shader_compile.h
@@ -34,6 +37,7 @@ target_sources(trace PRIVATE main.cpp
 
                              vr/input.cpp vr/input.h
                              vr/instance.cpp vr/instance.h
+                             vr/imgui_input.cpp vr/imgui_input.h
                              vr/session.cpp vr/session.h
                              vr/vr_swapchain.cpp vr/vr_swapchain.h
                              vr/vr_common.h

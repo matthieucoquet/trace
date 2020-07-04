@@ -32,7 +32,7 @@ public:
     void create_uniforms(Context& context, uint32_t swapchain_size);
     // OpenXR doesn't expose Storage bit so we have to first render to another image and copy
     void create_storage_image(Context& context, vk::Extent2D extent, vk::Format format, uint32_t swapchain_size);
-    void create_descriptor_sets(const Scene& scene, uint32_t swapchain_size);
+    void create_descriptor_sets(const Scene& scene, vk::DescriptorPool descriptor_pool, uint32_t swapchain_size);
     void create_synchronization();
 private:
     vk::Device m_device;
@@ -42,22 +42,10 @@ private:
     Blas m_blas;
     Tlas m_tlas;
 
-    std::vector<vk::CommandBuffer> m_command_buffers;
     std::vector<Allocated_buffer> m_scene_uniforms;
     std::vector<vk::DescriptorSet> m_descriptor_sets;
 
     std::vector<vk::ImageView> m_image_views;
-
-    //vk::ImageView m_image_view;
-
-    vk::DescriptorPool m_descriptor_pool;
-
-    vk::Fence m_render_fence;
-    /*uint32_t m_current_frame = 0u;
-    std::array<vk::Semaphore, max_frames_in_flight> m_semaphore_available_in_flight;
-    std::array<vk::Semaphore, max_frames_in_flight> m_semaphore_finished_in_flight;
-    std::array<vk::Fence, max_frames_in_flight> m_fence_in_flight;
-    std::array<vk::Fence, max_frames_in_flight> m_fence_swapchain_in_flight;*/
 };
 
 }

@@ -50,31 +50,11 @@ Desktop_swapchain::Desktop_swapchain(Context& context) :
     for (size_t i = 0u; i < image_count; i++) {
         images[i] = vec_images[i];
     }
-    create_image_views();
 }
 
 Desktop_swapchain::~Desktop_swapchain()
 {
-    for (auto image_view : image_views) {
-        m_device.destroyImageView(image_view);
-    }
     m_device.destroySwapchainKHR(swapchain);
-}
-
-void Desktop_swapchain::create_image_views()
-{
-    for (size_t i = 0u; i < image_count; i++) {
-        image_views[i] = m_device.createImageView(vk::ImageViewCreateInfo()
-            .setImage(images[i])
-            .setViewType(vk::ImageViewType::e2D)
-            .setFormat(format)
-            .setSubresourceRange(vk::ImageSubresourceRange()
-                .setAspectMask(vk::ImageAspectFlagBits::eColor)
-                .setBaseMipLevel(0u)
-                .setLevelCount(1u)
-                .setBaseArrayLayer(0u)
-                .setLayerCount(1u)));
-    }
 }
 
 }

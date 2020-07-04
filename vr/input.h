@@ -10,12 +10,11 @@ class Input
 public:
     std::array<xr::Posef, 2> last_known_hand_pose;
 
-    Input(xr::Instance instance, xr::Session sessio);
+    Input(xr::Instance instance, xr::Session session);
     Input(const Input& other) = delete;
     Input(Input&& other) = delete;
     Input& operator=(const Input& other) = delete;
     Input& operator=(Input&& other) = delete;
-    ~Input();
 
     bool sync_actions(xr::Session session);
     void update_hand_poses(xr::Time display_time);

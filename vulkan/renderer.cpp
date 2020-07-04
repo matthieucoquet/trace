@@ -18,8 +18,8 @@ Renderer::Renderer(Context& context, Scene& scene) :
 
 Renderer::~Renderer()
 {
-    for (auto& command_buffer : m_command_buffers) {
-        m_device.freeCommandBuffers(m_command_pool, command_buffer);
+    for (auto image_view : m_image_views) {
+        m_device.destroyImageView(image_view);
     }
 }
 
@@ -71,13 +71,17 @@ void Renderer::start_recording(vk::CommandBuffer command_buffer, vk::Image swapc
             .setBaseMipLevel(0)
             .setAspectMask(vk::ImageAspectFlagBits::eColor)));
 
+    extent.width *= 2;
+    assert(extent.width % 4 == 0);
+    assert(extent.height % 4 == 0);
+
     command_buffer.traceRaysKHR(
         &raygen_shader_entry,
         &miss_shader_entry,
         &hit_shader_entry,
         &callable_shader_entry,
-        extent.width,
-        extent.height,
+        extent.width / 4,  // width * 2 / 4
+        extent.height / 4,
         1u);
 
     //  Img to source
@@ -161,7 +165,6 @@ void Renderer::end_recording(vk::CommandBuffer command_buffer, vk::Image swapcha
             .setBaseArrayLayer(0)
             .setBaseMipLevel(0)
             .setAspectMask(vk::ImageAspectFlagBits::eColor)));
-    command_buffer.end();
 }
 
 void Renderer::create_uniforms(Context& context, uint32_t swapchain_size)
@@ -175,7 +178,6 @@ void Renderer::create_uniforms(Context& context, uint32_t swapchain_size)
              VMA_MEMORY_USAGE_CPU_TO_GPU,
              context.device, context.allocator);
     }
-
 }
 
 void Renderer::update_uniforms(Scene& scene, uint32_t swapchain_index)
@@ -183,31 +185,11 @@ void Renderer::update_uniforms(Scene& scene, uint32_t swapchain_index)
     m_scene_uniforms[swapchain_index].copy(reinterpret_cast<void*>(&scene.scene_global), sizeof(Scene_global));
 }
 
-void Renderer::create_descriptor_sets(const Scene& scene, uint32_t swapchain_size)
+void Renderer::create_descriptor_sets(const Scene& scene, vk::DescriptorPool descriptor_pool, uint32_t swapchain_size)
 {
-    std::array pool_sizes
-    {
-        vk::DescriptorPoolSize()
-            .setType(vk::DescriptorType::eAccelerationStructureKHR)
-            .setDescriptorCount(swapchain_size),
-        vk::DescriptorPoolSize()
-            .setType(vk::DescriptorType::eStorageImage)
-            .setDescriptorCount(swapchain_size),
-        vk::DescriptorPoolSize()
-            .setType(vk::DescriptorType::eStorageBuffer)
-            .setDescriptorCount(swapchain_size),
-        vk::DescriptorPoolSize()
-            .setType(vk::DescriptorType::eUniformBuffer)
-            .setDescriptorCount(swapchain_size)
-    };
-    m_descriptor_pool = m_device.createDescriptorPool(vk::DescriptorPoolCreateInfo()
-        .setPoolSizeCount(static_cast<uint32_t>(pool_sizes.size()))
-        .setPPoolSizes(pool_sizes.data())
-        .setMaxSets(swapchain_size));
-
     std::vector<vk::DescriptorSetLayout> layouts(swapchain_size, m_pipeline.descriptor_set_layout);
     m_descriptor_sets = m_device.allocateDescriptorSets(vk::DescriptorSetAllocateInfo()
-        .setDescriptorPool(m_descriptor_pool)
+        .setDescriptorPool(descriptor_pool)
         .setDescriptorSetCount(static_cast<uint32_t>(layouts.size()))
         .setPSetLayouts(layouts.data()));
 

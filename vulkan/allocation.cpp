@@ -83,6 +83,18 @@ void Allocated_buffer::copy(const void* data, size_t size)
     vmaUnmapMemory(m_allocator, m_allocation);
 }
 
+void* Allocated_buffer::map()
+{
+    void* mapped;
+    vmaMapMemory(m_allocator, m_allocation, &mapped);
+    return mapped;
+}
+
+void Allocated_buffer::unmap()
+{
+    vmaUnmapMemory(m_allocator, m_allocation);
+}
+
 Allocated_image::Allocated_image(Allocated_image&& other) noexcept :
     image(other.image),
     m_device(other.m_device),
@@ -114,6 +126,32 @@ Allocated_image::~Allocated_image()
 
 Allocated_image::Allocated_image(vk::ImageCreateInfo image_info, VmaMemoryUsage memory_usage, vk::Device device, VmaAllocator allocator) :
     m_device(device), m_allocator(allocator)
+{
+    allocate(allocator, memory_usage, image_info);
+}
+
+Allocated_image::Allocated_image(vk::ImageCreateInfo image_info, const void* data, size_t size,
+    vk::Device device, VmaAllocator allocator, vk::CommandPool command_pool, vk::Queue queue) :
+    m_device(device), m_allocator(allocator)
+{
+    Allocated_buffer staged_buffer(
+        vk::BufferCreateInfo()
+        .setSize(size)
+        .setUsage(vk::BufferUsageFlagBits::eTransferSrc),
+        VMA_MEMORY_USAGE_CPU_ONLY,
+        device, allocator);
+    staged_buffer.copy(data, size);
+
+    allocate(allocator, VMA_MEMORY_USAGE_GPU_ONLY, image_info);
+
+    One_time_command_buffer command_buffer(device, command_pool, queue);
+    command_buffer.command_buffer.copyBufferToImage(staged_buffer.buffer, image, vk::ImageLayout::eTransferDstOptimal, vk::BufferImageCopy()
+        .setImageExtent(image_info.extent)
+        .setImageSubresource(vk::ImageSubresourceLayers().setLayerCount(1).setAspectMask(vk::ImageAspectFlagBits::eColor)));
+    command_buffer.submit_and_wait_idle();
+}
+
+void Allocated_image::allocate(VmaAllocator allocator, VmaMemoryUsage memory_usage, vk::ImageCreateInfo image_info)
 {
     const VkImageCreateInfo& c_image_info = image_info;
     VmaAllocationCreateInfo allocation_info{ .usage = memory_usage };

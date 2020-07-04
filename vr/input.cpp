@@ -55,7 +55,7 @@ bool Input::sync_actions(xr::Session session)
     for (size_t i = 0u; i < 2u; i++)
     {
         xr::ActionStateBoolean select_state = session.getActionStateBoolean(xr::ActionStateGetInfo{
-            .action = m_select_action, 
+            .action = m_select_action.get(), 
             .subactionPath = m_hand_subaction_paths[i] });
         if (select_state.isActive) {
             pushed |= select_state.currentState == XR_TRUE;
@@ -77,19 +77,6 @@ void Input::update_hand_poses(xr::Time display_time)
         if (space_location.locationFlags & required_flags) {
             last_known_hand_pose[i] = space_location.pose;
         }
-    }
-}
-
-Input::~Input()
-{
-    if (m_pose_action) {
-        m_pose_action.destroy();
-    }
-    if (m_select_action) {
-        m_select_action.destroy();
-    }
-    if (m_action_set) {
-        m_action_set.destroy();
     }
 }
 

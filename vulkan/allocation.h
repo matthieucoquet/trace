@@ -20,6 +20,8 @@ public:
     ~Allocated_buffer();
 
     void copy(const void* data, size_t size);
+    void* map();
+    void unmap();
 private:
     vk::Device m_device;
     VmaAllocator m_allocator;
@@ -39,11 +41,14 @@ public:
     Allocated_image& operator=(const Allocated_buffer& other) = delete;
     Allocated_image& operator=(Allocated_image&& other) noexcept;
     Allocated_image(vk::ImageCreateInfo image_info, VmaMemoryUsage memory_usage, vk::Device device, VmaAllocator allocator);
+    Allocated_image(vk::ImageCreateInfo image_info, const void* data, size_t size,
+        vk::Device device, VmaAllocator allocator, vk::CommandPool command_pool, vk::Queue queue);
     ~Allocated_image();
 private:
     vk::Device m_device;
     VmaAllocator m_allocator{};
     VmaAllocation m_allocation{};
+    void allocate(VmaAllocator allocator, VmaMemoryUsage memory_usage, vk::ImageCreateInfo image_info);
 };
 
 }

@@ -19,11 +19,13 @@ Context::Context(Window& window, vr::Instance& vr_instance)
     surface = window.create_surface(instance);
     init_device(vr_instance);
     init_allocator();
+    init_descriptor_pool();
 }
 
 Context::~Context()
 {
     vmaDestroyAllocator(allocator);
+    device.destroyDescriptorPool(descriptor_pool);
     device.destroyCommandPool(command_pool);
     device.destroy();
     instance.destroySurfaceKHR(surface);
@@ -234,6 +236,33 @@ void Context::init_allocator()
         .instance = instance
     };
     vmaCreateAllocator(&allocator_info, &allocator);
+}
+
+void Context::init_descriptor_pool()
+{
+    constexpr uint32_t max_swapchain_size = 4u;
+    std::array pool_sizes
+    {
+        vk::DescriptorPoolSize()
+            .setType(vk::DescriptorType::eAccelerationStructureKHR)
+            .setDescriptorCount(max_swapchain_size),
+        vk::DescriptorPoolSize()
+            .setType(vk::DescriptorType::eStorageImage)
+            .setDescriptorCount(max_swapchain_size),
+        vk::DescriptorPoolSize()
+            .setType(vk::DescriptorType::eStorageBuffer)
+            .setDescriptorCount(max_swapchain_size),
+        vk::DescriptorPoolSize()
+            .setType(vk::DescriptorType::eUniformBuffer)
+            .setDescriptorCount(max_swapchain_size),
+        vk::DescriptorPoolSize()
+            .setType(vk::DescriptorType::eSampler)
+            .setDescriptorCount(1)
+    };
+    descriptor_pool = device.createDescriptorPool(vk::DescriptorPoolCreateInfo()
+        .setPoolSizeCount(static_cast<uint32_t>(pool_sizes.size()))
+        .setPPoolSizes(pool_sizes.data())
+        .setMaxSets(max_swapchain_size));
 }
 
 }

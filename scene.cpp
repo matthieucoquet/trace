@@ -3,16 +3,16 @@
 
 Scene::Scene(vulkan::Context& context)
 {
-    for (unsigned int i = 0u; i < 16u; i++) {
-        for (unsigned int j = 0u; j < 16u; j++) {
-            primitives.emplace_back(Primitive{ .center = glm::vec3(-15.0f + 2.0f * i, 2.0f, -15.0f + 2.0f * j) });
+    for (unsigned int i = 0u; i < 8u; i++) {
+        for (unsigned int j = 0u; j < 8u; j++) {
+            primitives.emplace_back(Primitive{ .center = glm::vec3(-15.0f + 4.0f * i, 2.0f, -15.0f + 4.0f * j) });
             kinds.emplace_back(Object_kind::sphere);
         }
     }
 
-    for (unsigned int i = 0u; i < 16u; i++) {
-        for (unsigned int j = 0u; j < 16u; j++) {
-            primitives.emplace_back(Primitive{ .center = glm::vec3(-15.0f + 2.0f * i, 5.0f, -15.0f + 2.0f * j) });
+    for (unsigned int i = 0u; i < 8u; i++) {
+        for (unsigned int j = 0u; j < 8u; j++) {
+            primitives.emplace_back(Primitive{ .center = glm::vec3(-15.0f + 4.0f * i, 5.0f, -15.0f + 4.0f * j) });
             kinds.emplace_back(Object_kind::cube);
         }
     }

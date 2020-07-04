@@ -11,25 +11,6 @@ constexpr bool verbose = true;
 namespace vr
 {
 
-Swapchain& Swapchain::operator=(Swapchain&& other)
-{
-    if (swapchain) {
-        swapchain.destroy();
-        for (auto image_view : image_views) {
-            m_device.destroyImageView(image_view);
-        }
-    }
-    swapchain = std::move(other.swapchain);
-    images = std::move(other.images);
-    vk_images = std::move(other.vk_images);
-    image_views = std::move(other.image_views);
-    view_extent = other.view_extent;
-    other.swapchain = nullptr;
-    other.images.clear();
-    other.image_views.clear();
-    return *this;
-}
-
 Swapchain::Swapchain(Instance& instance, xr::Session& session, vulkan::Context& context) :
     m_device(context.device)
 {
@@ -81,11 +62,37 @@ Swapchain::Swapchain(Instance& instance, xr::Session& session, vulkan::Context& 
     create_image_views();
 }
 
+Swapchain::Swapchain(xr::Session session, vulkan::Context& context, xr::Extent2Di extent) :
+    view_extent(extent),
+    m_device(context.device)
+{
+    std::vector<int64_t> supported_formats = session.enumerateSwapchainFormats();
+    if (std::none_of(supported_formats.cbegin(), supported_formats.cend(), [](const auto& format) {
+        return static_cast<int64_t>(required_format) == format;
+    })) {
+        throw std::runtime_error("Required format not supported by OpenXR runtime.");
+    }
+
+    swapchain = session.createSwapchain(xr::SwapchainCreateInfo{
+        .createFlags = xr::SwapchainCreateFlagBits::None,
+        .usageFlags = xr::SwapchainUsageFlagBits::ColorAttachment, // OpenXR doesn't expose Storage bit so we have to first render to another image and copy
+        .format = static_cast<int64_t>(required_format),
+        .sampleCount = 1u, //3u,
+        .width = static_cast<uint32_t>(extent.width),  // One swapchain of double width
+        .height = static_cast<uint32_t>(extent.height),
+        .faceCount = 1,
+        .arraySize = 1,
+        .mipCount = 1 });
+    images = swapchain.enumerateSwapchainImages<xr::SwapchainImageVulkanKHR>();
+    vk_images.reserve(images.size());
+    for (const auto& image : images) {
+        vk_images.push_back(image.image);
+    }
+    create_image_views();
+}
+
 Swapchain::~Swapchain()
 {
-    if (swapchain) {
-        swapchain.destroy(); // good place ?
-    }
     for (auto image_view : image_views) {
         m_device.destroyImageView(image_view);
     }

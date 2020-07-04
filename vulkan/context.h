@@ -20,6 +20,7 @@ public:
     uint32_t queue_family = 0u;
     vk::Queue graphics_queue;
     VmaAllocator allocator;
+    vk::DescriptorPool descriptor_pool;
 
     Context(Window& window, vr::Instance& vr_instance);
     Context(const Context& other) = delete;
@@ -35,6 +36,7 @@ private:
     void init_instance(Window& window, vr::Instance& vr_instance);
     void init_device(vr::Instance& vr_instance);
     void init_allocator();
+    void init_descriptor_pool();
 };
 
 }

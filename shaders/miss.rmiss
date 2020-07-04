@@ -27,7 +27,7 @@ void main()
         vec3 ambient = 0.2 * light_color;
 
         vec3 reflection = reflect(gl_WorldRayDirectionEXT, normal);
-        if (hit_value.x == 0.0)
+        /*if (hit_value.x == 0.0)
         {
             hit_value = vec3(0.01, 0.01, 0.01);
             traceRayEXT(topLevelAS,  // acceleration structure
@@ -42,7 +42,7 @@ void main()
                         100.0,        // ray max range
                         0            // payload (location = 1)
                         );
-            }
+            }*/
 
         vec3 spec = 1.12 * hit_value * max(dot(normal, reflection), 0.0);
         hit_value = (spec + ambient + diffuse) * vec3(0.4, 0.4, 0.4);
