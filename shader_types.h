@@ -19,6 +19,7 @@ struct Primitive
     glm::vec3 center;
 };
 
+// TODO use push constant
 struct Eye
 {
     xr::Posef pose = {};

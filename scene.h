@@ -2,6 +2,7 @@
 #include <vector>
 #include <chrono>
 #include "shader_types.h"
+#include "entities.h"
 #include "vulkan/allocation.h"
 
 namespace vulkan
@@ -20,6 +21,11 @@ public:
 
     vulkan::Allocated_buffer aabbs_buffer;
     vulkan::Allocated_buffer primitives_buffer;
+
+    std::vector<Shader_file> shader_files;
+    Shader raygen_shader;
+    Shader miss_shader;
+    std::vector<Shader_group> entities;
 
     Scene(vulkan::Context& context);
 

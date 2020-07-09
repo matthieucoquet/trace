@@ -1,4 +1,6 @@
 #include "engine.h"
+#include "shader_system.h"
+#include "ui_system.h"
 #include <iostream>
 #include <limits>
 #include <imgui.h>
@@ -11,6 +13,9 @@ Engine::Engine() :
 {
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
+
+    m_systems.push_back(std::make_unique<Shader_system>(m_context, m_scene));
+    m_systems.push_back(std::make_unique<Ui_system>());
 
     auto graphic_binding = xr::GraphicsBindingVulkanKHR{
         .instance = m_context.instance,
@@ -25,6 +30,7 @@ Engine::Engine() :
         .systemId = m_vr_instance.system_id
         }),
         m_vr_instance, m_context, m_scene);
+
 }
 
 Engine::~Engine()
@@ -41,7 +47,7 @@ void Engine::run()
         std::cout << "Time : " << frame_time.count() << " - " << 1000 / frame_time.count() << " - " << count++ << std::endl;
         m_previous_clock = Clock::now();
 
-        m_session->step(m_vr_instance.instance, m_scene);
+        m_session->step(m_vr_instance.instance, m_scene, m_systems);
         m_scene.step();
         if (reload_shaders) {
             reset_renderer();

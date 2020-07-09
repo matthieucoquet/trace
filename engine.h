@@ -3,6 +3,7 @@
 
 #include "window.h"
 #include "scene.h"
+#include "system.h"
 #include "vulkan/context.h"
 #include "vulkan/renderer.h"
 #include "vr/instance.h"
@@ -35,6 +36,8 @@ private:
     vulkan::Context m_context;
     Scene m_scene;
     std::optional<vr::Session> m_session;  // When set, session is a valid session
+
+    std::vector<std::unique_ptr<System>> m_systems;
 
     Time_point m_previous_clock;
 

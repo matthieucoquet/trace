@@ -87,10 +87,10 @@ Session::~Session()
     }
 }
 
-void Session::step(xr::Instance instance, Scene& scene)
+void Session::step(xr::Instance instance, Scene& scene, std::vector<std::unique_ptr<System>>& systems)
 {
     poll_events(instance);
-    draw_frame(scene);
+    draw_frame(scene, systems);
 }
 
 void Session::poll_events(xr::Instance instance)
@@ -138,7 +138,7 @@ void Session::poll_events(xr::Instance instance)
     }
 }
 
-void Session::draw_frame(Scene& scene)
+void Session::draw_frame(Scene& scene, std::vector<std::unique_ptr<System>>& systems)
 {
     if (m_session_state == xr::SessionState::Ready || 
         m_session_state == xr::SessionState::Synchronized ||
@@ -146,6 +146,10 @@ void Session::draw_frame(Scene& scene)
         m_session_state == xr::SessionState::Focused)
     {
         xr::FrameState frame_state = session.waitFrame({});
+
+        std::for_each(systems.begin(), systems.end(), [&scene](auto& system) { system->step(scene); });
+
+
         session.beginFrame({});
 
         std::vector<xr::CompositionLayerBaseHeader*> layers_pointers;
@@ -181,10 +185,6 @@ void Session::draw_frame(Scene& scene)
 
                 swapchain_index = m_ui_swapchain.swapchain.acquireSwapchainImage({});
                 m_ui_swapchain.swapchain.waitSwapchainImage({ .timeout = xr::Duration::infinite() });
-
-                ImGui::NewFrame();
-                ImGui::ShowDemoWindow(&test_render_demo);
-                ImGui::Render();
                 ImDrawData* draw_data = ImGui::GetDrawData();
                 m_imgui_render.draw(draw_data, command_buffer, swapchain_index);
                 command_buffer.end();

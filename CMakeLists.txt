@@ -32,7 +32,6 @@ target_sources(trace PRIVATE main.cpp
                              vulkan/imgui_render.cpp vulkan/imgui_render.h
                              vulkan/raytracing_pipeline.cpp vulkan/raytracing_pipeline.h
                              vulkan/renderer.cpp vulkan/renderer.h
-                             vulkan/shader_compile.cpp vulkan/shader_compile.h
                              vulkan/vk_common.h
 
                              vr/input.cpp vr/input.h
@@ -43,9 +42,13 @@ target_sources(trace PRIVATE main.cpp
                              vr/vr_common.h
 
                              engine.cpp engine.h
+                             entities.cpp entities.h
                              scene.cpp scene.h
                              window.cpp window.h
                              shader_types.h
+                             shader_system.cpp shader_system.h
+                             ui_system.cpp ui_system.h
+                             system.h
  )
 
 # We don't want to use the target Vulkan::Vulkan and xr::openxr_loader
@@ -56,11 +59,16 @@ target_include_directories(trace SYSTEM PUBLIC ${Vulkan_INCLUDE_DIR}
                                                ${CMAKE_CURRENT_SOURCE_DIR}
                                                ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-target_link_libraries(trace PRIVATE glm glfw OpenXR::headers shaderc::shaderc_combined)
+# DON'T COMMIT, just to avoid copy header each time during dev
+target_include_directories(trace SYSTEM PUBLIC "C:/code/external/fork_openxr_hpp/include")
+
+target_link_libraries(trace PRIVATE glm glfw OpenXR::openxr_loader shaderc::shaderc_combined imgui::imgui)
+# target_link_libraries(trace PRIVATE glm glfw OpenXR::headers shaderc::shaderc_combined imgui::imgui)
 target_compile_features(trace PRIVATE cxx_std_20)
 
 get_filename_component(shader_locations shaders ABSOLUTE)
-set_source_files_properties(vulkan/shader_compile.cpp PROPERTIES COMPILE_DEFINITIONS SHADER_SOURCE="${shader_locations}")
+set_source_files_properties(shader_system.cpp PROPERTIES COMPILE_DEFINITIONS SHADER_SOURCE="${shader_locations}")
+#set_source_files_properties(vulkan/shader_compile.cpp PROPERTIES COMPILE_DEFINITIONS SHADER_SOURCE="${shader_locations}")
 
 if(MSVC)
     set_target_properties(trace PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY $<TARGET_FILE_DIR:trace>)

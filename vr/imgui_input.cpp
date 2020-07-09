@@ -24,7 +24,6 @@ static GLFWscrollfun        g_PrevUserCallbackScroll = NULL;
 static GLFWkeyfun           g_PrevUserCallbackKey = NULL;
 static GLFWcharfun          g_PrevUserCallbackChar = NULL;*/
 
-// static needed?
 static const char* imgui_get_clipboard_text(void* user_data)
 {
     return glfwGetClipboardString(reinterpret_cast<Imgui_input*>(user_data)->window);

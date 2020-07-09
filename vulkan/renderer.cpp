@@ -11,7 +11,7 @@ Renderer::Renderer(Context& context, Scene& scene) :
     m_device(context.device),
     m_queue(context.graphics_queue),
     m_command_pool(context.command_pool),
-    m_pipeline(context),
+    m_pipeline(context, scene),
     m_blas(context, scene.aabbs_buffer.buffer, static_cast<uint32_t>(scene.aabbs.size())),
     m_tlas(context, m_blas, scene)
 {}

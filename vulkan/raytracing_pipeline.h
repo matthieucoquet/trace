@@ -2,7 +2,8 @@
 #include "vk_common.h"
 #include "allocation.h"
 #include <filesystem>
-#include "shader_compile.h"
+
+class Scene;
 
 namespace vulkan
 {
@@ -18,7 +19,7 @@ public:
     vk::DescriptorSetLayout descriptor_set_layout;
     Allocated_buffer shader_binding_table{};
 
-    Raytracing_pipeline(Context& context);
+    Raytracing_pipeline(Context& context, Scene& scene);
     Raytracing_pipeline(const Raytracing_pipeline& other) = delete;
     Raytracing_pipeline(Raytracing_pipeline&& other) = delete;
     Raytracing_pipeline& operator=(const Raytracing_pipeline& other) = default;
@@ -28,10 +29,9 @@ public:
     void reload(Context& context);
 private:
     vk::Device m_device;
-    Shader_compile shader_compiler;
 
     void create_shader_binding_table(Context& context, uint32_t group_count);  // TODO should be here ?
-    void create_pipeline(Context& context);
+    void create_pipeline(Context& context, Scene& scene);
 };
 
 }

@@ -9,6 +9,7 @@
 #include "imgui_input.h"
 #include "vr_swapchain.h"
 #include "input.h"
+#include "system.h"
 
 struct GLFWwindow;
 namespace vulkan {
@@ -32,7 +33,7 @@ public:
     Session& operator=(Session&& other) = delete;
     ~Session();
 
-    void step(xr::Instance instance, Scene& scene);
+    void step(xr::Instance instance, Scene& scene, std::vector<std::unique_ptr<System>>& systems);
 private:
     xr::SystemId m_system_id;
     xr::Space m_stage_space;
@@ -47,14 +48,13 @@ private:
     vulkan::Reusable_command_buffers m_command_buffers;
     Imgui_input m_imgui_input;
     vulkan::Imgui_render m_imgui_render;
-    bool test_render_demo;
 
     xr::CompositionLayerProjection composition_layer_proj{};
     std::array<xr::CompositionLayerProjectionView, 2> composition_layer_views;
     xr::CompositionLayerQuad composition_layer_ui{};
 
     void poll_events(xr::Instance instance);
-    void draw_frame(Scene& scene);
+    void draw_frame(Scene& scene, std::vector<std::unique_ptr<System>>& systems);
     void handle_state_change(xr::EventDataSessionStateChanged& event_stage_changed);
 };
 
