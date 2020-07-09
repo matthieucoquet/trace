@@ -14,7 +14,7 @@ Session::Session(GLFWwindow* window, xr::Session new_session, Instance& instance
     session(new_session),
     m_input(instance.instance, session),
     m_main_swapchain(instance, session, context),
-    m_ui_swapchain(session, context, xr::Extent2Di{ .width = 500, .height = 500 }),
+    m_ui_swapchain(session, context, xr::Extent2Di{ .width = 1000, .height = 1000 }),
     m_renderer(context, scene),
     m_mirror(context, size_command_buffers),
     m_command_buffers(context.device, context.command_pool, context.graphics_queue, size_command_buffers),

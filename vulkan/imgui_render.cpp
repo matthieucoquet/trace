@@ -113,7 +113,8 @@ static uint32_t __glsl_shader_frag_spv[] =
 
 Imgui_render::Imgui_render(Context& context, vk::Extent2D extent, uint32_t swapchain_size, const std::vector<vk::ImageView>& image_views):
     m_device(context.device),
-    m_allocator(context.allocator)
+    m_allocator(context.allocator),
+    m_extent(extent)
 {
     ImGuiIO& io = ImGui::GetIO();
     io.BackendRendererName = "imgui_impl_vulkan_hpp";
@@ -318,16 +319,13 @@ void Imgui_render::create_pipeline(Context& context, vk::Extent2D extent)
     // Check blend ?
     auto color_blend_attachment = vk::PipelineColorBlendAttachmentState()
         .setColorWriteMask(vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA)
-        .setBlendEnable(false);
-    /*VkPipelineColorBlendAttachmentState color_attachment[1] = {};
-    color_attachment[0].blendEnable = VK_TRUE;
-    color_attachment[0].srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
-    color_attachment[0].dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-    color_attachment[0].colorBlendOp = VK_BLEND_OP_ADD;
-    color_attachment[0].srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-    color_attachment[0].dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
-    color_attachment[0].alphaBlendOp = VK_BLEND_OP_ADD;
-    color_attachment[0].colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;*/
+        .setBlendEnable(true)
+        .setSrcColorBlendFactor(vk::BlendFactor::eSrcAlpha)
+        .setDstColorBlendFactor(vk::BlendFactor::eOneMinusSrcAlpha)
+        .setColorBlendOp(vk::BlendOp::eAdd)
+        .setSrcAlphaBlendFactor(vk::BlendFactor::eOneMinusSrcAlpha)
+        .setDstAlphaBlendFactor(vk::BlendFactor::eZero)
+        .setAlphaBlendOp(vk::BlendOp::eAdd);
 
     auto depth_test = vk::PipelineDepthStencilStateCreateInfo()
         .setDepthTestEnable(false)
@@ -370,7 +368,7 @@ void Imgui_render::draw(ImDrawData* draw_data, vk::CommandBuffer command_buffer,
     auto renderpass_info = vk::RenderPassBeginInfo()
         .setRenderPass(m_render_pass)
         .setFramebuffer(m_framebuffers[frame_id])
-        .setRenderArea(vk::Rect2D({}, {500, 500}))
+        .setRenderArea(vk::Rect2D({}, m_extent))
         .setClearValueCount(1u)
         .setPClearValues(&clear_value);
     command_buffer.beginRenderPass(renderpass_info, vk::SubpassContents::eInline);
@@ -504,7 +502,7 @@ void Imgui_render::create_fonts_texture(Context& context)
         .setInitialLayout(vk::ImageLayout::eUndefined)
         .setSamples(vk::SampleCountFlagBits::e1)
         .setSharingMode(vk::SharingMode::eExclusive)
-        .setUsage(vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst),
+        .setUsage(/*vk::ImageUsageFlagBits::eColorAttachment |*/ vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst),
         pixels, upload_size,
         m_device, context.allocator, context.command_pool, context.graphics_queue);
 

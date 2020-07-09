@@ -145,9 +145,45 @@ Allocated_image::Allocated_image(vk::ImageCreateInfo image_info, const void* dat
     allocate(allocator, VMA_MEMORY_USAGE_GPU_ONLY, image_info);
 
     One_time_command_buffer command_buffer(device, command_pool, queue);
+    command_buffer.command_buffer.pipelineBarrier(
+        vk::PipelineStageFlagBits::eTopOfPipe,
+        vk::PipelineStageFlagBits::eTransfer,
+        {}, {}, {},
+        vk::ImageMemoryBarrier()
+        .setOldLayout(vk::ImageLayout::eUndefined)
+        .setNewLayout(vk::ImageLayout::eTransferDstOptimal)
+        .setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+        .setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+        .setImage(image)
+        .setSrcAccessMask({})
+        .setDstAccessMask(vk::AccessFlagBits::eTransferWrite)
+        .setSubresourceRange(vk::ImageSubresourceRange()
+            .setLevelCount(1u)
+            .setLayerCount(1)
+            .setBaseArrayLayer(0)
+            .setBaseMipLevel(0)
+            .setAspectMask(vk::ImageAspectFlagBits::eColor)));
     command_buffer.command_buffer.copyBufferToImage(staged_buffer.buffer, image, vk::ImageLayout::eTransferDstOptimal, vk::BufferImageCopy()
         .setImageExtent(image_info.extent)
         .setImageSubresource(vk::ImageSubresourceLayers().setLayerCount(1).setAspectMask(vk::ImageAspectFlagBits::eColor)));
+    command_buffer.command_buffer.pipelineBarrier(
+            vk::PipelineStageFlagBits::eTransfer,
+            vk::PipelineStageFlagBits::eBottomOfPipe,
+            {}, {}, {},
+            vk::ImageMemoryBarrier()
+            .setOldLayout(vk::ImageLayout::eTransferDstOptimal)
+            .setNewLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
+            .setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+            .setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+            .setImage(image)
+            .setSrcAccessMask(vk::AccessFlagBits::eTransferWrite)
+            .setDstAccessMask({})
+            .setSubresourceRange(vk::ImageSubresourceRange()
+                .setLevelCount(1u)
+                .setLayerCount(1)
+                .setBaseArrayLayer(0)
+                .setBaseMipLevel(0)
+                .setAspectMask(vk::ImageAspectFlagBits::eColor)));
     command_buffer.submit_and_wait_idle();
 }
 

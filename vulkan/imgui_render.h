@@ -21,8 +21,10 @@ public:
     void draw(ImDrawData* draw_data, vk::CommandBuffer command_buffer, size_t frame_id);
 private:
     vk::Device m_device;
+    VmaAllocator m_allocator;
     vk::RenderPass m_render_pass;
     std::vector<vk::Framebuffer> m_framebuffers;
+    vk::Extent2D m_extent;
 
     vk::Sampler m_font_sampler;
     vk::DescriptorSetLayout m_descriptor_set_layout;
@@ -32,8 +34,6 @@ private:
 
     vulkan::Allocated_image m_font_image;
     vk::ImageView m_font_image_view;
-
-    VmaAllocator m_allocator;
 
     std::vector<uint32_t> m_size_index_buffer;
     std::vector<vulkan::Allocated_buffer> m_index_buffer;

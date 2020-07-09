@@ -6,7 +6,8 @@ void Ui_system::step(Scene& /*scene*/)
 {
     ImGui::NewFrame();
 
-    ImGui::Begin("Dear ImGui Demo");
+    ImGuiWindowFlags flag = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse;
+    ImGui::Begin("Dear ImGui Demo", nullptr, flag);
 
     ImGui::Text("Wow.");
     /*if (ImGui::TreeNode("Scene"))
