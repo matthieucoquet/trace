@@ -144,6 +144,7 @@ void Imgui_input::step()
         io.DisplayFramebufferScale = ImVec2((float)display_w / w, (float)display_h / h);*/
 
     // Setup time step
+    // TODO use openxr time function instead
     double current_time = glfwGetTime();
     io.DeltaTime = m_time > 0.0 ? (float)(current_time - m_time) : (float)(1.0f / 60.0f);
     m_time = current_time;
