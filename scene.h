@@ -27,6 +27,8 @@ public:
     Shader miss_shader;
     std::vector<Shader_group> entities;
 
+    std::array<xr::Posef, 2> last_known_hand_pose;
+
     Scene(vulkan::Context& context);
 
     void step();

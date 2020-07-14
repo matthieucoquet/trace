@@ -16,7 +16,7 @@ public:
     Shader_system(Shader_system&& other) = delete;
     Shader_system& operator=(const Shader_system& other) = delete;
     Shader_system& operator=(Shader_system&& other) = delete;
-    ~Shader_system() override final {}
+    ~Shader_system() override final = default;
     void step(Scene& scene) override final;
 private:
     vk::Device m_device;

@@ -4,12 +4,6 @@
 
 Ui_system::Ui_system()
 {
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-
-    ImGuiIO& io = ImGui::GetIO();
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard
-
     ImGuiStyle& style = ImGui::GetStyle();
     style.WindowRounding = 0.0f;
 }
@@ -19,7 +13,7 @@ void Ui_system::step(Scene& scene)
     if (!m_selected_shader) {
         m_selected_shader = &scene.raygen_shader;
     }
-
+    // imgui input should be done before this call
     ImGui::NewFrame();
 
     ImGuiIO& io = ImGui::GetIO();

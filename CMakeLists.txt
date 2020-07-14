@@ -34,21 +34,23 @@ target_sources(trace PRIVATE main.cpp
                              vulkan/renderer.cpp vulkan/renderer.h
                              vulkan/vk_common.h
 
-                             vr/input.cpp vr/input.h
+                             vr/input_system.h
+                             vr/ui_input_system.cpp vr/ui_input_system.h
+                             vr/main_input_system.cpp vr/main_input_system.h
                              vr/instance.cpp vr/instance.h
-                             vr/imgui_input.cpp vr/imgui_input.h
                              vr/session.cpp vr/session.h
                              vr/vr_swapchain.cpp vr/vr_swapchain.h
                              vr/vr_common.h
 
                              engine.cpp engine.h
                              entities.cpp entities.h
+                             input_keyboard_system.cpp input_keyboard_system.h
                              scene.cpp scene.h
-                             window.cpp window.h
                              shader_types.h
                              shader_system.cpp shader_system.h
-                             ui_system.cpp ui_system.h
                              system.h
+                             ui_system.cpp ui_system.h
+                             window.cpp window.h
  )
 
 # We don't want to use the target Vulkan::Vulkan and xr::openxr_loader

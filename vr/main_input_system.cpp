@@ -1,26 +1,20 @@
-#include "input.h"
-#include <iostream>
+#include "main_input_system.h"
+#include "scene.h"
 
 namespace vr
 {
 
-Input::Input(xr::Instance instance, xr::Session session)
+Main_input_system::Main_input_system(xr::Instance instance, xr::Session session)
 {
     m_action_set = instance.createActionSet(xr::ActionSetCreateInfo{
-        .actionSetName = "gameplay", 
-        .localizedActionSetName = "Gameplay" });
+        .actionSetName = "control", 
+        .localizedActionSetName = "Control" });
 
     m_hand_subaction_paths = xr::BilateralPaths {
         instance.stringToPath("/user/hand/left"),
         instance.stringToPath("/user/hand/right")
     };
 
-    m_select_action = m_action_set.createAction(xr::ActionCreateInfo{ 
-        .actionName = "select", 
-        .actionType = xr::ActionType::BooleanInput, 
-        .countSubactionPaths = static_cast<uint32_t>(m_hand_subaction_paths.size()),
-        .subactionPaths = m_hand_subaction_paths.data(),
-        .localizedActionName = "Select thing" });
     m_pose_action = m_action_set.createAction(xr::ActionCreateInfo{
         .actionName = "hand_pose",
         .actionType = xr::ActionType::PoseInput,
@@ -29,8 +23,6 @@ Input::Input(xr::Instance instance, xr::Session session)
         .localizedActionName = "Hand pose" });
 
     std::array bindings { 
-        xr::ActionSuggestedBinding{ m_select_action, instance.stringToPath("/user/hand/left/input/x/click") },
-        xr::ActionSuggestedBinding{ m_select_action, instance.stringToPath("/user/hand/right/input/a/click") },
         xr::ActionSuggestedBinding{ m_pose_action, instance.stringToPath("/user/hand/left/input/grip/pose") },
         xr::ActionSuggestedBinding{ m_pose_action, instance.stringToPath("/user/hand/right/input/grip/pose") }
     };
@@ -45,27 +37,7 @@ Input::Input(xr::Instance instance, xr::Session session)
     m_active_action_set = xr::ActiveActionSet{ .actionSet = m_action_set };
 }
 
-bool Input::sync_actions(xr::Session session)
-{
-    session.syncActions(xr::ActionsSyncInfo {
-        .countActiveActionSets = 1u, 
-        .activeActionSets = &m_active_action_set });
-
-    bool pushed = false;
-    for (size_t i = 0u; i < 2u; i++)
-    {
-        xr::ActionStateBoolean select_state = session.getActionStateBoolean(xr::ActionStateGetInfo{
-            .action = m_select_action.get(), 
-            .subactionPath = m_hand_subaction_paths[i] });
-        if (select_state.isActive) {
-            pushed |= select_state.currentState == XR_TRUE;
-            std::cout << "pushed" << std::endl;
-        }
-    }
-    return pushed;
-}
-
-void Input::update_hand_poses(xr::Time display_time)
+void Main_input_system::step(Scene& scene, xr::Session /*session*/, xr::Time display_time)
 {
     for (size_t i = 0u; i < 2u; i++)
     {
@@ -75,7 +47,7 @@ void Input::update_hand_poses(xr::Time display_time)
             xr::SpaceLocationFlags{ xr::SpaceLocationFlagBits::PositionValid } | 
             xr::SpaceLocationFlags{ xr::SpaceLocationFlagBits::OrientationValid };
         if (space_location.locationFlags & required_flags) {
-            last_known_hand_pose[i] = space_location.pose;
+            scene.last_known_hand_pose[i] = space_location.pose;
         }
     }
 }

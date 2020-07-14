@@ -1,5 +1,5 @@
+#include "input_keyboard_system.h"
 #include <imgui.h>
-#include "imgui_input.h"
 #include "vulkan/vk_common.h"
 
 #include <GLFW/glfw3.h>
@@ -8,9 +8,6 @@
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3native.h>   // for glfwGetWin32Window
 #endif
-
-namespace vr
-{
 
 /*
 
@@ -26,17 +23,18 @@ static GLFWcharfun          g_PrevUserCallbackChar = NULL;*/
 
 static const char* imgui_get_clipboard_text(void* user_data)
 {
-    return glfwGetClipboardString(reinterpret_cast<Imgui_input*>(user_data)->window);
+    return glfwGetClipboardString(reinterpret_cast<Input_keyboard_system*>(user_data)->window);
 }
 
 static void imgui_set_clipboard_text(void* user_data, const char* text)
 {
-    glfwSetClipboardString(reinterpret_cast<Imgui_input*>(user_data)->window, text);
+    glfwSetClipboardString(reinterpret_cast<Input_keyboard_system*>(user_data)->window, text);
 }
 
 void imgui_key_callback(GLFWwindow* /*window*/, int key, int /*scancode*/, int action, int /*mods*/)
 {
     ImGuiIO& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard
     if (action == GLFW_PRESS)
         io.KeysDown[key] = true;
     if (action == GLFW_RELEASE)
@@ -59,7 +57,7 @@ void imgui_char_callback(GLFWwindow* /*window*/, unsigned int c)
     io.AddInputCharacter(c);
 }
 
-Imgui_input::Imgui_input(GLFWwindow* glfw_window) :
+Input_keyboard_system::Input_keyboard_system(GLFWwindow* glfw_window) :
     window(glfw_window)
 {
     //glfwSetWindowUserPointer(m_window, user_pointer);
@@ -129,7 +127,7 @@ Imgui_input::Imgui_input(GLFWwindow* glfw_window) :
     glfwSetCharCallback(window, imgui_char_callback);
 }
 
-void Imgui_input::step()
+void Input_keyboard_system::step(scene& /*scene*/)
 {
     ImGuiIO& io = ImGui::GetIO();
     IM_ASSERT(io.Fonts->IsBuilt() && "Font atlas not built! It is generally built by the renderer back-end. Missing call to renderer _NewFrame() function? e.g. ImGui_ImplOpenGL3_NewFrame().");
@@ -146,7 +144,7 @@ void Imgui_input::step()
     // Setup time step
     // TODO use openxr time function instead
     double current_time = glfwGetTime();
-    io.DeltaTime = m_time > 0.0 ? (float)(current_time - m_time) : (float)(1.0f / 60.0f);
+    io.DeltaTime = m_time > 0.0 ? (float)(current_time - m_time) : (float)(1.0f / 90.0f);
     m_time = current_time;
 
     /*ImGui_ImplGlfw_UpdateMousePosAndButtons();
@@ -156,7 +154,6 @@ void Imgui_input::step()
     ImGui_ImplGlfw_UpdateGamepads();*/
 }
 
-}
 /*
 void ImGui_ImplGlfw_MouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
 {

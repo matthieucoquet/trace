@@ -11,6 +11,9 @@ Engine::Engine() :
     m_context(m_window, m_vr_instance),
     m_scene(m_context)
 {
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+
     m_systems.push_back(std::make_unique<Shader_system>(m_context, m_scene));
     m_systems.push_back(std::make_unique<Ui_system>());
 
@@ -33,6 +36,7 @@ Engine::Engine() :
 Engine::~Engine()
 {
     m_context.device.waitIdle();
+    ImGui::DestroyContext();
 }
 
 void Engine::run()

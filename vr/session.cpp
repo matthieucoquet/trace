@@ -10,15 +10,14 @@ namespace vr
 constexpr bool verbose = true;
 constexpr size_t size_command_buffers = 4u;
 
-Session::Session(GLFWwindow* window, xr::Session new_session, Instance& instance, vulkan::Context& context, Scene& scene) :
+Session::Session(xr::Session new_session, Instance& instance, vulkan::Context& context, Scene& scene) :
     session(new_session),
-    m_input(instance.instance, session),
+    //m_input(instance.instance, session),
     m_main_swapchain(instance, session, context),
     m_ui_swapchain(session, context, xr::Extent2Di{ .width = 1000, .height = 1000 }),
     m_renderer(context, scene),
     m_mirror(context, size_command_buffers),
     m_command_buffers(context.device, context.command_pool, context.graphics_queue, size_command_buffers),
-    m_imgui_input(window),
     m_imgui_render(context, m_ui_swapchain.vk_view_extent(), m_ui_swapchain.size(), m_ui_swapchain.image_views)
 {
     if constexpr (verbose) {
@@ -149,9 +148,7 @@ void Session::draw_frame(Scene& scene, std::vector<std::unique_ptr<System>>& sys
 
         std::for_each(systems.begin(), systems.end(), [&scene](auto& system) { system->step(scene); });
 
-
         session.beginFrame({});
-
         std::vector<xr::CompositionLayerBaseHeader*> layers_pointers;
         if (frame_state.shouldRender &&
             m_session_state != xr::SessionState::Synchronized)
