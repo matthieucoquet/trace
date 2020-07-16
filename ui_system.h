@@ -1,6 +1,9 @@
 #pragma once
 #include "system.h"
 
+struct Shader;
+struct Shader_file;
+
 class Ui_system : public System
 {
 public:

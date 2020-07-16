@@ -172,25 +172,25 @@ void Session::draw_frame(Scene& scene, std::vector<std::unique_ptr<System>>& sys
 
             size_t command_buffer_id = m_command_buffers.find_available();
             auto command_buffer = m_command_buffers.command_buffers[command_buffer_id];
-                uint32_t swapchain_index = m_main_swapchain.swapchain.acquireSwapchainImage({});
-                m_main_swapchain.swapchain.waitSwapchainImage({ .timeout = xr::Duration::infinite() });
+            uint32_t swapchain_index = m_main_swapchain.swapchain.acquireSwapchainImage({});
+            m_main_swapchain.swapchain.waitSwapchainImage({ .timeout = xr::Duration::infinite() });
 
-                m_renderer.update_uniforms(scene, swapchain_index);
-                m_renderer.start_recording(command_buffer, m_main_swapchain.vk_images[swapchain_index], swapchain_index, m_main_swapchain.vk_view_extent());
-                m_mirror.copy(command_buffer, m_renderer.storage_images[swapchain_index].image, command_buffer_id, m_main_swapchain.vk_view_extent());
-                m_renderer.end_recording(command_buffer, m_main_swapchain.vk_images[swapchain_index], swapchain_index);
+            m_renderer.update_uniforms(scene, swapchain_index);
+            m_renderer.start_recording(command_buffer, m_main_swapchain.vk_images[swapchain_index], swapchain_index, m_main_swapchain.vk_view_extent());
+            m_mirror.copy(command_buffer, m_renderer.storage_images[swapchain_index].image, command_buffer_id, m_main_swapchain.vk_view_extent());
+            m_renderer.end_recording(command_buffer, m_main_swapchain.vk_images[swapchain_index], swapchain_index);
 
-                swapchain_index = m_ui_swapchain.swapchain.acquireSwapchainImage({});
-                m_ui_swapchain.swapchain.waitSwapchainImage({ .timeout = xr::Duration::infinite() });
-                ImDrawData* draw_data = ImGui::GetDrawData();
-                m_imgui_render.draw(draw_data, command_buffer, swapchain_index);
-                command_buffer.end();
+            swapchain_index = m_ui_swapchain.swapchain.acquireSwapchainImage({});
+            m_ui_swapchain.swapchain.waitSwapchainImage({ .timeout = xr::Duration::infinite() });
+            ImDrawData* draw_data = ImGui::GetDrawData();
+            m_imgui_render.draw(draw_data, command_buffer, swapchain_index);
+            command_buffer.end();
 
-                m_mirror.present(command_buffer, m_command_buffers.fences[command_buffer_id], command_buffer_id);
-                m_main_swapchain.swapchain.releaseSwapchainImage({});
-                m_ui_swapchain.swapchain.releaseSwapchainImage({});
-                layers_pointers.push_back(reinterpret_cast<xr::CompositionLayerBaseHeader*>(&composition_layer_proj));
-                layers_pointers.push_back(reinterpret_cast<xr::CompositionLayerBaseHeader*>(&composition_layer_ui));
+            m_mirror.present(command_buffer, m_command_buffers.fences[command_buffer_id], command_buffer_id);
+            m_main_swapchain.swapchain.releaseSwapchainImage({});
+            m_ui_swapchain.swapchain.releaseSwapchainImage({});
+            layers_pointers.push_back(reinterpret_cast<xr::CompositionLayerBaseHeader*>(&composition_layer_proj));
+            layers_pointers.push_back(reinterpret_cast<xr::CompositionLayerBaseHeader*>(&composition_layer_ui));
         }
 
 

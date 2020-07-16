@@ -17,5 +17,3 @@ public:
 private:
     double m_time = 0.0;
 };
-
-}

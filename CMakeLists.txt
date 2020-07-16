@@ -69,7 +69,8 @@ target_link_libraries(trace PRIVATE glm glfw OpenXR::openxr_loader shaderc::shad
 target_compile_features(trace PRIVATE cxx_std_20)
 
 get_filename_component(shader_locations shaders ABSOLUTE)
-set_source_files_properties(shader_system.cpp PROPERTIES COMPILE_DEFINITIONS SHADER_SOURCE="${shader_locations}")
+set_source_files_properties(shader_system.cpp PROPERTIES COMPILE_DEFINITIONS SHADER_SOURCE="${shader_locations}/scene")
+set_source_files_properties(vulkan/imgui_render.cpp PROPERTIES COMPILE_DEFINITIONS SHADER_SOURCE="${shader_locations}/ui")
 #set_source_files_properties(vulkan/shader_compile.cpp PROPERTIES COMPILE_DEFINITIONS SHADER_SOURCE="${shader_locations}")
 
 if(MSVC)

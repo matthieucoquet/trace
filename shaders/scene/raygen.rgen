@@ -27,7 +27,7 @@ void shoot_ray(vec3 direction, Eye eye)
     direction = direction + 2.0 * cross(eye.pose.rotation.xyz, cross(eye.pose.rotation.xyz, direction) + eye.pose.rotation.w * direction);
     direction = normalize(direction);
 
-    float tmin = 0.1;
+    float tmin = 0.01;
     float tmax = 100.0;
 
     traceRayEXT(topLevelAS, gl_RayFlagsOpaqueEXT, 0xFF, 0, 0, 0, eye.pose.position, tmin, direction.xyz, tmax, 0);

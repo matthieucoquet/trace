@@ -1,7 +1,7 @@
 #pragma once
-
 #include "vk_common.h"
 #include "allocation.h"
+#include <shaderc/shaderc.hpp>
 #include <imgui.h>
 
 namespace vulkan
@@ -26,6 +26,9 @@ private:
     std::vector<vk::Framebuffer> m_framebuffers;
     vk::Extent2D m_extent;
 
+    shaderc::Compiler m_compiler;
+    shaderc::CompileOptions m_group_compile_options;
+
     vk::Sampler m_font_sampler;
     vk::DescriptorSetLayout m_descriptor_set_layout;
     std::vector<vk::DescriptorSet> m_descriptor_sets;
@@ -45,6 +48,7 @@ private:
     void create_fonts_texture(Context& context);
 
     void setup_render_state(ImDrawData* draw_data, vk::CommandBuffer command_buffer, size_t frame_id, int fb_width, int fb_height);
+    [[nodiscard]] vk::ShaderModule compile_glsl_file(const char* filename, shaderc_shader_kind shader_kind) const;
 };
 
 }

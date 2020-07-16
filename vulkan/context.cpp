@@ -62,7 +62,7 @@ void Context::init_instance(Window& window, vr::Instance& vr_instance)
     }
 
     auto debug_create_info = vk::DebugUtilsMessengerCreateInfoEXT()
-        .setMessageSeverity(vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose | vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning | vk::DebugUtilsMessageSeverityFlagBitsEXT::eError)
+        .setMessageSeverity(/*vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose |*/ vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning | vk::DebugUtilsMessageSeverityFlagBitsEXT::eError)
         .setMessageType(vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral | vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance | vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation)
         .setPfnUserCallback(&debug_callback);
     std::array validation_features{ vk::ValidationFeatureEnableEXT::eBestPractices };
@@ -182,7 +182,8 @@ void Context::init_device(vr::Instance& vr_instance)
         auto device_features = vk::PhysicalDeviceFeatures2()
             .setPNext(&raytracing_features)
             .setFeatures(vk::PhysicalDeviceFeatures()
-                .setSamplerAnisotropy(true));
+                .setSamplerAnisotropy(true)
+                .setShaderStorageImageMultisample(true));
         device = physical_device.createDevice(vk::DeviceCreateInfo()
             .setPNext(&device_features)  // Using pNext instead of pEnabledFeatures to enable raytracing
             .setQueueCreateInfoCount(1u)

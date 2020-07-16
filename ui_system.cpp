@@ -94,6 +94,6 @@ void Ui_system::shader_text(Shader_file& shader_file)
                 data->Buf = string->data();
             }
             return 0;
-        }, (void*)shader_file.data);
+        }, (void*)&shader_file.data);
 
 }

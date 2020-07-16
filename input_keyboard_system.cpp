@@ -34,7 +34,7 @@ static void imgui_set_clipboard_text(void* user_data, const char* text)
 void imgui_key_callback(GLFWwindow* /*window*/, int key, int /*scancode*/, int action, int /*mods*/)
 {
     ImGuiIO& io = ImGui::GetIO();
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
     if (action == GLFW_PRESS)
         io.KeysDown[key] = true;
     if (action == GLFW_RELEASE)
@@ -127,7 +127,7 @@ Input_keyboard_system::Input_keyboard_system(GLFWwindow* glfw_window) :
     glfwSetCharCallback(window, imgui_char_callback);
 }
 
-void Input_keyboard_system::step(scene& /*scene*/)
+void Input_keyboard_system::step(Scene& /*scene*/)
 {
     ImGuiIO& io = ImGui::GetIO();
     IM_ASSERT(io.Fonts->IsBuilt() && "Font atlas not built! It is generally built by the renderer back-end. Missing call to renderer _NewFrame() function? e.g. ImGui_ImplOpenGL3_NewFrame().");

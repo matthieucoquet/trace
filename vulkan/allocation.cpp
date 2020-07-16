@@ -92,6 +92,7 @@ void* Allocated_buffer::map()
 
 void Allocated_buffer::unmap()
 {
+    vmaFlushAllocation(m_allocator, m_allocation, 0, VK_WHOLE_SIZE);
     vmaUnmapMemory(m_allocator, m_allocation);
 }
 

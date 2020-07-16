@@ -24,7 +24,7 @@ Engine::Engine() :
         .queueFamilyIndex = m_context.queue_family,
         .queueIndex = 0u
     };
-    m_session.emplace(m_window.window,
+    m_session.emplace(
         m_vr_instance.instance.createSession(xr::SessionCreateInfo{
         .next = xr::get(graphic_binding),
         .systemId = m_vr_instance.system_id
