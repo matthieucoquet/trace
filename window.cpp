@@ -1,6 +1,6 @@
 #include "window.h"
 
-#include <iostream>
+#include <fmt/core.h>
 
 constexpr bool verbose = false;
 //constexpr unsigned int initial_width = 1800u;
@@ -44,9 +44,9 @@ std::vector<const char*> Window::required_extensions() const
 
     if constexpr (verbose)
     {
-        std::cout << "GLFW required extensions:" << std::endl;
+        fmt::print("GLFW required extensions:\n");
         for (const auto& ext : extensions) {
-            std::cout << "\t" << ext << std::endl;
+            fmt::print("\t{}\n", ext);
         }
     }
     return extensions;

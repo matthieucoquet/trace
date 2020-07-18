@@ -1,8 +1,12 @@
 #include "engine.h"
 #include "shader_system.h"
 #include "ui_system.h"
-#include <iostream>
+#include "input_keyboard_system.h"
+#include <fmt/core.h>
 #include <limits>
+#include <concepts>
+#include <ranges>
+#include <algorithm>
 #include <imgui.h>
 constexpr bool vr_mode = true;
 
@@ -14,6 +18,7 @@ Engine::Engine() :
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
 
+    m_systems.push_back(std::make_unique<Input_keyboard_system>(m_window.window));
     m_systems.push_back(std::make_unique<Shader_system>(m_context, m_scene));
     m_systems.push_back(std::make_unique<Ui_system>());
 
@@ -36,17 +41,18 @@ Engine::Engine() :
 Engine::~Engine()
 {
     m_context.device.waitIdle();
+    std::ranges::for_each(m_systems, [this](auto& system) { system->cleanup(m_scene); });
     ImGui::DestroyContext();
 }
 
 void Engine::run()
 {
-    unsigned int count = 0u;
+    //unsigned int count = 0u;
     while (m_window.step())
     {
-        Duration frame_time = Clock::now() - m_previous_clock;
-        std::cout << "Time : " << frame_time.count() << " - " << 1000 / frame_time.count() << " - " << count++ << std::endl;
-        m_previous_clock = Clock::now();
+        //Duration frame_time = Clock::now() - m_previous_clock;
+        //fmt::core("Time : {} - {} - {}\n", frame_time.count(), 1000 / frame_time.count(),  count++);
+        //m_previous_clock = Clock::now();
 
         m_session->step(m_vr_instance.instance, m_scene, m_systems);
         m_scene.step();

@@ -1,13 +1,15 @@
 #pragma once
 
-#include "scene.h"
 #include "vr_common.h"
+#include "input_system.h"
+#include "vr_swapchain.h"
+#include "core/system.h"
+#include "core/scene.h"
 #include "vulkan/renderer.h"
 #include "vulkan/desktop_mirror.h"
 #include "vulkan/command_buffer.h"
 #include "vulkan/imgui_render.h"
-#include "vr_swapchain.h"
-#include "system.h"
+#include <memory>
 
 struct GLFWwindow;
 namespace vulkan {
@@ -48,6 +50,9 @@ private:
     xr::CompositionLayerProjection composition_layer_proj{};
     std::array<xr::CompositionLayerProjectionView, 2> composition_layer_views;
     xr::CompositionLayerQuad composition_layer_ui{};
+
+    std::vector<std::unique_ptr<Input_system>> m_input_systems;
+    std::vector<xr::ActionSet> m_action_sets;
 
     void poll_events(xr::Instance instance);
     void draw_frame(Scene& scene, std::vector<std::unique_ptr<System>>& systems);

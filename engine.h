@@ -2,8 +2,8 @@
 #include "vulkan/vk_common.h"
 
 #include "window.h"
-#include "scene.h"
-#include "system.h"
+#include "core/system.h"
+#include "core/scene.h"
 #include "vulkan/context.h"
 #include "vulkan/renderer.h"
 #include "vr/instance.h"

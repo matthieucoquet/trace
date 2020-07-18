@@ -1,6 +1,6 @@
 #pragma once
 #include "vk_common.h"
-#include <iostream>
+#include <fmt/core.h>
 
 namespace vulkan
 {
@@ -82,12 +82,13 @@ public:
             {
                 if (m_device.getFenceStatus(fences[i]) == vk::Result::eSuccess) {
                     m_device.resetFences(fences[i]);
+                    command_buffers[i].reset({});
                     return i;
                 }
             }
             if (first) {
                 first = false;
-                std::cout << "Warning: no command buffer available, waiting until one get available." << std::endl;
+                fmt::print("Warning: no command buffer available, waiting until one get available.\n");
             }
         }
     }

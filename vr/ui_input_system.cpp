@@ -1,11 +1,11 @@
 #include "ui_input_system.h"
-#include "scene.h"
-#include <iostream>
+#include "core/scene.h"
+#include <fmt/core.h>
 
 namespace vr
 {
 
-Ui_input_system::Ui_input_system(xr::Instance instance, xr::Session session)
+Ui_input_system::Ui_input_system(xr::Instance instance, xr::Session /*session*/, std::vector<xr::ActionSet>& action_sets)
 {
     m_action_set = instance.createActionSet(xr::ActionSetCreateInfo{
         .actionSetName = "ui", 
@@ -32,7 +32,8 @@ Ui_input_system::Ui_input_system(xr::Instance instance, xr::Session session)
         .countSuggestedBindings = static_cast<uint32_t>(bindings.size()),
         .suggestedBindings = bindings.data() });
 
-    session.attachSessionActionSets(xr::SessionActionSetsAttachInfo{ .countActionSets = 1, .actionSets = &m_action_set });
+    action_sets.push_back(m_action_set);
+    //session.attachSessionActionSets(xr::SessionActionSetsAttachInfo{ .countActionSets = 1, .actionSets = &m_action_set });
     m_active_action_set = xr::ActiveActionSet{ .actionSet = m_action_set };
 }
 
@@ -50,7 +51,7 @@ void Ui_input_system::step(Scene& /*scene*/, xr::Session session, xr::Time /*dis
             .subactionPath = m_hand_subaction_paths[i] });
         if (select_state.isActive) {
             pushed |= select_state.currentState == XR_TRUE;
-            std::cout << "pushed" << std::endl;
+            fmt::print("pushed\n");
         }
     }
 }

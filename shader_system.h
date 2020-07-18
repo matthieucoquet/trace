@@ -1,8 +1,8 @@
 #pragma once
+#include "core/system.h"
+#include "core/entities.h"
 #include <filesystem>
 #include <shaderc/shaderc.hpp>
-#include "system.h"
-#include "entities.h"
 
 namespace vulkan {
 class Context;
@@ -18,6 +18,7 @@ public:
     Shader_system& operator=(Shader_system&& other) = delete;
     ~Shader_system() override final = default;
     void step(Scene& scene) override final;
+    void cleanup(Scene& scene)  override final;
 private:
     vk::Device m_device;
     shaderc::Compiler m_compiler;

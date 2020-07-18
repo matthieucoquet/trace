@@ -1,7 +1,7 @@
 #include "Desktop_mirror.h"
 #include "context.h"
 #include "command_buffer.h"
-#include <iostream>
+#include <fmt/core.h>
 namespace vulkan
 {
 
@@ -29,7 +29,7 @@ void Desktop_mirror::copy(vk::CommandBuffer& command_buffer, vk::Image vr_image,
         assert(false);
     }
     if (acquire_result.result == vk::Result::eTimeout) {
-        std::cout << "Desktop acquireNextImageKHR timeout." << std::endl;
+        fmt::print("Desktop acquireNextImageKHR timeout.\n");
         assert(false);
     }
     m_image_id = acquire_result.value;

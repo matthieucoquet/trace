@@ -1,10 +1,10 @@
 #include "main_input_system.h"
-#include "scene.h"
+#include "core/scene.h"
 
 namespace vr
 {
 
-Main_input_system::Main_input_system(xr::Instance instance, xr::Session session)
+Main_input_system::Main_input_system(xr::Instance instance, xr::Session session, std::vector<xr::ActionSet>& action_sets)
 {
     m_action_set = instance.createActionSet(xr::ActionSetCreateInfo{
         .actionSetName = "control", 
@@ -33,22 +33,23 @@ Main_input_system::Main_input_system(xr::Instance instance, xr::Session session)
 
     m_hand_space[0] = session.createActionSpace(xr::ActionSpaceCreateInfo{ .action = m_pose_action, .subactionPath = m_hand_subaction_paths[0] });
     m_hand_space[1] = session.createActionSpace(xr::ActionSpaceCreateInfo{ .action = m_pose_action, .subactionPath = m_hand_subaction_paths[1] });
-    session.attachSessionActionSets(xr::SessionActionSetsAttachInfo{ .countActionSets = 1, .actionSets = &m_action_set });
-    m_active_action_set = xr::ActiveActionSet{ .actionSet = m_action_set };
+    action_sets.push_back(m_action_set);
+    //session.attachSessionActionSets(xr::SessionActionSetsAttachInfo{ .countActionSets = 1, .actionSets = &m_action_set });
+    //m_active_action_set = xr::ActiveActionSet{ .actionSet = m_action_set };
 }
 
-void Main_input_system::step(Scene& scene, xr::Session /*session*/, xr::Time display_time)
+void Main_input_system::step(Scene& /*scene*/, xr::Session /*session*/, xr::Time /*display_time*/)
 {
-    for (size_t i = 0u; i < 2u; i++)
+    //for (size_t i = 0u; i < 2u; i++)
     {
         // Is it better to use baseSpace ?
-        auto space_location = m_hand_space[i].locateSpace({}, display_time);
+        /*auto space_location = m_hand_space[i].locateSpace({}, display_time);
         xr::SpaceLocationFlags required_flags = 
             xr::SpaceLocationFlags{ xr::SpaceLocationFlagBits::PositionValid } | 
             xr::SpaceLocationFlags{ xr::SpaceLocationFlagBits::OrientationValid };
         if (space_location.locationFlags & required_flags) {
             scene.last_known_hand_pose[i] = space_location.pose;
-        }
+        }*/
     }
 }
 

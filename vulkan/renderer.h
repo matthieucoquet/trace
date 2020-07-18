@@ -2,9 +2,9 @@
 #include "vk_common.h"
 
 #include "raytracing_pipeline.h"
-#include "scene.h"
 #include "acceleration_structure.h"
 #include "allocation.h"
+#include "core/scene.h"
 
 namespace vulkan
 {

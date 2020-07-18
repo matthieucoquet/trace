@@ -1,8 +1,9 @@
 #include "session.h"
 #include "instance.h"
 #include "vulkan/context.h"
-
-#include <iostream>
+#include "main_input_system.h"
+#include "ui_input_system.h"
+#include <fmt/core.h>
 #include <vector>
 
 namespace vr
@@ -22,9 +23,9 @@ Session::Session(xr::Session new_session, Instance& instance, vulkan::Context& c
 {
     if constexpr (verbose) {
         auto reference_spaces = session.enumerateReferenceSpaces();
-        std::cout << "XR runtime supported reference spaces:" << std::endl;
+        fmt::print("XR runtime supported reference spaces:\n");
         for (auto reference_space : reference_spaces) {
-            std::cout << "\t" << xr::to_string_literal(reference_space) << std::endl;
+            fmt::print("\t{}\n", xr::to_string_literal(reference_space));
         }
     }
     m_stage_space = session.createReferenceSpace(xr::ReferenceSpaceCreateInfo{
@@ -77,6 +78,12 @@ Session::Session(xr::Session new_session, Instance& instance, vulkan::Context& c
         .size = /*xr::Extent2Df*/{ .width = 0.2f, .height = 0.2f }
     };
 
+    m_input_systems.emplace_back(std::make_unique<Main_input_system>(instance.instance, session, m_action_sets));
+    m_input_systems.emplace_back(std::make_unique<Ui_input_system>(instance.instance, session, m_action_sets));
+
+    session.attachSessionActionSets(xr::SessionActionSetsAttachInfo{ 
+        .countActionSets = static_cast<uint32_t>(m_action_sets.size()), 
+        .actionSets = m_action_sets.data() });
 }
 
 Session::~Session()
@@ -105,30 +112,30 @@ void Session::poll_events(xr::Instance instance)
         {
         case xr::StructureType::EventDataEventsLost: {
             if constexpr (verbose) {
-                std::cout << "Event: lost events." << std::endl;
+                fmt::print("Event: lost events.");
             }
         }
         case xr::StructureType::EventDataInstanceLossPending: {
             if constexpr (verbose) {
-                std::cout << "Event: Instance Loss pending." << std::endl;
+                fmt::print("Event: instance loss pending.");
             }
             break;
         }
         case xr::StructureType::EventDataInteractionProfileChanged: {
             if constexpr (verbose) {
-                std::cout << "Event: interaction profile changed." << std::endl;
+                fmt::print("Event: interaction profile changed.");
             }
             break;
         }
         case xr::StructureType::EventDataReferenceSpaceChangePending: {
             if constexpr (verbose) {
-                std::cout << "Event: reference space changed." << std::endl;
+                fmt::print("Event: reference space changed.");
             }
             break;
         }
         case xr::StructureType::EventDataSessionStateChanged: {
             if constexpr (verbose) {
-                std::cout << "Event: state changed." << std::endl;
+                fmt::print("Event: state changed.");
             }
             handle_state_change(reinterpret_cast<xr::EventDataSessionStateChanged&>(data_buffer));
             break;
@@ -146,7 +153,11 @@ void Session::draw_frame(Scene& scene, std::vector<std::unique_ptr<System>>& sys
     {
         xr::FrameState frame_state = session.waitFrame({});
 
+        for (auto& system : m_input_systems) {
+            system->step(scene, session, frame_state.predictedDisplayTime);
+        }
         std::for_each(systems.begin(), systems.end(), [&scene](auto& system) { system->step(scene); });
+
 
         session.beginFrame({});
         std::vector<xr::CompositionLayerBaseHeader*> layers_pointers;
@@ -204,7 +215,7 @@ void Session::draw_frame(Scene& scene, std::vector<std::unique_ptr<System>>& sys
 
 void Session::handle_state_change(xr::EventDataSessionStateChanged& event_stage_changed)
 {
-    std::cout << xr::to_string_literal(event_stage_changed.state) << std::endl;
+    fmt::print("{}\n", xr::to_string_literal(event_stage_changed.state));
     m_session_state = event_stage_changed.state;
     switch (m_session_state)
     {

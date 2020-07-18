@@ -1,8 +1,8 @@
 #include "acceleration_structure.h"
 #include "context.h"
-#include "shader_types.h"
 #include "command_buffer.h"
-#include "scene.h"
+#include "core/scene.h"
+#include "core/shader_types.h"
 
 namespace vulkan
 {

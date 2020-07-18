@@ -1,7 +1,7 @@
 #include "imgui_render.h"
 #include "context.h"
 #include <imgui.h>
-#include <iostream>
+#include <fmt/core.h>
 #include <filesystem>
 #include <fstream>
 
@@ -462,7 +462,7 @@ vk::ShaderModule Imgui_render::compile_glsl_file(const char* filename, shaderc_s
 
     auto compile_result = m_compiler.CompileGlslToSpv(buffer.data(), buffer.size(), shader_kind, filename, m_group_compile_options);
     if (compile_result.GetCompilationStatus() != shaderc_compilation_status_success) {
-        std::cout << compile_result.GetErrorMessage() << std::endl;
+        fmt::print("{}\n", compile_result.GetErrorMessage());
         throw std::runtime_error("Imgui shader compilation error");
     }
     return  m_device.createShaderModule(vk::ShaderModuleCreateInfo()

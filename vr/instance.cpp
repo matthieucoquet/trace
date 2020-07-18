@@ -1,6 +1,5 @@
 #include "instance.h"
-
-#include <iostream>
+#include <fmt/core.h>
 
 OPENXR_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
@@ -10,7 +9,7 @@ static XrBool32 debug_callback(
     const XrDebugUtilsMessengerCallbackDataEXT* callback_data,
     void* /*user_data*/) 
 {
-    std::cout << callback_data->message << std::endl;
+    fmt::print(callback_data->message);
     return XR_TRUE;
 }
 
@@ -28,17 +27,17 @@ Instance::Instance()
 
     if constexpr (verbose) {
         {
-            std::cout << "API layers:" << std::endl;
+            fmt::print("OpenXR API layers:\n");
             auto properties = xr::enumerateApiLayerProperties(xr::DispatchLoaderStatic());
             for (const auto& property : properties) {
-                std::cout << "\t" << property.layerName << std::endl;
+                fmt::print("\t{}\n", property.layerName);
             }
         }
         {
-            std::cout << "Available instance extensions:" << std::endl;
+            fmt::print("Available OpenXR instance extensions:\n");
             auto properties = xr::enumerateInstanceExtensionProperties(nullptr, xr::DispatchLoaderStatic());
             for (const auto& property : properties) {
-                std::cout << "\t" << property.extensionName << std::endl;
+                fmt::print("\t{}\n", property.extensionName);
             }
         }
     }
@@ -71,9 +70,9 @@ Instance::Instance()
 
     if constexpr (verbose) {
         auto instance_properties = instance.getInstanceProperties();
-        std::cout << "Runtime: \n\t" << instance_properties.runtimeName << std::endl;
+        fmt::print("Runtime: \n\t{}\n", instance_properties.runtimeName);
         auto system_properties = instance.getSystemProperties(system_id);
-        std::cout << "HMD: \n\t" << system_properties.systemName << std::endl;
+        fmt::print("HMD: \n\t{}\n", system_properties.systemName);
     }
 
     auto view_configurations = instance.enumerateViewConfigurations(system_id);
@@ -94,7 +93,7 @@ Instance::Instance()
         throw std::runtime_error("Vulkan version is too old for OpenXR.");
     }
     if (vulkan_requirements.maxApiVersionSupported.major() == 1 && vulkan_requirements.maxApiVersionSupported.minor() < 2) {
-        std::cout << "Max supported: \n\t" << vulkan_requirements.maxApiVersionSupported.major() << "." << vulkan_requirements.maxApiVersionSupported.minor() << std::endl;
+        fmt::print("Max supported: \n\t{}.{}\n", vulkan_requirements.maxApiVersionSupported.major(), vulkan_requirements.maxApiVersionSupported.minor());
         //throw std::runtime_error("OpenXR doesn't support Vulkan 1.2.");
     }
 }

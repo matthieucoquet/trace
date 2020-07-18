@@ -14,6 +14,7 @@ find_package(glm CONFIG REQUIRED)
 find_package(Vulkan REQUIRED)
 find_package(OpenXR CONFIG REQUIRED)
 find_package(imgui CONFIG REQUIRED)
+find_package(fmt CONFIG REQUIRED)
 
 # import shaderc as a module
 # Should switch to a config when shaderc supports it
@@ -21,37 +22,51 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 find_package(shaderc MODULE REQUIRED)
 
 add_executable (trace)
-target_sources(trace PRIVATE main.cpp
 
-                             vulkan/acceleration_structure.cpp vulkan/acceleration_structure.h
-                             vulkan/allocation.cpp vulkan/allocation.h
-                             vulkan/command_buffer.h
-                             vulkan/context.cpp vulkan/context.h
-                             vulkan/desktop_mirror.cpp vulkan/desktop_mirror.h
-                             vulkan/desktop_swapchain.cpp vulkan/desktop_swapchain.h
-                             vulkan/imgui_render.cpp vulkan/imgui_render.h
-                             vulkan/raytracing_pipeline.cpp vulkan/raytracing_pipeline.h
-                             vulkan/renderer.cpp vulkan/renderer.h
-                             vulkan/vk_common.h
+set(SOURCE_CORE
+    core/entities.cpp core/entities.h
+    core/scene.cpp core/scene.h
+    core/shader_types.h
+    core/system.h)
+set(SOURCE_ENGINE
+    main.cpp
+    engine.cpp engine.h
+    input_keyboard_system.cpp input_keyboard_system.h
+    shader_system.cpp shader_system.h
+    ui_system.cpp ui_system.h
+    window.cpp window.h)
+set(SOURCE_VR
+    vr/input_system.h
+    vr/ui_input_system.cpp vr/ui_input_system.h
+    vr/main_input_system.cpp vr/main_input_system.h
+    vr/instance.cpp vr/instance.h
+    vr/session.cpp vr/session.h
+    vr/vr_swapchain.cpp vr/vr_swapchain.h
+    vr/vr_common.h)
+set(SOURCE_VULKAN
+    vulkan/acceleration_structure.cpp vulkan/acceleration_structure.h
+    vulkan/allocation.cpp vulkan/allocation.h
+    vulkan/command_buffer.h
+    vulkan/command_checkpoint.h
+    vulkan/context.cpp vulkan/context.h
+    vulkan/desktop_mirror.cpp vulkan/desktop_mirror.h
+    vulkan/desktop_swapchain.cpp vulkan/desktop_swapchain.h
+    vulkan/imgui_render.cpp vulkan/imgui_render.h
+    vulkan/raytracing_pipeline.cpp vulkan/raytracing_pipeline.h
+    vulkan/renderer.cpp vulkan/renderer.h
+    vulkan/vk_common.h)
 
-                             vr/input_system.h
-                             vr/ui_input_system.cpp vr/ui_input_system.h
-                             vr/main_input_system.cpp vr/main_input_system.h
-                             vr/instance.cpp vr/instance.h
-                             vr/session.cpp vr/session.h
-                             vr/vr_swapchain.cpp vr/vr_swapchain.h
-                             vr/vr_common.h
-
-                             engine.cpp engine.h
-                             entities.cpp entities.h
-                             input_keyboard_system.cpp input_keyboard_system.h
-                             scene.cpp scene.h
-                             shader_types.h
-                             shader_system.cpp shader_system.h
-                             system.h
-                             ui_system.cpp ui_system.h
-                             window.cpp window.h
+target_sources(trace
+    PRIVATE 
+    ${SOURCE_CORE}
+    ${SOURCE_ENGINE}
+    ${SOURCE_VR}
+    ${SOURCE_VULKAN}
  )
+ source_group("core" FILES ${SOURCE_CORE})
+ source_group("engine" FILES ${SOURCE_ENGINE})
+ source_group("vr" FILES ${SOURCE_VR})
+ source_group("vulkan" FILES ${SOURCE_VULKAN})
 
 # We don't want to use the target Vulkan::Vulkan and xr::openxr_loader
 # because this target would link against the static Vulkan/OpenXR library
@@ -64,7 +79,7 @@ target_include_directories(trace SYSTEM PUBLIC ${Vulkan_INCLUDE_DIR}
 # DON'T COMMIT, just to avoid copy header each time during dev
 target_include_directories(trace SYSTEM PUBLIC "C:/code/external/fork_openxr_hpp/include")
 
-target_link_libraries(trace PRIVATE glm glfw OpenXR::openxr_loader shaderc::shaderc_combined imgui::imgui)
+target_link_libraries(trace PRIVATE glm glfw OpenXR::openxr_loader shaderc::shaderc_combined imgui::imgui fmt::fmt)
 # target_link_libraries(trace PRIVATE glm glfw OpenXR::headers shaderc::shaderc_combined imgui::imgui)
 target_compile_features(trace PRIVATE cxx_std_20)
 

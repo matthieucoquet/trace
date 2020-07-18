@@ -1,5 +1,5 @@
 #include "shader_system.h"
-#include "scene.h"
+#include "core/scene.h"
 #include "vulkan/context.h"
 #include <fstream>
 #include <iostream>
@@ -73,6 +73,16 @@ Shader_system::Shader_system(vulkan::Context& context, Scene& scene) :
 void Shader_system::step(Scene& /*scene*/)
 {
 
+}
+
+void Shader_system::cleanup(Scene& scene)
+{
+    m_device.destroyShaderModule(scene.raygen_shader.shader_module);
+    m_device.destroyShaderModule(scene.miss_shader.shader_module);
+    for (auto& entity : scene.entities) {
+        m_device.destroyShaderModule(entity.intersection.shader_module);
+        m_device.destroyShaderModule(entity.closest_hit.shader_module);
+    }
 }
 
 void Shader_system::compile(Scene& scene, Shader& shader, shaderc_shader_kind shader_kind)

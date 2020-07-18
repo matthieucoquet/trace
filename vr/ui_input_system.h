@@ -8,7 +8,7 @@ namespace vr
 class Ui_input_system : public Input_system
 {
 public:
-    Ui_input_system(xr::Instance instance, xr::Session session);
+    Ui_input_system(xr::Instance instance, xr::Session session, std::vector<xr::ActionSet>& action_sets);
     Ui_input_system(const Ui_input_system& other) = delete;
     Ui_input_system(Ui_input_system&& other) = delete;
     Ui_input_system& operator=(const Ui_input_system& other) = delete;

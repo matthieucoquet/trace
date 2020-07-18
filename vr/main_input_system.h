@@ -8,7 +8,7 @@ namespace vr
 class Main_input_system : public Input_system
 {
 public:
-    Main_input_system(xr::Instance instance, xr::Session session);
+    Main_input_system(xr::Instance instance, xr::Session session, std::vector<xr::ActionSet>& action_sets);
     Main_input_system(const Main_input_system& other) = delete;
     Main_input_system(Main_input_system&& other) = delete;
     Main_input_system& operator=(const Main_input_system& other) = delete;

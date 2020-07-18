@@ -4,7 +4,7 @@
 #include "session.h"
 
 #include <algorithm>
-#include <iostream>
+#include <fmt/core.h>
 
 constexpr bool verbose = true;
 
@@ -21,9 +21,9 @@ Swapchain::Swapchain(Instance& instance, xr::Session& session, vulkan::Context& 
         throw std::runtime_error("Required format not supported by OpenXR runtime.");
     }
     if constexpr (verbose) {
-        std::cout << "Supported Vulkan format in the XR runtime:" << std::endl;
+        fmt::print("Supported Vulkan format in the XR runtime:\n");
         for (auto format : supported_formats) {
-            std::cout << "\t" << vk::to_string(static_cast<vk::Format>(format)) << std::endl;
+            fmt::print("\t{}\n", vk::to_string(static_cast<vk::Format>(format)));
         }
     }
 
@@ -33,12 +33,9 @@ Swapchain::Swapchain(Instance& instance, xr::Session& session, vulkan::Context& 
     assert(view_configuration_views[0].recommendedImageRectWidth == view_configuration_views[1].recommendedImageRectWidth);
     assert(view_configuration_views[0].recommendedSwapchainSampleCount == view_configuration_views[1].recommendedSwapchainSampleCount);
     if constexpr (verbose) {
-        std::cout << "XR runtime view configuration views:" << std::endl;
-        for (auto view : view_configuration_views) {
-            std::cout << "\t" << "Recommended: "
-                << view.recommendedImageRectWidth << " x "
-                << view.recommendedImageRectHeight << " "
-                << view.recommendedSwapchainSampleCount << " samples " << std::endl;
+        fmt::print("XR runtime view configuration views:\n");
+        for (const auto& view : view_configuration_views) {
+            fmt::print("\tRecommended: {}x{} {} samples\n", view.recommendedImageRectWidth, view.recommendedImageRectHeight, view.recommendedSwapchainSampleCount);
         }
     }
 

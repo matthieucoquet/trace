@@ -4,7 +4,7 @@
 #include "vr/instance.h"
 #include "debug_callback.h"
 
-#include <iostream>
+#include <fmt/core.h>
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
@@ -51,13 +51,13 @@ void Context::init_instance(Window& window, vr::Instance& vr_instance)
     VULKAN_HPP_DEFAULT_DISPATCHER.init(vkGetInstanceProcAddr);
 
     if constexpr (verbose) {
-        std::cout << "Instance extensions:" << std::endl;
+        fmt::print("Instance extensions:\n");
         for (const auto& property : vk::enumerateInstanceExtensionProperties()) {
-            std::cout << "\t" << property.extensionName << std::endl;
+            fmt::print("\t{}\n", property.extensionName);
         }
-        std::cout << "Required instance extensions:" << std::endl;
+        fmt::print("Required instance extensions:\n");
         for (const auto& required_extension : required_extensions) {
-            std::cout << "\t" << required_extension << std::endl;
+            fmt::print("\t{}\n", required_extension);
         }
     }
 
@@ -108,8 +108,9 @@ void Context::init_device(vr::Instance& vr_instance)
     for (const auto& potential_physical_device : potential_physical_devices)
     {
         auto properties = potential_physical_device.getProperties();
-        if constexpr (verbose)
-            std::cout << "Found GPU: \n\t" << properties.deviceName << std::endl;
+        if constexpr (verbose) {
+            fmt::print("Found GPU: \n\t{}\n", properties.deviceName);
+        }
 
         // For simplicity, we take only discrete gpu
         if (properties.deviceType != vk::PhysicalDeviceType::eDiscreteGpu)
@@ -153,13 +154,13 @@ void Context::init_device(vr::Instance& vr_instance)
             continue;
 
         if constexpr (verbose) {
-            std::cout << "Devices extensions:" << std::endl;
+            fmt::print("Devices extensions:\n");
             for (const auto& property : available_extensions) {
-                std::cout << "\t" << property.extensionName << std::endl;
+                fmt::print("\t{}\n", property.extensionName);
             }
-            std::cout << "Required device extensions:" << std::endl;
+            fmt::print("Required device extensions:\n");
             for (const auto& required_extension : required_device_extensions) {
-                std::cout << "\t" << required_extension << std::endl;
+                fmt::print("\t{}\n", required_extension);
             }
         }
 
