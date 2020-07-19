@@ -40,6 +40,7 @@ Engine::Engine() :
 
 Engine::~Engine()
 {
+    auto checkpoints_data = m_context.graphics_queue.getCheckpointDataNV();
     m_context.device.waitIdle();
     std::ranges::for_each(m_systems, [this](auto& system) { system->cleanup(m_scene); });
     ImGui::DestroyContext();

@@ -25,30 +25,34 @@ Renderer::~Renderer()
 
 void Renderer::start_recording(vk::CommandBuffer command_buffer, vk::Image swapchain_image, uint32_t swapchain_id, vk::Extent2D extent)
 {
-    command_buffer.begin(vk::CommandBufferBeginInfo()
-        .setFlags(vk::CommandBufferUsageFlagBits::eOneTimeSubmit));
+    command_buffer.begin({ .flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit });
 
-    auto raygen_shader_entry = vk::StridedBufferRegionKHR()
-        .setBuffer(m_pipeline.shader_binding_table.buffer)
-        .setOffset(0u)
-        .setStride(m_pipeline.raytracing_properties.shaderGroupHandleSize)
-        .setSize(m_pipeline.raytracing_properties.shaderGroupHandleSize);
+    vk::StridedBufferRegionKHR raygen_shader_entry {
+        .buffer = m_pipeline.shader_binding_table.buffer,
+        .offset = 0u,
+        .stride = m_pipeline.raytracing_properties.shaderGroupHandleSize,
+        .size = m_pipeline.raytracing_properties.shaderGroupHandleSize,
+    };
 
-    auto miss_shader_entry = vk::StridedBufferRegionKHR()
-        .setBuffer(m_pipeline.shader_binding_table.buffer)
-        .setOffset(m_pipeline.raytracing_properties.shaderGroupHandleSize)
-        .setStride(m_pipeline.raytracing_properties.shaderGroupHandleSize)
-        .setSize(m_pipeline.raytracing_properties.shaderGroupHandleSize);
+    vk::StridedBufferRegionKHR miss_shader_entry {
+        .buffer = m_pipeline.shader_binding_table.buffer,
+        .offset = m_pipeline.offset_miss_group,
+        .stride = m_pipeline.raytracing_properties.shaderGroupHandleSize,
+        .size = m_pipeline.raytracing_properties.shaderGroupHandleSize
+    };
 
-    auto hit_shader_entry = vk::StridedBufferRegionKHR()
-        .setBuffer(m_pipeline.shader_binding_table.buffer)
-        .setOffset(m_pipeline.raytracing_properties.shaderGroupHandleSize * vk::DeviceSize(2u))
-        .setStride(m_pipeline.raytracing_properties.shaderGroupHandleSize)
-        .setSize(m_pipeline.raytracing_properties.shaderGroupHandleSize * vk::DeviceSize(2u));
+    vk::StridedBufferRegionKHR hit_shader_entry {
+        .buffer = m_pipeline.shader_binding_table.buffer,
+        .offset = m_pipeline.offset_hit_group,
+        .stride = m_pipeline.raytracing_properties.shaderGroupHandleSize,
+        .size = m_pipeline.raytracing_properties.shaderGroupHandleSize * vk::DeviceSize(2u)
+    };
 
-    auto callable_shader_entry = vk::StridedBufferRegionKHR();
+    vk::StridedBufferRegionKHR callable_shader_entry{};
 
     command_buffer.bindPipeline(vk::PipelineBindPoint::eRayTracingKHR, m_pipeline.pipeline);
+    static const char* before = "before start recording";
+    command_buffer.setCheckpointNV(&before);
     command_buffer.bindDescriptorSets(vk::PipelineBindPoint::eRayTracingKHR, m_pipeline.pipeline_layout, 0, m_descriptor_sets[swapchain_id], {});
 
     //  Swapchain to dst
@@ -56,20 +60,22 @@ void Renderer::start_recording(vk::CommandBuffer command_buffer, vk::Image swapc
         vk::PipelineStageFlagBits::eTopOfPipe,
         vk::PipelineStageFlagBits::eTransfer,
         {}, {}, {},
-        vk::ImageMemoryBarrier()
-        .setOldLayout(vk::ImageLayout::eUndefined)  // color ?
-        .setNewLayout(vk::ImageLayout::eTransferDstOptimal)
-        .setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-        .setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-        .setImage(swapchain_image)
-        .setSrcAccessMask({})
-        .setDstAccessMask(vk::AccessFlagBits::eTransferWrite)
-        .setSubresourceRange(vk::ImageSubresourceRange()
-            .setLevelCount(1u)
-            .setLayerCount(1)
-            .setBaseArrayLayer(0)
-            .setBaseMipLevel(0)
-            .setAspectMask(vk::ImageAspectFlagBits::eColor)));
+        vk::ImageMemoryBarrier{
+            .srcAccessMask = {},
+            .dstAccessMask = vk::AccessFlagBits::eTransferWrite,
+            .oldLayout = vk::ImageLayout::eUndefined,  // color ?
+            .newLayout = vk::ImageLayout::eTransferDstOptimal,
+            .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .image = swapchain_image,
+            .subresourceRange = /*vk::ImageSubresourceRange*/{
+                .aspectMask = vk::ImageAspectFlagBits::eColor,
+                .baseMipLevel = 0,
+                .levelCount = 1u,
+                .baseArrayLayer = 0,
+                .layerCount = 1
+            }
+        });
 
     extent.width *= 2;
     assert(extent.width % 4 == 0);
@@ -80,7 +86,7 @@ void Renderer::start_recording(vk::CommandBuffer command_buffer, vk::Image swapc
         &miss_shader_entry,
         &hit_shader_entry,
         &callable_shader_entry,
-        extent.width / 4,  // width * 2 / 4
+        extent.width / 4,
         extent.height / 4,
         1u);
 
@@ -89,38 +95,43 @@ void Renderer::start_recording(vk::CommandBuffer command_buffer, vk::Image swapc
         vk::PipelineStageFlagBits::eRayTracingShaderKHR,
         vk::PipelineStageFlagBits::eTransfer,
         {}, {}, {},
-        vk::ImageMemoryBarrier()
-        .setOldLayout(vk::ImageLayout::eGeneral)
-        .setNewLayout(vk::ImageLayout::eTransferSrcOptimal)
-        .setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-        .setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-        .setImage(storage_images[swapchain_id].image)
-        .setSrcAccessMask(vk::AccessFlagBits::eShaderWrite)
-        .setDstAccessMask(vk::AccessFlagBits::eTransferRead)
-        .setSubresourceRange(vk::ImageSubresourceRange()
-            .setLevelCount(1u)
-            .setLayerCount(1)
-            .setBaseArrayLayer(0)
-            .setBaseMipLevel(0)
-            .setAspectMask(vk::ImageAspectFlagBits::eColor)));
+        vk::ImageMemoryBarrier{
+            .srcAccessMask = vk::AccessFlagBits::eShaderWrite,
+            .dstAccessMask = vk::AccessFlagBits::eTransferRead,
+            .oldLayout = vk::ImageLayout::eGeneral,
+            .newLayout = vk::ImageLayout::eTransferSrcOptimal,
+            .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .image = storage_images[swapchain_id].image,
+            .subresourceRange = /*vk::ImageSubresourceRange*/ {
+                .aspectMask = vk::ImageAspectFlagBits::eColor,
+                .baseMipLevel = 0,
+                .levelCount = 1u,
+                .baseArrayLayer = 0,
+                .layerCount = 1
+            }
+        });
 
     command_buffer.copyImage(
         storage_images[swapchain_id].image, vk::ImageLayout::eTransferSrcOptimal,
         swapchain_image, vk::ImageLayout::eTransferDstOptimal,
-        vk::ImageCopy()
-        .setSrcOffset(vk::Offset3D(0, 0, 0))
-        .setSrcSubresource(vk::ImageSubresourceLayers()
-            .setAspectMask(vk::ImageAspectFlagBits::eColor)
-            .setMipLevel(0u)
-            .setLayerCount(1u)
-            .setBaseArrayLayer(0u))
-        .setDstOffset(vk::Offset3D(0, 0, 0))
-        .setDstSubresource(vk::ImageSubresourceLayers()
-            .setAspectMask(vk::ImageAspectFlagBits::eColor)
-            .setMipLevel(0u)
-            .setLayerCount(1u)
-            .setBaseArrayLayer(0u))
-        .setExtent(vk::Extent3D(extent, 1u))
+        vk::ImageCopy{
+            .srcSubresource = /*vk::ImageSubresourceLayers*/{
+                .aspectMask = vk::ImageAspectFlagBits::eColor,
+                .mipLevel = 0u,
+                .baseArrayLayer = 0u,
+                .layerCount = 1u
+            },
+            .srcOffset = { 0, 0, 0 },
+            .dstSubresource = /*vk::ImageSubresourceLayers*/{
+                .aspectMask = vk::ImageAspectFlagBits::eColor,
+                .mipLevel = 0u,
+                .baseArrayLayer = 0u,
+                .layerCount = 1u
+            },
+            .dstOffset = { 0, 0, 0 },
+            .extent = { extent.width, extent.height, 1u }
+        }
     );
 }
 
@@ -131,40 +142,44 @@ void Renderer::end_recording(vk::CommandBuffer command_buffer, vk::Image swapcha
         vk::PipelineStageFlagBits::eTransfer,
         vk::PipelineStageFlagBits::eRayTracingShaderKHR,
         {}, {}, {},
-        vk::ImageMemoryBarrier()
-        .setOldLayout(vk::ImageLayout::eTransferSrcOptimal)
-        .setNewLayout(vk::ImageLayout::eGeneral)
-        .setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-        .setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-        .setImage(storage_images[swapchain_id].image)
-        .setSrcAccessMask(vk::AccessFlagBits::eTransferRead)
-        .setDstAccessMask(vk::AccessFlagBits::eShaderWrite)
-        .setSubresourceRange(vk::ImageSubresourceRange()
-            .setLevelCount(1u)
-            .setLayerCount(1)
-            .setBaseArrayLayer(0)
-            .setBaseMipLevel(0)
-            .setAspectMask(vk::ImageAspectFlagBits::eColor)));
-    //  Swapchain to present
+        vk::ImageMemoryBarrier{
+            .srcAccessMask = vk::AccessFlagBits::eTransferRead,
+            .dstAccessMask = vk::AccessFlagBits::eShaderWrite,
+            .oldLayout = vk::ImageLayout::eTransferSrcOptimal,
+            .newLayout = vk::ImageLayout::eGeneral,
+            .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .image = storage_images[swapchain_id].image,
+            .subresourceRange = /*vk::ImageSubresourceRange*/{
+                .aspectMask = vk::ImageAspectFlagBits::eColor,
+                .baseMipLevel = 0,
+                .levelCount = 1u,
+                .baseArrayLayer = 0,
+                .layerCount = 1
+            }
+        });
+    //  Swapchain to attachment optiomal
     command_buffer.pipelineBarrier(
         vk::PipelineStageFlagBits::eTransfer,
         vk::PipelineStageFlagBits::eBottomOfPipe,
         //vk::PipelineStageFlagBits::eAllCommands,
         {}, {}, {},
-        vk::ImageMemoryBarrier()
-        .setOldLayout(vk::ImageLayout::eTransferDstOptimal)
-        .setNewLayout(vk::ImageLayout::eColorAttachmentOptimal)
-        .setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-        .setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-        .setImage(swapchain_image)
-        .setSrcAccessMask(vk::AccessFlagBits::eTransferWrite)
-        .setDstAccessMask({})
-        .setSubresourceRange(vk::ImageSubresourceRange()
-            .setLevelCount(1u)
-            .setLayerCount(1)
-            .setBaseArrayLayer(0)
-            .setBaseMipLevel(0)
-            .setAspectMask(vk::ImageAspectFlagBits::eColor)));
+        vk::ImageMemoryBarrier{
+            .srcAccessMask = vk::AccessFlagBits::eTransferWrite,
+            .dstAccessMask = {},
+            .oldLayout = vk::ImageLayout::eTransferDstOptimal,
+            .newLayout = vk::ImageLayout::eColorAttachmentOptimal,
+            .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .image = swapchain_image,
+            .subresourceRange = /*vk::ImageSubresourceRange*/{
+                .aspectMask = vk::ImageAspectFlagBits::eColor,
+                .baseMipLevel = 0,
+                .levelCount = 1u,
+                .baseArrayLayer = 0,
+                .layerCount = 1
+            }
+        });
 }
 
 void Renderer::create_uniforms(Context& context, uint32_t swapchain_size)
@@ -172,9 +187,10 @@ void Renderer::create_uniforms(Context& context, uint32_t swapchain_size)
     m_scene_uniforms.reserve(swapchain_size);
     for (uint32_t i = 0u; i < swapchain_size; i++) {
         m_scene_uniforms.emplace_back(
-             vk::BufferCreateInfo()
-                 .setSize(sizeof(Scene_global))
-                 .setUsage(vk::BufferUsageFlagBits::eUniformBuffer | vk::BufferUsageFlagBits::eRayTracingKHR),
+            vk::BufferCreateInfo{
+                .size = sizeof(Scene_global),
+                .usage = vk::BufferUsageFlagBits::eUniformBuffer | vk::BufferUsageFlagBits::eRayTracingKHR
+            },
              VMA_MEMORY_USAGE_CPU_TO_GPU,
              context.device, context.allocator);
     }
@@ -254,49 +270,53 @@ void Renderer::create_storage_image(Context& context, vk::Extent2D extent, vk::F
     for (uint32_t i = 0; i < swapchain_size; i++)
     {
         storage_images.emplace_back(
-            vk::ImageCreateInfo()
-            .setImageType(vk::ImageType::e2D)
-            .setExtent(vk::Extent3D(extent, 1))
-            .setMipLevels(1u)
-            .setArrayLayers(1u)
-            .setFormat(format)
-            .setTiling(vk::ImageTiling::eOptimal)
-            .setInitialLayout(vk::ImageLayout::eUndefined)
-            .setSamples(vk::SampleCountFlagBits::e1)
-            .setSharingMode(vk::SharingMode::eExclusive)
-            .setUsage(vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eStorage),
+            vk::ImageCreateInfo{
+                .imageType = vk::ImageType::e2D,
+                .format = format,
+                .extent = {extent.width, extent.height, 1},
+                .mipLevels = 1u,
+                .arrayLayers = 1u,
+                .samples = vk::SampleCountFlagBits::e1,
+                .tiling = vk::ImageTiling::eOptimal,
+                .usage = vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eStorage,
+                .sharingMode = vk::SharingMode::eExclusive,
+                .initialLayout = vk::ImageLayout::eUndefined
+            },
             VMA_MEMORY_USAGE_GPU_ONLY,
             m_device, context.allocator);
 
-        m_image_views.push_back(m_device.createImageView(vk::ImageViewCreateInfo()
-            .setImage(storage_images.back().image)
-            .setViewType(vk::ImageViewType::e2D)
-            .setFormat(format)
-            .setSubresourceRange(vk::ImageSubresourceRange()
-                .setAspectMask(vk::ImageAspectFlagBits::eColor)
-                .setBaseMipLevel(0u)
-                .setLevelCount(1u)
-                .setBaseArrayLayer(0u)
-                .setLayerCount(1u))));
+        m_image_views.push_back(m_device.createImageView(vk::ImageViewCreateInfo{
+            .image = storage_images.back().image,
+            .viewType = vk::ImageViewType::e2D,
+            .format = format,
+            .subresourceRange = /*vk::ImageSubresourceRange*/{
+                .aspectMask = vk::ImageAspectFlagBits::eColor,
+                .baseMipLevel = 0u,
+                .levelCount = 1u,
+                .baseArrayLayer = 0u,
+                .layerCount = 1u
+        } }));
 
-        auto barrier = vk::ImageMemoryBarrier()
-            .setOldLayout(vk::ImageLayout::eUndefined)
-            .setNewLayout(vk::ImageLayout::eGeneral)
-            .setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-            .setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-            .setImage(storage_images.back().image)
-            .setSrcAccessMask({})
-            .setDstAccessMask({})
-            .setSubresourceRange(vk::ImageSubresourceRange()
-                .setLevelCount(1u)
-                .setLayerCount(1)
-                .setBaseArrayLayer(0)
-                .setBaseMipLevel(0)
-                .setAspectMask(vk::ImageAspectFlagBits::eColor));
         command_buffer.command_buffer.pipelineBarrier(
             vk::PipelineStageFlagBits::eTopOfPipe,
             vk::PipelineStageFlagBits::eRayTracingShaderKHR,
-            {}, {}, {}, barrier);
+            {}, {}, {}, 
+            vk::ImageMemoryBarrier{
+                .srcAccessMask = {},
+                .dstAccessMask = {},
+                .oldLayout = vk::ImageLayout::eUndefined,
+                .newLayout = vk::ImageLayout::eGeneral,
+                .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+                .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+                .image = storage_images.back().image,
+                .subresourceRange = /*vk::ImageSubresourceRange*/{
+                    .aspectMask = vk::ImageAspectFlagBits::eColor,
+                    .baseMipLevel = 0,
+                    .levelCount = 1u,
+                    .baseArrayLayer = 0,
+                    .layerCount = 1
+                }
+            });
     }
     command_buffer.submit_and_wait_idle();
 }

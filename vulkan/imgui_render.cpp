@@ -247,7 +247,7 @@ void Imgui_render::create_pipeline(Context& context, vk::Extent2D /*extent*/)
         .setPDynamicState(&dynamic_state)
         .setLayout(m_pipeline_layout)
         .setRenderPass(m_render_pass)
-        .setSubpass(0));
+        .setSubpass(0)).value;
 
     m_device.destroyShaderModule(vertex_module);
     m_device.destroyShaderModule(fragment_module);
@@ -256,13 +256,15 @@ void Imgui_render::create_pipeline(Context& context, vk::Extent2D /*extent*/)
 void Imgui_render::draw(ImDrawData* draw_data, vk::CommandBuffer command_buffer, size_t frame_id)
 {
     auto clear_value = vk::ClearValue().setColor(std::array<float,4>{ 0.03f, 0.03f, 0.03f, 1.0f });
-    auto renderpass_info = vk::RenderPassBeginInfo()
-        .setRenderPass(m_render_pass)
-        .setFramebuffer(m_framebuffers[frame_id])
-        .setRenderArea(vk::Rect2D({}, m_extent))
-        .setClearValueCount(1u)
-        .setPClearValues(&clear_value);
-    command_buffer.beginRenderPass(renderpass_info, vk::SubpassContents::eInline);
+    command_buffer.beginRenderPass(
+        vk::RenderPassBeginInfo{
+            .renderPass = m_render_pass,
+            .framebuffer = m_framebuffers[frame_id],
+            .renderArea = { .offset = {}, .extent = m_extent },
+            .clearValueCount = 1u,
+            .pClearValues = &clear_value 
+        },
+        vk::SubpassContents::eInline);
 
     // Avoid rendering when minimized, scale coordinates for retina displays (screen coordinates != framebuffer coordinates)
     auto fb_width = static_cast<int>(draw_data->DisplaySize.x * draw_data->FramebufferScale.x);
@@ -352,9 +354,10 @@ void Imgui_render::draw(ImDrawData* draw_data, vk::CommandBuffer command_buffer,
                         clip_rect.y = 0.0f;
 
                     // Apply scissor/clipping rectangle
-                    command_buffer.setScissor(0, vk::Rect2D()
-                        .setOffset(vk::Offset2D(static_cast<uint32_t>(clip_rect.x), static_cast<uint32_t>(clip_rect.y)))
-                        .setExtent(vk::Extent2D(static_cast<uint32_t>(clip_rect.z - clip_rect.x), static_cast<uint32_t>(clip_rect.w - clip_rect.y))));
+                    command_buffer.setScissor(0, vk::Rect2D{
+                        .offset = { static_cast<int32_t>(clip_rect.x), static_cast<int32_t>(clip_rect.y) },
+                        .extent = { static_cast<uint32_t>(clip_rect.z - clip_rect.x), static_cast<uint32_t>(clip_rect.w - clip_rect.y) }
+                    });
 
                     command_buffer.drawIndexed(pcmd->ElemCount, 1, pcmd->IdxOffset + global_idx_offset, pcmd->VtxOffset + global_vtx_offset, 0);
                 }
@@ -375,17 +378,18 @@ void Imgui_render::create_fonts_texture(Context& context)
     io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
     size_t upload_size = width * height * 4 * sizeof(char);
 
-    m_font_image = vulkan::Allocated_image(vk::ImageCreateInfo()
-        .setImageType(vk::ImageType::e2D)
-        .setExtent(vk::Extent3D(width, height, 1))
-        .setMipLevels(1u)
-        .setArrayLayers(1u)
-        .setFormat(vk::Format::eR8G8B8A8Unorm)
-        .setTiling(vk::ImageTiling::eOptimal)
-        .setInitialLayout(vk::ImageLayout::eUndefined)
-        .setSamples(vk::SampleCountFlagBits::e1)
-        .setSharingMode(vk::SharingMode::eExclusive)
-        .setUsage(vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst),
+    m_font_image = vulkan::Allocated_image(vk::ImageCreateInfo{
+            .imageType = vk::ImageType::e2D,
+            .format = vk::Format::eR8G8B8A8Unorm,
+            .extent = { static_cast<uint32_t>(width), static_cast<uint32_t>(height), 1 },
+            .mipLevels = 1u,
+            .arrayLayers = 1u,
+            .samples = vk::SampleCountFlagBits::e1,
+            .tiling = vk::ImageTiling::eOptimal,
+            .usage = vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst,
+            .sharingMode = vk::SharingMode::eExclusive,
+            .initialLayout = vk::ImageLayout::eUndefined
+        },
         pixels, upload_size,
         m_device, context.allocator, context.command_pool, context.graphics_queue);
 

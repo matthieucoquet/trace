@@ -1,3 +1,4 @@
+
 #include "scene.h"
 #include "vulkan/context.h"
 
@@ -20,18 +21,18 @@ Scene::Scene(vulkan::Context& context)
         }
     }
 
-    aabbs.emplace_back(- 1.0f, - 1.0f, - 1.0f, 1.0f, 1.0f, 1.0f);
+    aabbs.emplace_back(Aabb{ -1.0f, -1.0f, -1.0f, 1.0f, 1.0f, 1.0f });
     aabbs_buffer = vulkan::Allocated_buffer(
-        vk::BufferCreateInfo()
-            .setSize(sizeof(Aabb) * aabbs.size())
-            .setUsage(vk::BufferUsageFlagBits::eShaderDeviceAddress | vk::BufferUsageFlagBits::eRayTracingKHR),
+        vk::BufferCreateInfo{
+            .size = sizeof(Aabb) * aabbs.size(),
+            .usage = vk::BufferUsageFlagBits::eShaderDeviceAddress | vk::BufferUsageFlagBits::eRayTracingKHR },
         aabbs.data(),
         context.device, context.allocator, context.command_pool, context.graphics_queue);
 
     primitives_buffer = vulkan::Allocated_buffer(
-        vk::BufferCreateInfo()
-        .setSize(sizeof(Primitive) * primitives.size())
-        .setUsage(vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eRayTracingKHR),
+        vk::BufferCreateInfo{
+            .size = sizeof(Primitive) * primitives.size(),
+            .usage = vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eRayTracingKHR },
         primitives.data(),
         context.device, context.allocator, context.command_pool, context.graphics_queue);
 }

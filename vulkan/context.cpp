@@ -61,26 +61,30 @@ void Context::init_instance(Window& window, vr::Instance& vr_instance)
         }
     }
 
-    auto debug_create_info = vk::DebugUtilsMessengerCreateInfoEXT()
-        .setMessageSeverity(/*vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose |*/ vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning | vk::DebugUtilsMessageSeverityFlagBitsEXT::eError)
-        .setMessageType(vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral | vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance | vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation)
-        .setPfnUserCallback(&debug_callback);
+    auto debug_create_info = vk::DebugUtilsMessengerCreateInfoEXT{
+        .messageSeverity = /*vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose |*/ vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning | vk::DebugUtilsMessageSeverityFlagBitsEXT::eError,
+        .messageType = vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral | vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance | vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation,
+        .pfnUserCallback = &debug_callback 
+    };
     std::array validation_features{ vk::ValidationFeatureEnableEXT::eBestPractices };
-    auto validation_features_ext = vk::ValidationFeaturesEXT()
-        .setPNext((VkDebugUtilsMessengerCreateInfoEXT*)&debug_create_info)
-        .setEnabledValidationFeatureCount(static_cast<uint32_t>(validation_features.size()))
-        .setPEnabledValidationFeatures(validation_features.data());
+    auto validation_features_ext = vk::ValidationFeaturesEXT{
+        .pNext = static_cast<vk::DebugUtilsMessengerCreateInfoEXT*>(&debug_create_info),
+        .enabledValidationFeatureCount = static_cast<uint32_t>(validation_features.size()),
+        .pEnabledValidationFeatures = validation_features.data()
+    };
 
-    auto app_info = vk::ApplicationInfo()
-        .setPApplicationName("trace")
-        .setApiVersion(VK_API_VERSION_1_2);
-    instance = vk::createInstance(vk::InstanceCreateInfo()
-        .setPApplicationInfo(&app_info)
-        .setPNext(&validation_features_ext)
-        .setPpEnabledExtensionNames(required_extensions.data())
-        .setEnabledExtensionCount(static_cast<uint32_t>(required_extensions.size()))
-        .setPpEnabledLayerNames(required_instance_layers.data())
-        .setEnabledLayerCount(static_cast<uint32_t>(required_instance_layers.size())));
+    auto app_info = vk::ApplicationInfo{
+        .pApplicationName = "trace",
+        .apiVersion = VK_API_VERSION_1_2
+    };
+    instance = vk::createInstance(vk::InstanceCreateInfo{
+        .pNext = &validation_features_ext,
+        .pApplicationInfo = &app_info,
+        .enabledLayerCount = static_cast<uint32_t>(required_instance_layers.size()),
+        .ppEnabledLayerNames = required_instance_layers.data(),
+        .enabledExtensionCount = static_cast<uint32_t>(required_extensions.size()),
+        .ppEnabledExtensionNames = required_extensions.data()
+    });
     VULKAN_HPP_DEFAULT_DISPATCHER.init(instance);
     m_debug_messenger = instance.createDebugUtilsMessengerEXT(debug_create_info);
 }
@@ -92,7 +96,9 @@ void Context::init_device(vr::Instance& vr_instance)
         VK_KHR_RAY_TRACING_EXTENSION_NAME,
         // The followings are required for VK_KHR_ray_tracing
         VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
-        VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME
+        VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME,
+        // The following is required to debug device lost
+        VK_NV_DEVICE_DIAGNOSTIC_CHECKPOINTS_EXTENSION_NAME
     };
 
     std::vector<vk::PhysicalDevice> potential_physical_devices;
@@ -129,8 +135,8 @@ void Context::init_device(vr::Instance& vr_instance)
         // Checking features
         {
             auto vulkan_12_features = vk::PhysicalDeviceVulkan12Features();
-            auto raytracing_features = vk::PhysicalDeviceRayTracingFeaturesKHR().setPNext(&vulkan_12_features);
-            auto features = vk::PhysicalDeviceFeatures2().setPNext(&raytracing_features);
+            auto raytracing_features = vk::PhysicalDeviceRayTracingFeaturesKHR{ .pNext = &vulkan_12_features };
+            auto features = vk::PhysicalDeviceFeatures2{ .pNext = &raytracing_features };
             potential_physical_device.getFeatures2(&features);
             if (!raytracing_features.rayTracing)
                 continue;
@@ -167,36 +173,43 @@ void Context::init_device(vr::Instance& vr_instance)
         // Create device now that we found a suitable gpu 
         physical_device = potential_physical_device;
         float queue_priority = 1.0f;
-        auto queue_create_info = vk::DeviceQueueCreateInfo()
-            .setQueueFamilyIndex(queue_family)
-            .setQueueCount(1u)
-            .setPQueuePriorities(&queue_priority);
+        auto queue_create_info = vk::DeviceQueueCreateInfo{
+            .queueFamilyIndex = queue_family,
+            .queueCount = 1u,
+            .pQueuePriorities = &queue_priority
+        };
 
-        auto vulkan_12_features = vk::PhysicalDeviceVulkan12Features()
-            .setBufferDeviceAddress(true)
-            .setUniformBufferStandardLayout(true)
-            .setScalarBlockLayout(true);
-        auto raytracing_features = vk::PhysicalDeviceRayTracingFeaturesKHR()
-            .setPNext(&vulkan_12_features)
-            .setRayTracing(true);
+        auto vulkan_12_features = vk::PhysicalDeviceVulkan12Features{
+            .scalarBlockLayout = true,
+            .uniformBufferStandardLayout = true,
+            .bufferDeviceAddress = true
+        };
+        auto raytracing_features = vk::PhysicalDeviceRayTracingFeaturesKHR{
+            .pNext = &vulkan_12_features,
+            .rayTracing = true
+        };
         //.setRayTracingHostAccelerationStructureCommands(true);
-        auto device_features = vk::PhysicalDeviceFeatures2()
-            .setPNext(&raytracing_features)
-            .setFeatures(vk::PhysicalDeviceFeatures()
-                .setSamplerAnisotropy(true)
-                .setShaderStorageImageMultisample(true));
-        device = physical_device.createDevice(vk::DeviceCreateInfo()
-            .setPNext(&device_features)  // Using pNext instead of pEnabledFeatures to enable raytracing
-            .setQueueCreateInfoCount(1u)
-            .setPQueueCreateInfos(&queue_create_info)
-            .setEnabledExtensionCount(static_cast<uint32_t>(required_device_extensions.size()))
-            .setPpEnabledExtensionNames(required_device_extensions.data()));
+        auto device_features = vk::PhysicalDeviceFeatures2{
+            .pNext = &raytracing_features,
+            .features = {
+                .samplerAnisotropy = true,
+                .shaderStorageImageMultisample = true
+            }
+        };
+        device = physical_device.createDevice(vk::DeviceCreateInfo{
+            .pNext = &device_features,  // Using pNext instead of pEnabledFeatures to enable raytracing
+            .queueCreateInfoCount = 1u,
+            .pQueueCreateInfos = &queue_create_info,
+            .enabledExtensionCount = static_cast<uint32_t>(required_device_extensions.size()),
+            .ppEnabledExtensionNames = required_device_extensions.data()
+        });
         VULKAN_HPP_DEFAULT_DISPATCHER.init(device);
 
         graphics_queue = device.getQueue(queue_family, 0u);
-        command_pool = device.createCommandPool(vk::CommandPoolCreateInfo()
-            .setQueueFamilyIndex(queue_family)
-            .setFlags(vk::CommandPoolCreateFlagBits::eResetCommandBuffer));
+        command_pool = device.createCommandPool(vk::CommandPoolCreateInfo{
+            .flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
+            .queueFamilyIndex = queue_family
+        });
         return;
     }
     throw std::runtime_error("Failed to find a suitable GPU.");
@@ -245,26 +258,26 @@ void Context::init_descriptor_pool()
     constexpr uint32_t max_swapchain_size = 4u;
     std::array pool_sizes
     {
-        vk::DescriptorPoolSize()
-            .setType(vk::DescriptorType::eAccelerationStructureKHR)
-            .setDescriptorCount(max_swapchain_size),
-        vk::DescriptorPoolSize()
-            .setType(vk::DescriptorType::eStorageImage)
-            .setDescriptorCount(max_swapchain_size),
-        vk::DescriptorPoolSize()
-            .setType(vk::DescriptorType::eStorageBuffer)
-            .setDescriptorCount(max_swapchain_size),
-        vk::DescriptorPoolSize()
-            .setType(vk::DescriptorType::eUniformBuffer)
-            .setDescriptorCount(max_swapchain_size),
-        vk::DescriptorPoolSize()
-            .setType(vk::DescriptorType::eSampler)
-            .setDescriptorCount(1)
+        vk::DescriptorPoolSize {
+            .type = vk::DescriptorType::eAccelerationStructureKHR,
+            .descriptorCount = max_swapchain_size },
+        vk::DescriptorPoolSize {
+            .type = vk::DescriptorType::eStorageImage,
+            .descriptorCount = max_swapchain_size },
+        vk::DescriptorPoolSize {
+            .type = vk::DescriptorType::eStorageBuffer,
+            .descriptorCount = max_swapchain_size },
+        vk::DescriptorPoolSize {
+            .type = vk::DescriptorType::eUniformBuffer,
+            .descriptorCount = max_swapchain_size },
+        vk::DescriptorPoolSize {
+            .type = vk::DescriptorType::eSampler,
+            .descriptorCount = 1 }
     };
-    descriptor_pool = device.createDescriptorPool(vk::DescriptorPoolCreateInfo()
-        .setPoolSizeCount(static_cast<uint32_t>(pool_sizes.size()))
-        .setPPoolSizes(pool_sizes.data())
-        .setMaxSets(max_swapchain_size));
+    descriptor_pool = device.createDescriptorPool(vk::DescriptorPoolCreateInfo{
+        .maxSets = max_swapchain_size,
+        .poolSizeCount = static_cast<uint32_t>(pool_sizes.size()),
+        .pPoolSizes = pool_sizes.data()});
 }
 
 }

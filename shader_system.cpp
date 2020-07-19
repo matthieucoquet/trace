@@ -42,6 +42,7 @@ Shader_system::Shader_system(vulkan::Context& context, Scene& scene) :
     m_device(context.device),
     m_base_directory(SHADER_SOURCE)
 {
+    m_group_compile_options.SetTargetSpirv(shaderc_spirv_version_1_5);
     for (auto& directory_entry : std::filesystem::directory_iterator(m_base_directory))
     {
         auto& path = directory_entry.path();

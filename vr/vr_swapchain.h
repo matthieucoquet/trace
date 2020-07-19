@@ -33,7 +33,10 @@ public:
 
     [[nodiscard]] uint32_t size() const noexcept { return static_cast<uint32_t>(images.size()); }
     [[nodiscard]] vk::Extent2D vk_view_extent() const {
-        return vk::Extent2D(view_extent.width, view_extent.height);
+        return vk::Extent2D{ 
+            .width = static_cast<uint32_t>(view_extent.width), 
+            .height = static_cast<uint32_t>(view_extent.height)
+        };
     }
 protected:
     vk::Device m_device;

@@ -1,6 +1,6 @@
 #include "raytracing_pipeline.h"
 #include "context.h"
-#include "scene.h"
+#include "core/scene.h"
 
 #include <fstream>
 
@@ -57,17 +57,32 @@ Raytracing_pipeline::~Raytracing_pipeline()
 
 void Raytracing_pipeline::create_shader_binding_table(Context& context, uint32_t group_count)
 {
-    uint32_t shader_binding_table_size = raytracing_properties.shaderGroupHandleSize * group_count;
+    auto find_alignement = [alignement = raytracing_properties.shaderGroupBaseAlignment](vk::DeviceSize offset) {
+        auto ret = offset % alignement;
+        return ret == 0 ? offset : offset + alignement - ret;
+    };
 
-    // Could be optimized by directly calling getRayTracingShaderGroupHandlesKHR between memory map/unmap
+    offset_miss_group = find_alignement(1u * raytracing_properties.shaderGroupHandleSize);
+    offset_hit_group = find_alignement(offset_miss_group + 1u * raytracing_properties.shaderGroupHandleSize);
+
+    auto shader_binding_table_size = raytracing_properties.shaderGroupHandleSize * group_count;
+    auto shader_binding_table_size_aligned = static_cast<uint32_t>(offset_hit_group + raytracing_properties.shaderGroupHandleSize * (group_count - 2u));
+
     std::vector<uint8_t> temp_buffer(shader_binding_table_size);
     m_device.getRayTracingShaderGroupHandlesKHR(pipeline, 0u, group_count, shader_binding_table_size, temp_buffer.data());
 
+    // Could be optimized by directly calling getRayTracingShaderGroupHandlesKHR between memory map/unmap
+    std::vector<uint8_t> temp_buffer_aligned(shader_binding_table_size_aligned, 0);
+    memcpy(temp_buffer_aligned.data(), temp_buffer.data(), raytracing_properties.shaderGroupHandleSize);
+    memcpy(temp_buffer_aligned.data() + offset_miss_group, temp_buffer.data() + raytracing_properties.shaderGroupHandleSize, raytracing_properties.shaderGroupHandleSize);
+    memcpy(temp_buffer_aligned.data() + offset_hit_group, temp_buffer.data() + 2 * raytracing_properties.shaderGroupHandleSize, 2 * raytracing_properties.shaderGroupHandleSize);
+
     shader_binding_table = Allocated_buffer(
-        vk::BufferCreateInfo()
-        .setSize(shader_binding_table_size)
-        .setUsage(vk::BufferUsageFlagBits::eRayTracingKHR),
-        temp_buffer.data(),
+        vk::BufferCreateInfo{
+            .size = shader_binding_table_size_aligned,
+            .usage = vk::BufferUsageFlagBits::eRayTracingKHR
+        },
+        temp_buffer_aligned.data(),
         context.device, context.allocator, context.command_pool, context.graphics_queue);
 }
 
@@ -131,10 +146,6 @@ void Raytracing_pipeline::create_pipeline(Context& context, Scene& scene)
         .setMaxRecursionDepth(2)).value;
 
     create_shader_binding_table(context, static_cast<uint32_t>(groups.size()));
-
-    /*for (auto& shader_stage : shader_stages) {
-        m_device.destroyShaderModule(shader_stage.module);
-    }*/
 }
 
 void Raytracing_pipeline::reload(Context& /*context*/)

@@ -133,16 +133,18 @@ Tlas::Tlas(Context& context, const Blas& blas, const Scene& scene) :
     std::vector<vk::AccelerationStructureInstanceKHR> instances{};
     for (uint32_t i = 0u; i < scene.primitives.size(); i++)
     {
-        instances.push_back(vk::AccelerationStructureInstanceKHR()
-            .setTransform(vk::TransformMatrixKHR(std::array<std::array<float, 4>, 3>{
-            std::array<float, 4>{ 1.0f, 0.0f, 0.0f, scene.primitives[i].center.x },
-                std::array<float, 4>{ 0.0f, 1.0f, 0.0f, scene.primitives[i].center.y },
-                std::array<float, 4>{ 0.0f, 0.0f, 1.0f, scene.primitives[i].center.z }
-        }))
-            .setMask(0xFF)
-            .setInstanceCustomIndex(i)
-            .setInstanceShaderBindingTableRecordOffset(static_cast<std::underlying_type_t<Object_kind>>(scene.kinds[i]))
-            .setAccelerationStructureReference(blas.structure_address));
+        instances.push_back(vk::AccelerationStructureInstanceKHR{
+            .transform = {
+                .matrix = std::array<std::array<float, 4>, 3>{
+                    std::array<float, 4>{ 1.0f, 0.0f, 0.0f, scene.primitives[i].center.x },
+                    std::array<float, 4>{ 0.0f, 1.0f, 0.0f, scene.primitives[i].center.y },
+                    std::array<float, 4>{ 0.0f, 0.0f, 1.0f, scene.primitives[i].center.z }
+            } },
+            .instanceCustomIndex = i,
+            .mask = 0xFF,
+            .instanceShaderBindingTableRecordOffset = static_cast<std::underlying_type_t<Object_kind>>(scene.kinds[i]),
+            .accelerationStructureReference = blas.structure_address
+        });
     }
 
     m_instance_buffer = Allocated_buffer(

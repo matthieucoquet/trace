@@ -187,21 +187,28 @@ void Session::draw_frame(Scene& scene, std::vector<std::unique_ptr<System>>& sys
             m_main_swapchain.swapchain.waitSwapchainImage({ .timeout = xr::Duration::infinite() });
 
             m_renderer.update_uniforms(scene, swapchain_index);
-            m_renderer.start_recording(command_buffer, m_main_swapchain.vk_images[swapchain_index], swapchain_index, m_main_swapchain.vk_view_extent());
-            m_mirror.copy(command_buffer, m_renderer.storage_images[swapchain_index].image, command_buffer_id, m_main_swapchain.vk_view_extent());
-            m_renderer.end_recording(command_buffer, m_main_swapchain.vk_images[swapchain_index], swapchain_index);
 
-            swapchain_index = m_ui_swapchain.swapchain.acquireSwapchainImage({});
-            m_ui_swapchain.swapchain.waitSwapchainImage({ .timeout = xr::Duration::infinite() });
-            ImDrawData* draw_data = ImGui::GetDrawData();
-            m_imgui_render.draw(draw_data, command_buffer, swapchain_index);
+            m_renderer.start_recording(command_buffer, m_main_swapchain.vk_images[swapchain_index], swapchain_index, m_main_swapchain.vk_view_extent());
+            //m_mirror.copy(command_buffer, m_renderer.storage_images[swapchain_index].image, command_buffer_id, m_main_swapchain.vk_view_extent());
+            /*static const char* beforeend = "before end recording";
+            command_buffer.setCheckpointNV(&beforeend);*/
+            m_renderer.end_recording(command_buffer, m_main_swapchain.vk_images[swapchain_index], swapchain_index);
+            /*static const char* beforeui = "before ui";
+            command_buffer.setCheckpointNV(&beforeui);*/
+
+            //swapchain_index = m_ui_swapchain.swapchain.acquireSwapchainImage({});
+            //m_ui_swapchain.swapchain.waitSwapchainImage({ .timeout = xr::Duration::infinite() });
+            //ImDrawData* draw_data = ImGui::GetDrawData();
+            //m_imgui_render.draw(draw_data, command_buffer, swapchain_index);
             command_buffer.end();
 
+            /*static const char* beforepresent = "before present";
+            command_buffer.setCheckpointNV(&beforepresent);*/
             m_mirror.present(command_buffer, m_command_buffers.fences[command_buffer_id], command_buffer_id);
             m_main_swapchain.swapchain.releaseSwapchainImage({});
-            m_ui_swapchain.swapchain.releaseSwapchainImage({});
+            //m_ui_swapchain.swapchain.releaseSwapchainImage({});
             layers_pointers.push_back(reinterpret_cast<xr::CompositionLayerBaseHeader*>(&composition_layer_proj));
-            layers_pointers.push_back(reinterpret_cast<xr::CompositionLayerBaseHeader*>(&composition_layer_ui));
+            //layers_pointers.push_back(reinterpret_cast<xr::CompositionLayerBaseHeader*>(&composition_layer_ui));
         }
 
 

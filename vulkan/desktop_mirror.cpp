@@ -52,25 +52,34 @@ void Desktop_mirror::copy(vk::CommandBuffer& command_buffer, vk::Image vr_image,
             .setBaseArrayLayer(0)
             .setBaseMipLevel(0)
             .setAspectMask(vk::ImageAspectFlagBits::eColor)));
-
+    std::array test{ vk::Offset3D{ 0, 0, 0 }, vk::Offset3D{ static_cast<int32_t>(extent.width), static_cast<int32_t>(extent.height), 1 } };
     command_buffer.blitImage(
         vr_image,
         vk::ImageLayout::eTransferSrcOptimal,
         m_swapchain.images[m_image_id],
         vk::ImageLayout::eTransferDstOptimal,
-        vk::ImageBlit()
-        .setSrcOffsets({ vk::Offset3D(0, 0, 0), vk::Offset3D(extent.width, extent.height, 1) })
-        .setSrcSubresource(vk::ImageSubresourceLayers()
-            .setAspectMask(vk::ImageAspectFlagBits::eColor)
-            .setMipLevel(0u)
-            .setLayerCount(1u)
-            .setBaseArrayLayer(0u))
-        .setDstOffsets({ vk::Offset3D(0, 0, 0), vk::Offset3D(m_swapchain.extent.width, m_swapchain.extent.height, 1) })
-        .setDstSubresource(vk::ImageSubresourceLayers()
-            .setAspectMask(vk::ImageAspectFlagBits::eColor)
-            .setMipLevel(0u)
-            .setLayerCount(1u)
-            .setBaseArrayLayer(0u)),
+        vk::ImageBlit{
+            .srcSubresource = /*vk::ImageSubresourceLayers*/{
+                .aspectMask = vk::ImageAspectFlagBits::eColor,
+                .mipLevel = 0u,
+                .baseArrayLayer = 0u,
+                .layerCount = 1u
+            },
+            .srcOffsets = std::array{ 
+                vk::Offset3D{ 0, 0, 0 }, 
+                vk::Offset3D{ static_cast<int32_t>(extent.width), static_cast<int32_t>(extent.height), 1 }
+            },
+            .dstSubresource = /*vk::ImageSubresourceLayers*/{
+                .aspectMask = vk::ImageAspectFlagBits::eColor,
+                .mipLevel = 0u,
+                .baseArrayLayer = 0u,
+                .layerCount = 1u
+            },
+            .dstOffsets = std::array{ 
+                vk::Offset3D{ 0, 0, 0 },
+                vk::Offset3D{ static_cast<int32_t>(m_swapchain.extent.width), static_cast<int32_t>(m_swapchain.extent.height), 1 }
+            }
+        },
         vk::Filter::eLinear
     );
 
@@ -78,37 +87,39 @@ void Desktop_mirror::copy(vk::CommandBuffer& command_buffer, vk::Image vr_image,
         vk::PipelineStageFlagBits::eTransfer,
         vk::PipelineStageFlagBits::eBottomOfPipe,
         {}, {}, {},
-        vk::ImageMemoryBarrier()
-        .setOldLayout(vk::ImageLayout::eTransferDstOptimal)
-        .setNewLayout(vk::ImageLayout::ePresentSrcKHR)
-        .setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-        .setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-        .setImage(m_swapchain.images[m_image_id])
-        .setSrcAccessMask(vk::AccessFlagBits::eTransferWrite)
-        .setDstAccessMask({})
-        .setSubresourceRange(vk::ImageSubresourceRange()
-            .setLevelCount(1u)
-            .setLayerCount(1)
-            .setBaseArrayLayer(0)
-            .setBaseMipLevel(0)
-            .setAspectMask(vk::ImageAspectFlagBits::eColor)));
+        vk::ImageMemoryBarrier{
+            .srcAccessMask = vk::AccessFlagBits::eTransferWrite,
+            .dstAccessMask = {},
+            .oldLayout = vk::ImageLayout::eTransferDstOptimal,
+            .newLayout = vk::ImageLayout::ePresentSrcKHR,
+            .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .image = m_swapchain.images[m_image_id],
+            .subresourceRange = /*vk::ImageSubresourceRange*/{
+                .aspectMask = vk::ImageAspectFlagBits::eColor,
+                .baseMipLevel = 0,
+                .levelCount = 1u,
+                .baseArrayLayer = 0,
+                .layerCount = 1
+            }
+        });
 }
 
-void Desktop_mirror::present(vk::CommandBuffer& command_buffer, vk::Fence fence, size_t current_id)
+void Desktop_mirror::present(vk::CommandBuffer& command_buffer, vk::Fence fence, size_t /*current_id*/)
 {
     vk::PipelineStageFlags wait_stages = vk::PipelineStageFlagBits::eTransfer;
     m_queue.submit(
         vk::SubmitInfo()
-        .setWaitSemaphoreCount(1)
-        .setPWaitSemaphores(&m_semaphore_available[current_id])
-        .setPWaitDstStageMask(&wait_stages)
+        //.setWaitSemaphoreCount(1)
+        //.setPWaitSemaphores(&m_semaphore_available[current_id])
+        //.setPWaitDstStageMask(&wait_stages)
         .setCommandBufferCount(1)
         .setPCommandBuffers(&command_buffer)
-        .setSignalSemaphoreCount(1)
-        .setPSignalSemaphores(&m_semaphore_finished[current_id]),
-        fence);
+        //.setSignalSemaphoreCount(1)
+        //.setPSignalSemaphores(&m_semaphore_finished[current_id]),
+        ,fence);
 
-    auto present_result = m_queue.presentKHR(vk::PresentInfoKHR()
+    /*auto present_result = m_queue.presentKHR(vk::PresentInfoKHR()
         .setWaitSemaphoreCount(1)
         .setPWaitSemaphores(&m_semaphore_finished[current_id])
         .setSwapchainCount(1)
@@ -116,7 +127,7 @@ void Desktop_mirror::present(vk::CommandBuffer& command_buffer, vk::Fence fence,
         .setPImageIndices(&m_image_id));
     if (present_result == vk::Result::eErrorOutOfDateKHR) {
         assert(false);
-    }
+    }*/
 }
 
 

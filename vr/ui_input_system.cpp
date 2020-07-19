@@ -51,7 +51,7 @@ void Ui_input_system::step(Scene& /*scene*/, xr::Session session, xr::Time /*dis
             .subactionPath = m_hand_subaction_paths[i] });
         if (select_state.isActive) {
             pushed |= select_state.currentState == XR_TRUE;
-            fmt::print("pushed\n");
+            //fmt::print("pushed\n");
         }
     }
 }

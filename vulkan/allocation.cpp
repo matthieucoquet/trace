@@ -52,7 +52,7 @@ Allocated_buffer::Allocated_buffer(vk::BufferCreateInfo buffer_info, const void*
     allocate(allocator, VMA_MEMORY_USAGE_GPU_ONLY, buffer_info);
 
     One_time_command_buffer command_buffer(device, command_pool, queue);
-    command_buffer.command_buffer.copyBuffer(staged_buffer.buffer, buffer, vk::BufferCopy(0, 0, buffer_info.size));
+    command_buffer.command_buffer.copyBuffer(staged_buffer.buffer, buffer, vk::BufferCopy{ .srcOffset = 0, .dstOffset = 0, .size = buffer_info.size });
     command_buffer.submit_and_wait_idle();
 }
 
