@@ -2,6 +2,7 @@ struct Pose
 {
     vec4 rotation;
     vec3 position;
+    float padding;
 };
 
 struct Fov
@@ -34,4 +35,5 @@ struct Ray
 struct Primitive
 {
     vec3 center;
+    float padding;
 };

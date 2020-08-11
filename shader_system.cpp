@@ -42,6 +42,8 @@ Shader_system::Shader_system(vulkan::Context& context, Scene& scene) :
     m_device(context.device),
     m_base_directory(SHADER_SOURCE)
 {
+    //m_group_compile_options.SetOptimizationLevel(shaderc_optimization_level_zero);
+    m_group_compile_options.SetWarningsAsErrors();
     m_group_compile_options.SetTargetSpirv(shaderc_spirv_version_1_5);
     for (auto& directory_entry : std::filesystem::directory_iterator(m_base_directory))
     {
@@ -58,8 +60,10 @@ Shader_system::Shader_system(vulkan::Context& context, Scene& scene) :
         assert(file_it != scene.shader_files.cend());
         return std::distance(scene.shader_files.cbegin(), file_it);
     };
-    scene.raygen_shader.shader_file_id = find_file("raygen.rgen");
-    compile(scene, scene.raygen_shader, shaderc_raygen_shader);
+    scene.raygen_center_shader.shader_file_id = find_file("raygen.rgen");
+    compile(scene, scene.raygen_center_shader, shaderc_raygen_shader);
+    scene.raygen_side_shader.shader_file_id = find_file("raygen_side.rgen");
+    compile(scene, scene.raygen_side_shader, shaderc_raygen_shader);
     scene.miss_shader.shader_file_id = find_file("miss.rmiss");
     compile(scene, scene.miss_shader, shaderc_miss_shader);
 
@@ -78,7 +82,8 @@ void Shader_system::step(Scene& /*scene*/)
 
 void Shader_system::cleanup(Scene& scene)
 {
-    m_device.destroyShaderModule(scene.raygen_shader.shader_module);
+    m_device.destroyShaderModule(scene.raygen_center_shader.shader_module);
+    m_device.destroyShaderModule(scene.raygen_side_shader.shader_module);
     m_device.destroyShaderModule(scene.miss_shader.shader_module);
     for (auto& entity : scene.entities) {
         m_device.destroyShaderModule(entity.intersection.shader_module);

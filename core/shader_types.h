@@ -17,12 +17,14 @@ enum class Object_kind : unsigned int
 struct Primitive
 {
     glm::vec3 center;
+    float padding;
 };
 
 // TODO use push constant
 struct Eye
 {
     xr::Posef pose = {};
+    float padding = {};
     xr::Fovf fov = {};
 };
 

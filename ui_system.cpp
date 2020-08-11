@@ -11,7 +11,7 @@ Ui_system::Ui_system()
 void Ui_system::step(Scene& scene)
 {
     if (!m_selected_shader) {
-        m_selected_shader = &scene.raygen_shader;
+        m_selected_shader = &scene.raygen_center_shader;
     }
     // imgui input should be done before this call
     ImGui::NewFrame();
@@ -29,7 +29,8 @@ void Ui_system::step(Scene& scene)
 
     if (ImGui::TreeNodeEx("Scene", ImGuiTreeNodeFlags_DefaultOpen))
     {
-        add_leaf("Raygen", &scene.raygen_shader);
+        add_leaf("Raygen", &scene.raygen_center_shader);
+        add_leaf("Raygen", &scene.raygen_side_shader);
         add_leaf("Miss", &scene.miss_shader);
 
         for (auto& entity: scene.entities)

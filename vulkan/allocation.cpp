@@ -80,6 +80,7 @@ void Allocated_buffer::copy(const void* data, size_t size)
     void* mapped;
     vmaMapMemory(m_allocator, m_allocation, &mapped);
     memcpy(mapped, data, size);
+    vmaFlushAllocation(m_allocator, m_allocation, 0, VK_WHOLE_SIZE);
     vmaUnmapMemory(m_allocator, m_allocation);
 }
 

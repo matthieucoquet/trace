@@ -66,19 +66,21 @@ void Context::init_instance(Window& window, vr::Instance& vr_instance)
         .messageType = vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral | vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance | vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation,
         .pfnUserCallback = &debug_callback 
     };
-    std::array validation_features{ vk::ValidationFeatureEnableEXT::eBestPractices };
+    /*std::array validation_features{ /*vk::ValidationFeatureEnableEXT::eBestPractices,* / vk::ValidationFeatureEnableEXT::eGpuAssistedReserveBindingSlot };
     auto validation_features_ext = vk::ValidationFeaturesEXT{
         .pNext = static_cast<vk::DebugUtilsMessengerCreateInfoEXT*>(&debug_create_info),
         .enabledValidationFeatureCount = static_cast<uint32_t>(validation_features.size()),
         .pEnabledValidationFeatures = validation_features.data()
-    };
+    };*/
 
     auto app_info = vk::ApplicationInfo{
         .pApplicationName = "trace",
         .apiVersion = VK_API_VERSION_1_2
     };
+
     instance = vk::createInstance(vk::InstanceCreateInfo{
-        .pNext = &validation_features_ext,
+        .pNext = &debug_create_info,
+        //.pNext = &validation_features_ext,
         .pApplicationInfo = &app_info,
         .enabledLayerCount = static_cast<uint32_t>(required_instance_layers.size()),
         .ppEnabledLayerNames = required_instance_layers.data(),

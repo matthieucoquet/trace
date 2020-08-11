@@ -18,6 +18,7 @@ public:
     vk::PhysicalDeviceRayTracingPropertiesKHR raytracing_properties;
     vk::DescriptorSetLayout descriptor_set_layout;
     Allocated_buffer shader_binding_table{};
+    vk::DeviceSize offset_raygen_side_group;
     vk::DeviceSize offset_miss_group;
     vk::DeviceSize offset_hit_group;
 

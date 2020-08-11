@@ -23,7 +23,8 @@ public:
     vulkan::Allocated_buffer primitives_buffer;
 
     std::vector<Shader_file> shader_files;
-    Shader raygen_shader;
+    Shader raygen_side_shader;
+    Shader raygen_center_shader;
     Shader miss_shader;
     std::vector<Shader_group> entities;
 

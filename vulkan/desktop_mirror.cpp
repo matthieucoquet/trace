@@ -26,6 +26,7 @@ void Desktop_mirror::copy(vk::CommandBuffer& command_buffer, vk::Image vr_image,
 {
     auto acquire_result = m_device.acquireNextImageKHR(m_swapchain.swapchain, 0, m_semaphore_available[current_id], {});
     if (acquire_result.result == vk::Result::eErrorOutOfDateKHR) {
+        fmt::print("Out of date acquire.\n");
         assert(false);
     }
     if (acquire_result.result == vk::Result::eTimeout) {
@@ -52,7 +53,7 @@ void Desktop_mirror::copy(vk::CommandBuffer& command_buffer, vk::Image vr_image,
             .setBaseArrayLayer(0)
             .setBaseMipLevel(0)
             .setAspectMask(vk::ImageAspectFlagBits::eColor)));
-    std::array test{ vk::Offset3D{ 0, 0, 0 }, vk::Offset3D{ static_cast<int32_t>(extent.width), static_cast<int32_t>(extent.height), 1 } };
+
     command_buffer.blitImage(
         vr_image,
         vk::ImageLayout::eTransferSrcOptimal,
@@ -105,21 +106,21 @@ void Desktop_mirror::copy(vk::CommandBuffer& command_buffer, vk::Image vr_image,
         });
 }
 
-void Desktop_mirror::present(vk::CommandBuffer& command_buffer, vk::Fence fence, size_t /*current_id*/)
+void Desktop_mirror::present(vk::CommandBuffer& command_buffer, vk::Fence fence, size_t current_id)
 {
     vk::PipelineStageFlags wait_stages = vk::PipelineStageFlagBits::eTransfer;
     m_queue.submit(
         vk::SubmitInfo()
-        //.setWaitSemaphoreCount(1)
-        //.setPWaitSemaphores(&m_semaphore_available[current_id])
-        //.setPWaitDstStageMask(&wait_stages)
+        .setWaitSemaphoreCount(1)
+        .setPWaitSemaphores(&m_semaphore_available[current_id])
+        .setPWaitDstStageMask(&wait_stages)
         .setCommandBufferCount(1)
         .setPCommandBuffers(&command_buffer)
-        //.setSignalSemaphoreCount(1)
-        //.setPSignalSemaphores(&m_semaphore_finished[current_id]),
-        ,fence);
+        .setSignalSemaphoreCount(1)
+        .setPSignalSemaphores(&m_semaphore_finished[current_id]),
+        fence);
 
-    /*auto present_result = m_queue.presentKHR(vk::PresentInfoKHR()
+    auto present_result = m_queue.presentKHR(vk::PresentInfoKHR()
         .setWaitSemaphoreCount(1)
         .setPWaitSemaphores(&m_semaphore_finished[current_id])
         .setSwapchainCount(1)
@@ -127,7 +128,8 @@ void Desktop_mirror::present(vk::CommandBuffer& command_buffer, vk::Fence fence,
         .setPImageIndices(&m_image_id));
     if (present_result == vk::Result::eErrorOutOfDateKHR) {
         assert(false);
-    }*/
+    }
+    //m_device.waitForFences(fence, true, std::numeric_limits<uint64_t>::max());
 }
 
 

@@ -9,17 +9,16 @@ layout(binding = 1, set = 0, rgba8) uniform image2D image;
 
 layout(location = 0) rayPayloadEXT vec3 hit_value;
 
-#define LOW_SIZE 1
-#define SIZE_RATIO 2.0
+#define LOW_SIZE 4
 //#define HIGH_ANGLE 0.5
 
 vec3 get_direction(vec2 center, Eye eye, bool is_right)
 {
-    vec2 pixel_uv = center / (SIZE_RATIO * vec2(gl_LaunchSizeEXT.xy));
+    vec2 pixel_uv = center / (LOW_SIZE * vec2(gl_LaunchSizeEXT.xy));
     pixel_uv.x = pixel_uv.x * 2;
     pixel_uv.x = is_right ? pixel_uv.x - 1.0 : pixel_uv.x;
-    return vec3(tan(eye.fov.left) + (pixel_uv.x) * (tan(eye.fov.right) - tan(eye.fov.left)),
-        tan(eye.fov.up) + (pixel_uv.y) * (tan(eye.fov.down) - tan(eye.fov.up)),
+    return vec3(tan(eye.fov.left) + pixel_uv.x * (tan(eye.fov.right) - tan(eye.fov.left)),
+        tan(eye.fov.up) + pixel_uv.y * (tan(eye.fov.down) - tan(eye.fov.up)),
         -1.0);
 }
 
@@ -46,14 +45,25 @@ void main()
     if (is_right) {
         eye = scene_global.right;
     }
-    
-    uvec2 offset = uvec2(gl_LaunchSizeEXT.xy);
-    offset.y = offset.y / 2;
-    offset.x = (offset.x / 4) * (is_right ? 3 : 1);
-    const vec2 center = vec2(gl_LaunchIDEXT.xy) + vec2(0.5) + vec2(offset);
 
-    vec3 direction = get_direction(center, eye, is_right);
-    hit_value = vec3(0.0, 0.0, 0.0);
+    if (LOW_SIZE * gl_LaunchIDEXT.y > gl_LaunchSizeEXT.y && LOW_SIZE * gl_LaunchIDEXT.y < 3 * gl_LaunchSizeEXT.y)
+    {
+        uint check = LOW_SIZE * gl_LaunchIDEXT.x;
+        //check = is_right ? (check - 2 * gl_LaunchSizeEXT.x) : check;
+        check = check % (2 * gl_LaunchSizeEXT.x);
+        uint t = gl_LaunchSizeEXT.x / 2;
+        if (check >= 2* t && check < 1548/*&& check < 3 * t*/) {
+            return;
+        }
+    }
+    const vec2 group_center = LOW_SIZE * (vec2(gl_LaunchIDEXT.xy) + vec2(0.5));
+    vec3 direction = get_direction(group_center, eye, is_right);
+
     vec3 color = shoot_ray(direction, eye);
-    imageStore(image, ivec2(gl_LaunchIDEXT.xy + offset), vec4(color, 0.0));
+    for (int i = 0; i < LOW_SIZE; i++){
+        for (int j = 0; j < LOW_SIZE; j++){
+            ivec2 offset = ivec2(i , j);
+            imageStore(image, ivec2(LOW_SIZE * gl_LaunchIDEXT.xy) + offset, vec4(color, 0.0));
+        }
+    }
 }

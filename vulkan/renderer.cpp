@@ -27,21 +27,27 @@ void Renderer::start_recording(vk::CommandBuffer command_buffer, vk::Image swapc
 {
     command_buffer.begin({ .flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit });
 
-    vk::StridedBufferRegionKHR raygen_shader_entry {
+    vk::StridedBufferRegionKHR raygen_shader_center_entry{
         .buffer = m_pipeline.shader_binding_table.buffer,
         .offset = 0u,
         .stride = m_pipeline.raytracing_properties.shaderGroupHandleSize,
         .size = m_pipeline.raytracing_properties.shaderGroupHandleSize,
     };
+    vk::StridedBufferRegionKHR raygen_shader_side_entry{
+        .buffer = m_pipeline.shader_binding_table.buffer,
+        .offset = m_pipeline.offset_raygen_side_group,
+        .stride = m_pipeline.raytracing_properties.shaderGroupHandleSize,
+        .size = m_pipeline.raytracing_properties.shaderGroupHandleSize,
+    };
 
-    vk::StridedBufferRegionKHR miss_shader_entry {
+    vk::StridedBufferRegionKHR miss_shader_entry{
         .buffer = m_pipeline.shader_binding_table.buffer,
         .offset = m_pipeline.offset_miss_group,
         .stride = m_pipeline.raytracing_properties.shaderGroupHandleSize,
         .size = m_pipeline.raytracing_properties.shaderGroupHandleSize
     };
 
-    vk::StridedBufferRegionKHR hit_shader_entry {
+    vk::StridedBufferRegionKHR hit_shader_entry{
         .buffer = m_pipeline.shader_binding_table.buffer,
         .offset = m_pipeline.offset_hit_group,
         .stride = m_pipeline.raytracing_properties.shaderGroupHandleSize,
@@ -51,8 +57,8 @@ void Renderer::start_recording(vk::CommandBuffer command_buffer, vk::Image swapc
     vk::StridedBufferRegionKHR callable_shader_entry{};
 
     command_buffer.bindPipeline(vk::PipelineBindPoint::eRayTracingKHR, m_pipeline.pipeline);
-    static const char* before = "before start recording";
-    command_buffer.setCheckpointNV(&before);
+    /*static const char* before = "before start recording";
+    command_buffer.setCheckpointNV(&before);*/
     command_buffer.bindDescriptorSets(vk::PipelineBindPoint::eRayTracingKHR, m_pipeline.pipeline_layout, 0, m_descriptor_sets[swapchain_id], {});
 
     //  Swapchain to dst
@@ -78,11 +84,20 @@ void Renderer::start_recording(vk::CommandBuffer command_buffer, vk::Image swapc
         });
 
     extent.width *= 2;
-    assert(extent.width % 4 == 0);
+    assert(extent.width % 8 == 0);
     assert(extent.height % 4 == 0);
 
+    /*command_buffer.traceRaysKHR(
+        &raygen_shader_center_entry,
+        &miss_shader_entry,
+        &hit_shader_entry,
+        &callable_shader_entry,
+        extent.width / 2,
+        extent.height / 2,
+        1u);*/
+
     command_buffer.traceRaysKHR(
-        &raygen_shader_entry,
+        &raygen_shader_side_entry,
         &miss_shader_entry,
         &hit_shader_entry,
         &callable_shader_entry,
@@ -94,6 +109,7 @@ void Renderer::start_recording(vk::CommandBuffer command_buffer, vk::Image swapc
     command_buffer.pipelineBarrier(
         vk::PipelineStageFlagBits::eRayTracingShaderKHR,
         vk::PipelineStageFlagBits::eTransfer,
+        //vk::PipelineStageFlagBits::eAllCommands,
         {}, {}, {},
         vk::ImageMemoryBarrier{
             .srcAccessMask = vk::AccessFlagBits::eShaderWrite,
@@ -139,7 +155,9 @@ void Renderer::end_recording(vk::CommandBuffer command_buffer, vk::Image swapcha
 {
     //  Img to storage
     command_buffer.pipelineBarrier(
+        //vk::PipelineStageFlagBits::eAllCommands,
         vk::PipelineStageFlagBits::eTransfer,
+        //vk::PipelineStageFlagBits::eBottomOfPipe,
         vk::PipelineStageFlagBits::eRayTracingShaderKHR,
         {}, {}, {},
         vk::ImageMemoryBarrier{
@@ -161,13 +179,16 @@ void Renderer::end_recording(vk::CommandBuffer command_buffer, vk::Image swapcha
     //  Swapchain to attachment optiomal
     command_buffer.pipelineBarrier(
         vk::PipelineStageFlagBits::eTransfer,
+        //vk::PipelineStageFlagBits::eTopOfPipe,
         vk::PipelineStageFlagBits::eBottomOfPipe,
         //vk::PipelineStageFlagBits::eAllCommands,
         {}, {}, {},
         vk::ImageMemoryBarrier{
             .srcAccessMask = vk::AccessFlagBits::eTransferWrite,
+            //.srcAccessMask = {},
             .dstAccessMask = {},
             .oldLayout = vk::ImageLayout::eTransferDstOptimal,
+            //.oldLayout = vk::ImageLayout::eUndefined,
             .newLayout = vk::ImageLayout::eColorAttachmentOptimal,
             .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
             .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
@@ -264,8 +285,8 @@ void Renderer::create_descriptor_sets(const Scene& scene, vk::DescriptorPool des
 
 void Renderer::create_storage_image(Context& context, vk::Extent2D extent, vk::Format format, uint32_t swapchain_size)
 {
-    m_scene_uniforms.reserve(swapchain_size);
-    m_scene_uniforms.reserve(swapchain_size);
+    m_image_views.reserve(swapchain_size);
+    storage_images.reserve(swapchain_size);
     One_time_command_buffer command_buffer(m_device, context.command_pool, context.graphics_queue);
     for (uint32_t i = 0; i < swapchain_size; i++)
     {

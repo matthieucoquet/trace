@@ -74,8 +74,8 @@ Session::Session(xr::Session new_session, Instance& instance, vulkan::Context& c
                 },
                 .imageArrayIndex = 0u
             },
-        .pose = /*xr::Posef*/{.position = {0.2f, 1.0f, -0.2f } },
-        .size = /*xr::Extent2Df*/{ .width = 0.2f, .height = 0.2f }
+        .pose = /*xr::Posef*/{.position = {0.5f, 1.5f, -0.5f } },
+        .size = /*xr::Extent2Df*/{ .width = 0.4f, .height = 0.4f }
     };
 
     m_input_systems.emplace_back(std::make_unique<Main_input_system>(instance.instance, session, m_action_sets));
@@ -125,6 +125,7 @@ void Session::poll_events(xr::Instance instance)
             if constexpr (verbose) {
                 fmt::print("Event: interaction profile changed.");
             }
+            reinterpret_cast<xr::EventDataInteractionProfileChanged&>(data_buffer);
             break;
         }
         case xr::StructureType::EventDataReferenceSpaceChangePending: {
@@ -172,6 +173,11 @@ void Session::draw_frame(Scene& scene, std::vector<std::unique_ptr<System>>& sys
                     .space = m_stage_space },
                     &(view_state.operator XrViewState & ())
                     );
+            /*fmt::print("OrientationValid {} - PositionValid {} - OrientationTracked {} - PositionTracked {}\n", 
+                (bool)(view_state.viewStateFlags ^ xr::ViewStateFlagBits::OrientationValid),
+                (bool)(view_state.viewStateFlags ^ xr::ViewStateFlagBits::PositionValid),
+                (bool)(view_state.viewStateFlags ^ xr::ViewStateFlagBits::OrientationTracked),
+                (bool)(view_state.viewStateFlags ^ xr::ViewStateFlagBits::PositionTracked));*/
             // TODO check view_state
             for (size_t eye_id = 0u; eye_id < 2u; eye_id++)
             {
@@ -189,26 +195,27 @@ void Session::draw_frame(Scene& scene, std::vector<std::unique_ptr<System>>& sys
             m_renderer.update_uniforms(scene, swapchain_index);
 
             m_renderer.start_recording(command_buffer, m_main_swapchain.vk_images[swapchain_index], swapchain_index, m_main_swapchain.vk_view_extent());
-            //m_mirror.copy(command_buffer, m_renderer.storage_images[swapchain_index].image, command_buffer_id, m_main_swapchain.vk_view_extent());
+            m_mirror.copy(command_buffer, m_renderer.storage_images[swapchain_index].image, command_buffer_id, m_main_swapchain.vk_view_extent());
             /*static const char* beforeend = "before end recording";
             command_buffer.setCheckpointNV(&beforeend);*/
             m_renderer.end_recording(command_buffer, m_main_swapchain.vk_images[swapchain_index], swapchain_index);
             /*static const char* beforeui = "before ui";
             command_buffer.setCheckpointNV(&beforeui);*/
 
-            //swapchain_index = m_ui_swapchain.swapchain.acquireSwapchainImage({});
-            //m_ui_swapchain.swapchain.waitSwapchainImage({ .timeout = xr::Duration::infinite() });
-            //ImDrawData* draw_data = ImGui::GetDrawData();
-            //m_imgui_render.draw(draw_data, command_buffer, swapchain_index);
+            swapchain_index = m_ui_swapchain.swapchain.acquireSwapchainImage({});
+            m_ui_swapchain.swapchain.waitSwapchainImage({ .timeout = xr::Duration::infinite() });
+            ImDrawData* draw_data = ImGui::GetDrawData();
+            m_imgui_render.draw(draw_data, command_buffer, swapchain_index);
             command_buffer.end();
 
             /*static const char* beforepresent = "before present";
             command_buffer.setCheckpointNV(&beforepresent);*/
             m_mirror.present(command_buffer, m_command_buffers.fences[command_buffer_id], command_buffer_id);
+                        
             m_main_swapchain.swapchain.releaseSwapchainImage({});
-            //m_ui_swapchain.swapchain.releaseSwapchainImage({});
+            m_ui_swapchain.swapchain.releaseSwapchainImage({});
             layers_pointers.push_back(reinterpret_cast<xr::CompositionLayerBaseHeader*>(&composition_layer_proj));
-            //layers_pointers.push_back(reinterpret_cast<xr::CompositionLayerBaseHeader*>(&composition_layer_ui));
+            layers_pointers.push_back(reinterpret_cast<xr::CompositionLayerBaseHeader*>(&composition_layer_ui));
         }
 
 
