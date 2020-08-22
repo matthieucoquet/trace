@@ -42,8 +42,9 @@ Shader_system::Shader_system(vulkan::Context& context, Scene& scene) :
     m_device(context.device),
     m_base_directory(SHADER_SOURCE)
 {
-    //m_group_compile_options.SetOptimizationLevel(shaderc_optimization_level_zero);
+    m_group_compile_options.SetOptimizationLevel(shaderc_optimization_level_performance);
     m_group_compile_options.SetWarningsAsErrors();
+    m_group_compile_options.SetTargetEnvironment(shaderc_target_env_vulkan, shaderc_env_version_vulkan_1_2);
     m_group_compile_options.SetTargetSpirv(shaderc_spirv_version_1_5);
     for (auto& directory_entry : std::filesystem::directory_iterator(m_base_directory))
     {

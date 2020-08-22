@@ -208,8 +208,6 @@ void Session::draw_frame(Scene& scene, std::vector<std::unique_ptr<System>>& sys
             m_imgui_render.draw(draw_data, command_buffer, swapchain_index);
             command_buffer.end();
 
-            /*static const char* beforepresent = "before present";
-            command_buffer.setCheckpointNV(&beforepresent);*/
             m_mirror.present(command_buffer, m_command_buffers.fences[command_buffer_id], command_buffer_id);
                         
             m_main_swapchain.swapchain.releaseSwapchainImage({});

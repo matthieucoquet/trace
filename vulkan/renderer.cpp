@@ -57,8 +57,7 @@ void Renderer::start_recording(vk::CommandBuffer command_buffer, vk::Image swapc
     vk::StridedBufferRegionKHR callable_shader_entry{};
 
     command_buffer.bindPipeline(vk::PipelineBindPoint::eRayTracingKHR, m_pipeline.pipeline);
-    /*static const char* before = "before start recording";
-    command_buffer.setCheckpointNV(&before);*/
+
     command_buffer.bindDescriptorSets(vk::PipelineBindPoint::eRayTracingKHR, m_pipeline.pipeline_layout, 0, m_descriptor_sets[swapchain_id], {});
 
     //  Swapchain to dst
@@ -83,33 +82,39 @@ void Renderer::start_recording(vk::CommandBuffer command_buffer, vk::Image swapc
             }
         });
 
+    constexpr unsigned int foveated_rate = 8u;
     extent.width *= 2;
-    assert(extent.width % 8 == 0);
+    assert(extent.width % foveated_rate == 0);
     assert(extent.height % 4 == 0);
 
-    /*command_buffer.traceRaysKHR(
-        &raygen_shader_center_entry,
-        &miss_shader_entry,
-        &hit_shader_entry,
-        &callable_shader_entry,
-        extent.width / 2,
-        extent.height / 2,
-        1u);*/
 
     command_buffer.traceRaysKHR(
         &raygen_shader_side_entry,
         &miss_shader_entry,
         &hit_shader_entry,
         &callable_shader_entry,
-        extent.width / 4,
-        extent.height / 4,
+        extent.width / foveated_rate,
+        extent.height / foveated_rate,
+        1u);
+
+    command_buffer.pipelineBarrier(
+        vk::PipelineStageFlagBits::eRayTracingShaderKHR,
+        vk::PipelineStageFlagBits::eRayTracingShaderKHR,
+        {}, {}, {}, {});
+
+    command_buffer.traceRaysKHR(
+        &raygen_shader_center_entry,
+        &miss_shader_entry,
+        &hit_shader_entry,
+        &callable_shader_entry,
+        extent.width / 2,
+        extent.height / 2,
         1u);
 
     //  Img to source
     command_buffer.pipelineBarrier(
         vk::PipelineStageFlagBits::eRayTracingShaderKHR,
         vk::PipelineStageFlagBits::eTransfer,
-        //vk::PipelineStageFlagBits::eAllCommands,
         {}, {}, {},
         vk::ImageMemoryBarrier{
             .srcAccessMask = vk::AccessFlagBits::eShaderWrite,
@@ -155,9 +160,7 @@ void Renderer::end_recording(vk::CommandBuffer command_buffer, vk::Image swapcha
 {
     //  Img to storage
     command_buffer.pipelineBarrier(
-        //vk::PipelineStageFlagBits::eAllCommands,
         vk::PipelineStageFlagBits::eTransfer,
-        //vk::PipelineStageFlagBits::eBottomOfPipe,
         vk::PipelineStageFlagBits::eRayTracingShaderKHR,
         {}, {}, {},
         vk::ImageMemoryBarrier{
@@ -176,19 +179,17 @@ void Renderer::end_recording(vk::CommandBuffer command_buffer, vk::Image swapcha
                 .layerCount = 1
             }
         });
+
     //  Swapchain to attachment optiomal
     command_buffer.pipelineBarrier(
         vk::PipelineStageFlagBits::eTransfer,
-        //vk::PipelineStageFlagBits::eTopOfPipe,
         vk::PipelineStageFlagBits::eBottomOfPipe,
         //vk::PipelineStageFlagBits::eAllCommands,
         {}, {}, {},
         vk::ImageMemoryBarrier{
             .srcAccessMask = vk::AccessFlagBits::eTransferWrite,
-            //.srcAccessMask = {},
             .dstAccessMask = {},
             .oldLayout = vk::ImageLayout::eTransferDstOptimal,
-            //.oldLayout = vk::ImageLayout::eUndefined,
             .newLayout = vk::ImageLayout::eColorAttachmentOptimal,
             .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
             .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,

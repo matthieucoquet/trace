@@ -9,7 +9,7 @@ layout(binding = 1, set = 0, rgba8) uniform image2D image;
 
 layout(location = 0) rayPayloadEXT vec3 hit_value;
 
-#define LOW_SIZE 4
+#define LOW_SIZE 8
 //#define HIGH_ANGLE 0.5
 
 vec3 get_direction(vec2 center, Eye eye, bool is_right)
@@ -27,12 +27,11 @@ vec3 shoot_ray(vec3 direction, Eye eye)
     direction = direction + 2.0 * cross(eye.pose.rotation.xyz, cross(eye.pose.rotation.xyz, direction) + eye.pose.rotation.w * direction);
     direction = normalize(direction);
 
-    float tmin = 0.1;
-    float tmax = 10.0;
+    float tmin = 0.2;
+    float tmax = 12.0;
 
     hit_value = vec3(0.0, 0.2, 0.0);
     traceRayEXT(topLevelAS, gl_RayFlagsOpaqueEXT, 0xFF, 0, 0, 0, eye.pose.position, tmin, direction.xyz, tmax, 0);
-    //traceRayEXT(topLevelAS, 0, 0xFF, 0, 0, 0, eye.pose.position, tmin, direction.xyz, tmax, 0);
     vec3 result = hit_value;
     return result;
 }
@@ -46,16 +45,16 @@ void main()
         eye = scene_global.right;
     }
 
-    if (LOW_SIZE * gl_LaunchIDEXT.y > gl_LaunchSizeEXT.y && LOW_SIZE * gl_LaunchIDEXT.y < 3 * gl_LaunchSizeEXT.y)
+    /*if (LOW_SIZE * gl_LaunchIDEXT.y > gl_LaunchSizeEXT.y && LOW_SIZE * gl_LaunchIDEXT.y < 3 * gl_LaunchSizeEXT.y)
     {
         uint check = LOW_SIZE * gl_LaunchIDEXT.x;
         //check = is_right ? (check - 2 * gl_LaunchSizeEXT.x) : check;
         check = check % (2 * gl_LaunchSizeEXT.x);
         uint t = gl_LaunchSizeEXT.x / 2;
-        if (check >= 2* t && check < 1548/*&& check < 3 * t*/) {
+        if (check >= 4 * t - 10 || check < 3 * t) {
             return;
         }
-    }
+    }*/
     const vec2 group_center = LOW_SIZE * (vec2(gl_LaunchIDEXT.xy) + vec2(0.5));
     vec3 direction = get_direction(group_center, eye, is_right);
 
