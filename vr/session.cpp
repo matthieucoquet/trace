@@ -1,9 +1,9 @@
-#include "session.h"
-#include "instance.h"
-#include "vulkan/context.h"
-#include "main_input_system.h"
-#include "ui_input_system.h"
-#include "marl/scheduler.h"
+#include "session.hpp"
+#include "instance.hpp"
+#include "vulkan/context.hpp"
+#include "main_input_system.hpp"
+#include "ui_input_system.hpp"
+#include <marl/scheduler.h>
 #include <fmt/core.h>
 #include <vector>
 

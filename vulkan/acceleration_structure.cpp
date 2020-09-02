@@ -1,8 +1,8 @@
-#include "acceleration_structure.h"
-#include "context.h"
-#include "command_buffer.h"
-#include "core/scene.h"
-#include "core/shader_types.h"
+#include "acceleration_structure.hpp"
+#include "context.hpp"
+#include "command_buffer.hpp"
+#include "core/scene.hpp"
+#include "core/shader_types.hpp"
 
 #include <glm/gtx/string_cast.hpp>
 #include <fmt/core.h>

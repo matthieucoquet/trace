@@ -1,4 +1,4 @@
-#include "instance.h"
+#include "instance.hpp"
 #include <fmt/core.h>
 
 OPENXR_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE

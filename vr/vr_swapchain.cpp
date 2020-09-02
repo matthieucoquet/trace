@@ -1,7 +1,7 @@
-#include "vr_swapchain.h"
-#include "vulkan/context.h"
-#include "instance.h"
-#include "session.h"
+#include "vr_swapchain.hpp"
+#include "vulkan/context.hpp"
+#include "instance.hpp"
+#include "session.hpp"
 
 #include <algorithm>
 #include <fmt/core.h>
