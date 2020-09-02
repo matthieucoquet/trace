@@ -15,7 +15,6 @@ class Context;
 struct Per_frame
 {
     Tlas tlas;
-    Vma_buffer scene_uniform;
     Vma_buffer primitives;
     Vma_image storage_image;
     vk::ImageView image_view;
@@ -32,8 +31,6 @@ public:
     Renderer& operator=(const Renderer& other) = default;
     Renderer& operator=(Renderer&& other) = default;
     ~Renderer();
-
-    void reload_pipeline(Context& context);
 
     void update_per_frame_data(Scene& scene, uint32_t swapchain_index);
     void start_recording(vk::CommandBuffer command_buffer, Scene& scene, vk::Image swapchain_image, uint32_t swapchain_id, vk::Extent2D extent);

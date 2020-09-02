@@ -17,11 +17,9 @@ struct Primitive
     glm::mat4 world_to_model;
 };
 
-// TODO use push constant
 struct Eye
 {
     xr::Posef pose = {};
-    float padding = {};
     xr::Fovf fov = {};
 };
 

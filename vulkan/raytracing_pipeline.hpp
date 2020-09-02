@@ -28,8 +28,6 @@ public:
     Raytracing_pipeline& operator=(const Raytracing_pipeline& other) = default;
     Raytracing_pipeline& operator=(Raytracing_pipeline&& other) = default;
     ~Raytracing_pipeline();
-
-    void reload(Context& context);
 private:
     vk::Device m_device;
 

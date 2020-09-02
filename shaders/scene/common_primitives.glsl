@@ -2,7 +2,6 @@ struct Pose
 {
     vec4 rotation;
     vec3 position;
-    float padding;
 };
 
 struct Fov
@@ -19,8 +18,7 @@ struct Eye
     Fov fov;
 };
 
-layout(binding = 3, scalar) uniform Scene_global
-{
+layout(push_constant, scalar) uniform Scene_global {
     Eye left;
     Eye right;
     float time;
