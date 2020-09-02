@@ -9,6 +9,7 @@
 #include "vr/instance.h"
 #include "vr/session.h"
 
+#include <marl/scheduler.h>
 #include <memory>
 #include <optional>
 
@@ -31,6 +32,7 @@ private:
     using Time_point = std::chrono::time_point<std::chrono::steady_clock>;
     using Duration = std::chrono::duration<float, std::milli>;
 
+    marl::Scheduler m_scheduler{ marl::Scheduler::Config::allCores() };
     vr::Instance m_vr_instance;
     Window m_window;
     vulkan::Context m_context;

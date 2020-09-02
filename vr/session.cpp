@@ -3,6 +3,7 @@
 #include "vulkan/context.h"
 #include "main_input_system.h"
 #include "ui_input_system.h"
+#include "marl/scheduler.h"
 #include <fmt/core.h>
 #include <vector>
 
@@ -10,6 +11,9 @@ namespace vr
 {
 constexpr bool verbose = true;
 constexpr size_t size_command_buffers = 4u;
+
+constexpr bool standing = true;
+constexpr float offset_y_space = standing ? 0.0f : 1.7f;
 
 Session::Session(xr::Session new_session, Instance& instance, vulkan::Context& context, Scene& scene) :
     session(new_session),
@@ -29,14 +33,13 @@ Session::Session(xr::Session new_session, Instance& instance, vulkan::Context& c
         }
     }
     m_stage_space = session.createReferenceSpace(xr::ReferenceSpaceCreateInfo{
-        .referenceSpaceType = xr::ReferenceSpaceType::Stage });
+        .referenceSpaceType = standing ? xr::ReferenceSpaceType::Stage : xr::ReferenceSpaceType::Local });
 
     uint32_t size_swapchain = m_main_swapchain.size();
     auto extent = m_main_swapchain.vk_view_extent();
     extent.width *= 2;
-    m_renderer.create_storage_image(context, extent, m_main_swapchain.required_format, size_swapchain);
-    m_renderer.create_uniforms(context, size_swapchain);
-    m_renderer.create_descriptor_sets(scene, context.descriptor_pool, size_swapchain);
+    m_renderer.create_per_frame_data(context, scene, extent, m_main_swapchain.required_format, size_swapchain);
+    m_renderer.create_descriptor_sets(context.descriptor_pool, size_swapchain);
 
     for(size_t eye_id = 0u; eye_id < 2u; eye_id++)
     {
@@ -74,16 +77,25 @@ Session::Session(xr::Session new_session, Instance& instance, vulkan::Context& c
                 },
                 .imageArrayIndex = 0u
             },
-        .pose = /*xr::Posef*/{.position = {0.5f, 1.5f, -0.5f } },
+        .pose = /*xr::Posef*/{.position = { 0.f, 1.5f - offset_y_space, -0.5f } },
         .size = /*xr::Extent2Df*/{ .width = 0.4f, .height = 0.4f }
     };
 
     m_input_systems.emplace_back(std::make_unique<Main_input_system>(instance.instance, session, m_action_sets));
     m_input_systems.emplace_back(std::make_unique<Ui_input_system>(instance.instance, session, m_action_sets));
+    {
+        Suggested_binding suggested_binding(instance.instance);
+        for (auto& system : m_input_systems) {
+            system->suggest_interaction_profile(instance.instance, suggested_binding);
+        }
+    }
 
     session.attachSessionActionSets(xr::SessionActionSetsAttachInfo{ 
         .countActionSets = static_cast<uint32_t>(m_action_sets.size()), 
         .actionSets = m_action_sets.data() });
+    for (auto action_set : m_action_sets) {
+        m_active_action_sets.push_back(xr::ActiveActionSet{ .actionSet = action_set });
+    }
 }
 
 Session::~Session()
@@ -114,6 +126,7 @@ void Session::poll_events(xr::Instance instance)
             if constexpr (verbose) {
                 fmt::print("Event: lost events.");
             }
+            break;
         }
         case xr::StructureType::EventDataInstanceLossPending: {
             if constexpr (verbose) {
@@ -154,17 +167,23 @@ void Session::draw_frame(Scene& scene, std::vector<std::unique_ptr<System>>& sys
     {
         xr::FrameState frame_state = session.waitFrame({});
 
-        for (auto& system : m_input_systems) {
-            system->step(scene, session, frame_state.predictedDisplayTime);
+        if (m_session_state == xr::SessionState::Focused)
+        {
+            session.syncActions(xr::ActionsSyncInfo{
+               .countActiveActionSets = static_cast<uint32_t>(m_active_action_sets.size()),
+               .activeActionSets = m_active_action_sets.data()
+            });
+            for (auto& system : m_input_systems) {
+                system->step(scene, session, frame_state.predictedDisplayTime, m_stage_space, offset_y_space);
+            }
+            std::for_each(systems.begin(), systems.end(), [&scene](auto& system) { system->step(scene); });
         }
-        std::for_each(systems.begin(), systems.end(), [&scene](auto& system) { system->step(scene); });
 
-
-        session.beginFrame({});
-        std::vector<xr::CompositionLayerBaseHeader*> layers_pointers;
         if (frame_state.shouldRender &&
             m_session_state != xr::SessionState::Synchronized)
         {
+            session.beginFrame({});
+            std::vector<xr::CompositionLayerBaseHeader*> layers_pointers;
             xr::ViewState view_state{};
             auto views = session.locateViews(
                 xr::ViewLocateInfo{
@@ -173,14 +192,9 @@ void Session::draw_frame(Scene& scene, std::vector<std::unique_ptr<System>>& sys
                     .space = m_stage_space },
                     &(view_state.operator XrViewState & ())
                     );
-            /*fmt::print("OrientationValid {} - PositionValid {} - OrientationTracked {} - PositionTracked {}\n", 
-                (bool)(view_state.viewStateFlags ^ xr::ViewStateFlagBits::OrientationValid),
-                (bool)(view_state.viewStateFlags ^ xr::ViewStateFlagBits::PositionValid),
-                (bool)(view_state.viewStateFlags ^ xr::ViewStateFlagBits::OrientationTracked),
-                (bool)(view_state.viewStateFlags ^ xr::ViewStateFlagBits::PositionTracked));*/
-            // TODO check view_state
             for (size_t eye_id = 0u; eye_id < 2u; eye_id++)
             {
+                views[eye_id].pose.position.y += offset_y_space;
                 scene.scene_global.eyes[eye_id].pose = views[eye_id].pose;
                 scene.scene_global.eyes[eye_id].fov = views[eye_id].fov;
                 composition_layer_views[eye_id].pose = views[eye_id].pose;
@@ -192,15 +206,11 @@ void Session::draw_frame(Scene& scene, std::vector<std::unique_ptr<System>>& sys
             uint32_t swapchain_index = m_main_swapchain.swapchain.acquireSwapchainImage({});
             m_main_swapchain.swapchain.waitSwapchainImage({ .timeout = xr::Duration::infinite() });
 
-            m_renderer.update_uniforms(scene, swapchain_index);
+            m_renderer.update_per_frame_data(scene, swapchain_index);
 
-            m_renderer.start_recording(command_buffer, m_main_swapchain.vk_images[swapchain_index], swapchain_index, m_main_swapchain.vk_view_extent());
-            m_mirror.copy(command_buffer, m_renderer.storage_images[swapchain_index].image, command_buffer_id, m_main_swapchain.vk_view_extent());
-            /*static const char* beforeend = "before end recording";
-            command_buffer.setCheckpointNV(&beforeend);*/
+            m_renderer.start_recording(command_buffer, scene, m_main_swapchain.vk_images[swapchain_index], swapchain_index, m_main_swapchain.vk_view_extent());
+            m_mirror.copy(command_buffer, m_renderer.per_frame[swapchain_index].storage_image.image, command_buffer_id, m_main_swapchain.vk_view_extent());
             m_renderer.end_recording(command_buffer, m_main_swapchain.vk_images[swapchain_index], swapchain_index);
-            /*static const char* beforeui = "before ui";
-            command_buffer.setCheckpointNV(&beforeui);*/
 
             swapchain_index = m_ui_swapchain.swapchain.acquireSwapchainImage({});
             m_ui_swapchain.swapchain.waitSwapchainImage({ .timeout = xr::Duration::infinite() });
@@ -209,19 +219,27 @@ void Session::draw_frame(Scene& scene, std::vector<std::unique_ptr<System>>& sys
             command_buffer.end();
 
             m_mirror.present(command_buffer, m_command_buffers.fences[command_buffer_id], command_buffer_id);
-                        
+
             m_main_swapchain.swapchain.releaseSwapchainImage({});
             m_ui_swapchain.swapchain.releaseSwapchainImage({});
             layers_pointers.push_back(reinterpret_cast<xr::CompositionLayerBaseHeader*>(&composition_layer_proj));
             layers_pointers.push_back(reinterpret_cast<xr::CompositionLayerBaseHeader*>(&composition_layer_ui));
+            session.endFrame(xr::FrameEndInfo{
+                .displayTime = frame_state.predictedDisplayTime,
+                .environmentBlendMode = xr::EnvironmentBlendMode::Opaque,
+                .layerCount = static_cast<uint32_t>(layers_pointers.size()),
+                .layers = layers_pointers.data() });
+        }
+        else {
+            session.beginFrame({});
+            session.endFrame(xr::FrameEndInfo{
+                .displayTime = frame_state.predictedDisplayTime,
+                .environmentBlendMode = xr::EnvironmentBlendMode::Opaque,
+                .layerCount = 0u,
+                .layers = nullptr });
         }
 
 
-        session.endFrame(xr::FrameEndInfo{
-            .displayTime = frame_state.predictedDisplayTime,
-            .environmentBlendMode = xr::EnvironmentBlendMode::Opaque,
-            .layerCount = static_cast<uint32_t>(layers_pointers.size()),
-            .layers = layers_pointers.data()});
     }
 }
 

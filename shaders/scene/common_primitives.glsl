@@ -34,6 +34,5 @@ struct Ray
 
 struct Primitive
 {
-    vec3 center;
-    float padding;
+    mat4 world_to_model;
 };

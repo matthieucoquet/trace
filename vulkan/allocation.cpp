@@ -6,7 +6,7 @@ namespace vulkan
 {
 
 Allocated_buffer::Allocated_buffer(Allocated_buffer&& other) noexcept :
-    buffer(other.buffer),
+    buffer(std::move(other.buffer)),
     m_device(other.m_device),
     m_allocator(other.m_allocator),
     m_allocation(other.m_allocation)

@@ -1,5 +1,6 @@
 #include "main_input_system.h"
 #include "core/scene.h"
+#include <fmt/core.h>
 
 namespace vr
 {
@@ -22,35 +23,51 @@ Main_input_system::Main_input_system(xr::Instance instance, xr::Session session,
         .subactionPaths = m_hand_subaction_paths.data(),
         .localizedActionName = "Hand pose" });
 
-    std::array bindings { 
-        xr::ActionSuggestedBinding{ m_pose_action, instance.stringToPath("/user/hand/left/input/grip/pose") },
-        xr::ActionSuggestedBinding{ m_pose_action, instance.stringToPath("/user/hand/right/input/grip/pose") }
-    };
-    instance.suggestInteractionProfileBindings(xr::InteractionProfileSuggestedBinding{
-        .interactionProfile = instance.stringToPath("/interaction_profiles/oculus/touch_controller"),
-        .countSuggestedBindings = static_cast<uint32_t>(bindings.size()),
-        .suggestedBindings = bindings.data() });
+    m_grab_action = m_action_set.createAction(xr::ActionCreateInfo{
+        .actionName = "grab",
+        .actionType = xr::ActionType::FloatInput,
+        .countSubactionPaths = static_cast<uint32_t>(m_hand_subaction_paths.size()),
+        .subactionPaths = m_hand_subaction_paths.data(),
+        .localizedActionName = "Grab object" });
 
     m_hand_space[0] = session.createActionSpace(xr::ActionSpaceCreateInfo{ .action = m_pose_action, .subactionPath = m_hand_subaction_paths[0] });
     m_hand_space[1] = session.createActionSpace(xr::ActionSpaceCreateInfo{ .action = m_pose_action, .subactionPath = m_hand_subaction_paths[1] });
     action_sets.push_back(m_action_set);
-    //session.attachSessionActionSets(xr::SessionActionSetsAttachInfo{ .countActionSets = 1, .actionSets = &m_action_set });
-    //m_active_action_set = xr::ActiveActionSet{ .actionSet = m_action_set };
 }
 
-void Main_input_system::step(Scene& /*scene*/, xr::Session /*session*/, xr::Time /*display_time*/)
+void Main_input_system::suggest_interaction_profile(xr::Instance instance, Suggested_binding& suggested_bindings)
 {
-    //for (size_t i = 0u; i < 2u; i++)
+    suggested_bindings.suggested_binding_oculus.push_back(xr::ActionSuggestedBinding{ m_pose_action, instance.stringToPath("/user/hand/left/input/grip/pose") });
+    suggested_bindings.suggested_binding_oculus.push_back(xr::ActionSuggestedBinding{ m_pose_action, instance.stringToPath("/user/hand/right/input/grip/pose") });
+    suggested_bindings.suggested_binding_oculus.push_back(xr::ActionSuggestedBinding{ m_grab_action, instance.stringToPath("/user/hand/left/input/squeeze/value") });
+    suggested_bindings.suggested_binding_oculus.push_back(xr::ActionSuggestedBinding{ m_grab_action, instance.stringToPath("/user/hand/right/input/squeeze/value") });
+}
+
+void Main_input_system::step(Scene& scene, xr::Session session, xr::Time display_time, xr::Space base_space, float offset_space_y)
+{
+    for (size_t i = 0u; i < 2u; i++)
     {
-        // Is it better to use baseSpace ?
-        /*auto space_location = m_hand_space[i].locateSpace({}, display_time);
+        /*auto poseState =*/ session.getActionStatePose(xr::ActionStateGetInfo{ .action = m_pose_action, .subactionPath = m_hand_subaction_paths[0] });
+        //renderHand[hand] = poseState.isActive;
+
+        auto space_location = m_hand_space[i].locateSpace(base_space, display_time);
         xr::SpaceLocationFlags required_flags = 
             xr::SpaceLocationFlags{ xr::SpaceLocationFlagBits::PositionValid } | 
             xr::SpaceLocationFlags{ xr::SpaceLocationFlagBits::OrientationValid };
-        if (space_location.locationFlags & required_flags) {
+        if ((space_location.locationFlags & required_flags) == required_flags) {
+            space_location.pose.position.y += offset_space_y;
             scene.last_known_hand_pose[i] = space_location.pose;
-        }*/
+        }
+
+        xr::ActionStateFloat select_state = session.getActionStateFloat(xr::ActionStateGetInfo{
+        .action = m_grab_action.get(),
+        .subactionPath = m_hand_subaction_paths[i] });
+        if (select_state.isActive) {
+            fmt::print("Grab {} {}\n", i, select_state.currentState);
+        }
     }
+
+
 }
 
 }

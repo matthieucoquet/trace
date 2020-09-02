@@ -15,10 +15,12 @@ public:
     Main_input_system& operator=(Main_input_system&& other) = delete;
     ~Main_input_system() override final = default;
 
-    virtual void step(Scene& scene, xr::Session session, xr::Time display_time) override final;
+    void suggest_interaction_profile(xr::Instance instance, Suggested_binding& suggested_bindings) override final;
+    void step(Scene& scene, xr::Session session, xr::Time display_time, xr::Space base_space, float offset_space_y) override final;
 private:
     xr::ActionSet m_action_set;
     xr::Action m_pose_action;
+    xr::Action m_grab_action;
     xr::ActiveActionSet m_active_action_set;
     xr::BilateralPaths m_hand_subaction_paths;
 

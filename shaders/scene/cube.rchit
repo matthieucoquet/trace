@@ -21,7 +21,8 @@ void main()
     vec3 light_color = vec3(1.0, 1.0, 1.0);
   
     Primitive primitive = primitives.p[gl_InstanceID];
-    vec3 normal = normal(position - primitive.center);
+    vec3 normal_position = vec3(primitive.world_to_model * vec4(position, 1.0f));
+    vec3 normal = normal(normal_position);
     vec3 diffuse = max(dot(normal, light_dir), 0.0) * light_color;
     vec3 ambient = 0.2 * light_color;
 

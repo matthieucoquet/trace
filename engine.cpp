@@ -1,7 +1,7 @@
 #include "engine.h"
 #include "shader_system.h"
 #include "ui_system.h"
-#include "input_keyboard_system.h"
+#include "input_glfw_system.h"
 #include <fmt/core.h>
 #include <limits>
 #include <concepts>
@@ -13,12 +13,13 @@ constexpr bool vr_mode = true;
 Engine::Engine() :
     m_window(m_vr_instance.mirror_recommended_ratio()),
     m_context(m_window, m_vr_instance),
-    m_scene(m_context)
+    m_scene()
 {
+    m_scheduler.bind();
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
 
-    m_systems.push_back(std::make_unique<Input_keyboard_system>(m_window.window));
+    m_systems.push_back(std::make_unique<Input_glfw_system>(m_window.window));
     m_systems.push_back(std::make_unique<Shader_system>(m_context, m_scene));
     m_systems.push_back(std::make_unique<Ui_system>());
 
@@ -44,6 +45,7 @@ Engine::~Engine()
     m_context.device.waitIdle();
     std::ranges::for_each(m_systems, [this](auto& system) { system->cleanup(m_scene); });
     ImGui::DestroyContext();
+    m_scheduler.unbind();
 }
 
 void Engine::run()

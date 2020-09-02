@@ -3,24 +3,14 @@
 #include <chrono>
 #include "shader_types.h"
 #include "entities.h"
-#include "vulkan/allocation.h"
-
-namespace vulkan
-{
-class Context;
-}
 
 class Scene
 {
 public:
-    std::vector<Aabb> aabbs;
     std::vector<Primitive> primitives;
     std::vector<Object_kind> kinds;
 
     Scene_global scene_global = {};
-
-    vulkan::Allocated_buffer aabbs_buffer;
-    vulkan::Allocated_buffer primitives_buffer;
 
     std::vector<Shader_file> shader_files;
     Shader raygen_side_shader;
@@ -30,7 +20,7 @@ public:
 
     std::array<xr::Posef, 2> last_known_hand_pose;
 
-    Scene(vulkan::Context& context);
+    Scene();
 
     void step();
 private:

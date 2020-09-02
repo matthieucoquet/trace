@@ -6,8 +6,6 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <array>
 
-using Aabb = vk::AabbPositionsKHR;
-
 enum class Object_kind : unsigned int
 {
     sphere = 0u,
@@ -16,8 +14,7 @@ enum class Object_kind : unsigned int
 
 struct Primitive
 {
-    glm::vec3 center;
-    float padding;
+    glm::mat4 world_to_model;
 };
 
 // TODO use push constant

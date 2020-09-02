@@ -1,5 +1,6 @@
 float raymarch(in Ray ray)
 {
+    float len = length(ray.direction);
     float t = gl_RayTminEXT;
     for (int i = 0; i < 128 && t < gl_RayTmaxEXT; i++)
     {
@@ -7,7 +8,7 @@ float raymarch(in Ray ray)
         if(distance < 0.001) {
             return t;
         }
-        t += distance;
+        t += distance / len;
     }
     return -1.0f;
 }

@@ -12,11 +12,10 @@ layout(binding = 2, set = 0, scalar) buffer Primitives { Primitive p[]; } primit
 
 void main()
 {
-    Ray ray = Ray(gl_WorldRayOriginEXT, gl_WorldRayDirectionEXT);
-
     Primitive primitive = primitives.p[gl_InstanceID];
+    Ray ray = Ray(vec3(primitive.world_to_model * vec4(gl_WorldRayOriginEXT, 1.0f)), 
+                  vec3(primitive.world_to_model * vec4(gl_WorldRayDirectionEXT, 0.0f)));
 
-    ray.origin = ray.origin - primitive.center;
     float t = raymarch(ray);
     if (t > 0.0)
     {

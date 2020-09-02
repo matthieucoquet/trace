@@ -53,6 +53,7 @@ private:
 
     std::vector<std::unique_ptr<Input_system>> m_input_systems;
     std::vector<xr::ActionSet> m_action_sets;
+    std::vector<xr::ActiveActionSet> m_active_action_sets;
 
     void poll_events(xr::Instance instance);
     void draw_frame(Scene& scene, std::vector<std::unique_ptr<System>>& systems);

@@ -15,6 +15,7 @@ find_package(Vulkan REQUIRED)
 find_package(OpenXR CONFIG REQUIRED)
 find_package(imgui CONFIG REQUIRED)
 find_package(fmt CONFIG REQUIRED)
+find_package(marl CONFIG REQUIRED)
 
 # import shaderc as a module
 # Should switch to a config when shaderc supports it
@@ -31,7 +32,7 @@ set(SOURCE_CORE
 set(SOURCE_ENGINE
     main.cpp
     engine.cpp engine.h
-    input_keyboard_system.cpp input_keyboard_system.h
+    input_glfw_system.cpp input_glfw_system.h
     shader_system.cpp shader_system.h
     ui_system.cpp ui_system.h
     window.cpp window.h)
@@ -79,7 +80,15 @@ target_include_directories(trace SYSTEM PUBLIC ${Vulkan_INCLUDE_DIR}
 # DON'T COMMIT, just to avoid copy header each time during dev
 target_include_directories(trace SYSTEM PUBLIC "C:/code/external/fork_openxr_hpp/include")
 
-target_link_libraries(trace PRIVATE glm glfw OpenXR::openxr_loader shaderc::shaderc_combined imgui::imgui fmt::fmt)
+target_link_libraries(trace
+    PRIVATE
+    glm
+    glfw
+    OpenXR::openxr_loader
+    shaderc::shaderc_combined 
+    imgui::imgui
+    fmt::fmt
+    marl::marl)
 # target_link_libraries(trace PRIVATE glm glfw OpenXR::headers shaderc::shaderc_combined imgui::imgui)
 target_compile_features(trace PRIVATE cxx_std_20)
 
