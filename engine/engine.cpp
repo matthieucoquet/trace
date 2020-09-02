@@ -1,14 +1,14 @@
-#include "engine.h"
-#include "shader_system.h"
-#include "ui_system.h"
-#include "input_glfw_system.h"
+#include "engine.hpp"
+#include "shader_system.hpp"
+#include "ui_system.hpp"
+#include "input_glfw_system.hpp"
+
 #include <fmt/core.h>
 #include <limits>
 #include <concepts>
 #include <ranges>
 #include <algorithm>
 #include <imgui.h>
-constexpr bool vr_mode = true;
 
 Engine::Engine() :
     m_window(m_vr_instance.mirror_recommended_ratio()),

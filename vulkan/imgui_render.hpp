@@ -1,6 +1,6 @@
 #pragma once
-#include "vk_common.h"
-#include "allocation.h"
+#include "vk_common.hpp"
+#include "allocation.hpp"
 #include <shaderc/shaderc.hpp>
 #include <imgui.h>
 

@@ -1,5 +1,5 @@
-#include "imgui_render.h"
-#include "context.h"
+#include "imgui_render.hpp"
+#include "context.hpp"
 #include <imgui.h>
 #include <fmt/core.h>
 #include <filesystem>

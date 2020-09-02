@@ -25,37 +25,37 @@ find_package(shaderc MODULE REQUIRED)
 add_executable (trace)
 
 set(SOURCE_CORE
-    core/entities.cpp core/entities.h
-    core/scene.cpp core/scene.h
-    core/shader_types.h
-    core/system.h)
+    core/entities.cpp core/entities.hpp
+    core/scene.cpp core/scene.hpp
+    core/shader_types.hpp
+    core/system.hpp)
 set(SOURCE_ENGINE
-    main.cpp
-    engine.cpp engine.h
-    input_glfw_system.cpp input_glfw_system.h
-    shader_system.cpp shader_system.h
-    ui_system.cpp ui_system.h
-    window.cpp window.h)
+    engine/main.cpp
+    engine/engine.cpp engine/engine.hpp
+    engine/input_glfw_system.cpp engine/input_glfw_system.hpp
+    engine/shader_system.cpp engine/shader_system.hpp
+    engine/ui_system.cpp engine/ui_system.hpp
+    engine/window.cpp engine/window.hpp)
 set(SOURCE_VR
-    vr/input_system.h
-    vr/ui_input_system.cpp vr/ui_input_system.h
-    vr/main_input_system.cpp vr/main_input_system.h
-    vr/instance.cpp vr/instance.h
-    vr/session.cpp vr/session.h
-    vr/vr_swapchain.cpp vr/vr_swapchain.h
-    vr/vr_common.h)
+    vr/input_system.hpp
+    vr/ui_input_system.cpp vr/ui_input_system.hpp
+    vr/main_input_system.cpp vr/main_input_system.hpp
+    vr/instance.cpp vr/instance.hpp
+    vr/session.cpp vr/session.hpp
+    vr/vr_swapchain.cpp vr/vr_swapchain.hpp
+    vr/vr_common.hpp)
 set(SOURCE_VULKAN
-    vulkan/acceleration_structure.cpp vulkan/acceleration_structure.h
-    vulkan/allocation.cpp vulkan/allocation.h
-    vulkan/command_buffer.h
-    vulkan/command_checkpoint.h
-    vulkan/context.cpp vulkan/context.h
-    vulkan/desktop_mirror.cpp vulkan/desktop_mirror.h
-    vulkan/desktop_swapchain.cpp vulkan/desktop_swapchain.h
-    vulkan/imgui_render.cpp vulkan/imgui_render.h
-    vulkan/raytracing_pipeline.cpp vulkan/raytracing_pipeline.h
-    vulkan/renderer.cpp vulkan/renderer.h
-    vulkan/vk_common.h)
+    vulkan/acceleration_structure.cpp vulkan/acceleration_structure.hpp
+    vulkan/allocation.cpp vulkan/allocation.hpp
+    vulkan/command_buffer.hpp
+    vulkan/command_checkpoint.hpp
+    vulkan/context.cpp vulkan/context.hpp
+    vulkan/desktop_mirror.cpp vulkan/desktop_mirror.hpp
+    vulkan/desktop_swapchain.cpp vulkan/desktop_swapchain.hpp
+    vulkan/imgui_render.cpp vulkan/imgui_render.hpp
+    vulkan/raytracing_pipeline.cpp vulkan/raytracing_pipeline.hpp
+    vulkan/renderer.cpp vulkan/renderer.hpp
+    vulkan/vk_common.hpp)
 
 target_sources(trace
     PRIVATE 
@@ -93,9 +93,8 @@ target_link_libraries(trace
 target_compile_features(trace PRIVATE cxx_std_20)
 
 get_filename_component(shader_locations shaders ABSOLUTE)
-set_source_files_properties(shader_system.cpp PROPERTIES COMPILE_DEFINITIONS SHADER_SOURCE="${shader_locations}/scene")
+set_source_files_properties(engine/shader_system.cpp PROPERTIES COMPILE_DEFINITIONS SHADER_SOURCE="${shader_locations}/scene")
 set_source_files_properties(vulkan/imgui_render.cpp PROPERTIES COMPILE_DEFINITIONS SHADER_SOURCE="${shader_locations}/ui")
-#set_source_files_properties(vulkan/shader_compile.cpp PROPERTIES COMPILE_DEFINITIONS SHADER_SOURCE="${shader_locations}")
 
 if(MSVC)
     set_target_properties(trace PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY $<TARGET_FILE_DIR:trace>)

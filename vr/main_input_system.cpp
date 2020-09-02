@@ -1,6 +1,5 @@
-#include "main_input_system.h"
-#include "core/scene.h"
-#include <fmt/core.h>
+#include "main_input_system.hpp"
+#include "core/scene.hpp"
 
 namespace vr
 {
@@ -63,7 +62,6 @@ void Main_input_system::step(Scene& scene, xr::Session session, xr::Time display
         .action = m_grab_action.get(),
         .subactionPath = m_hand_subaction_paths[i] });
         if (select_state.isActive) {
-            fmt::print("Grab {} {}\n", i, select_state.currentState);
         }
     }
 

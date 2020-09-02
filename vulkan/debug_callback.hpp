@@ -1,5 +1,5 @@
 #pragma once
-#include "vk_common.h"
+#include "vk_common.hpp"
 #include <iostream>
 
 VkBool32 debug_callback(

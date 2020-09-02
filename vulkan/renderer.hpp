@@ -1,10 +1,10 @@
 #pragma once
-#include "vk_common.h"
+#include "vk_common.hpp"
 
-#include "raytracing_pipeline.h"
-#include "acceleration_structure.h"
-#include "allocation.h"
-#include "core/scene.h"
+#include "raytracing_pipeline.hpp"
+#include "acceleration_structure.hpp"
+#include "allocation.hpp"
+#include "core/scene.hpp"
 
 namespace vulkan
 {

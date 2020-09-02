@@ -1,5 +1,5 @@
 #pragma once
-#include "vr_common.h"
+#include "vr_common.hpp"
 
 class Scene;
 

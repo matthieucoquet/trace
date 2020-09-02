@@ -1,6 +1,6 @@
-#include "shader_system.h"
-#include "core/scene.h"
-#include "vulkan/context.h"
+#include "shader_system.hpp"
+#include "core/scene.hpp"
+#include "vulkan/context.hpp"
 #include <fstream>
 #include <iostream>
 

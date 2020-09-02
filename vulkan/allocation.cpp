@@ -1,5 +1,5 @@
-#include "allocation.h"
-#include "command_buffer.h"
+#include "allocation.hpp"
+#include "command_buffer.hpp"
 #include <utility>
 
 namespace vulkan

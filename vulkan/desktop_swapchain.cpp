@@ -1,5 +1,5 @@
-#include "desktop_swapchain.h"
-#include "context.h"
+#include "desktop_swapchain.hpp"
+#include "context.hpp"
 
 #include <algorithm>
 

@@ -1,13 +1,13 @@
 #pragma once
-#include "vulkan/vk_common.h"
+#include "vulkan/vk_common.hpp"
 
-#include "window.h"
-#include "core/system.h"
-#include "core/scene.h"
-#include "vulkan/context.h"
-#include "vulkan/renderer.h"
-#include "vr/instance.h"
-#include "vr/session.h"
+#include "window.hpp"
+#include "core/system.hpp"
+#include "core/scene.hpp"
+#include "vulkan/context.hpp"
+#include "vulkan/renderer.hpp"
+#include "vr/instance.hpp"
+#include "vr/session.hpp"
 
 #include <marl/scheduler.h>
 #include <memory>

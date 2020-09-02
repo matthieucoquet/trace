@@ -1,8 +1,6 @@
 #pragma once
-#include "vk_common.h"
-
-#include "desktop_swapchain.h"
-//#include "allocation.h"
+#include "vk_common.hpp"
+#include "desktop_swapchain.hpp"
 
 namespace vulkan
 {

@@ -1,5 +1,5 @@
-#include "ui_system.h"
-#include "core/scene.h"
+#include "ui_system.hpp"
+#include "core/scene.hpp"
 #include <imgui.h>
 
 Ui_system::Ui_system()

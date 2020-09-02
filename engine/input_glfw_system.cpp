@@ -1,6 +1,6 @@
-#include "input_glfw_system.h"
+#include "input_glfw_system.hpp"
 #include <imgui.h>
-#include "vulkan/vk_common.h"
+#include "vulkan/vk_common.hpp"
 
 #include <GLFW/glfw3.h>
 #ifdef _WIN32

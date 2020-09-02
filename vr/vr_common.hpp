@@ -1,5 +1,5 @@
 #pragma once
-#include "vulkan/vk_common.h"
+#include "vulkan/vk_common.hpp"
 
 //#define XR_NO_PROTOTYPES
 #define OPENXR_HPP_DISPATCH_LOADER_DYNAMIC 1

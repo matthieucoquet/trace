@@ -1,6 +1,5 @@
-#include "ui_input_system.h"
-#include "core/scene.h"
-#include <fmt/core.h>
+#include "ui_input_system.hpp"
+#include "core/scene.hpp"
 #include <imgui.h>
 
 namespace vr
@@ -33,17 +32,14 @@ void Ui_input_system::suggest_interaction_profile(xr::Instance instance, Suggest
     suggested_bindings.suggested_binding_oculus.push_back(xr::ActionSuggestedBinding{ m_select_action, instance.stringToPath("/user/hand/right/input/a/click") });
 }
 
-void Ui_input_system::step(Scene& scene, xr::Session session, xr::Time /*display_time*/, xr::Space /*base_space*/, float /*offset_space_y*/)
+void Ui_input_system::step(Scene& /*scene*/, xr::Session session, xr::Time /*display_time*/, xr::Space /*base_space*/, float /*offset_space_y*/)
 {
-    //bool pushed = false;
     for (size_t i = 0u; i < 2u; i++)
     {
         xr::ActionStateBoolean select_state = session.getActionStateBoolean(xr::ActionStateGetInfo{
             .action = m_select_action.get(), 
             .subactionPath = m_hand_subaction_paths[i] });
         if (select_state.isActive) {
-            //pushed |= select_state.currentState == XR_TRUE;
-            fmt::print("Button {} {}\n", i, select_state.currentState);
             if (select_state.currentState) {
                 m_last_active_hand = i;
             }

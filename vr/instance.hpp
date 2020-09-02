@@ -1,8 +1,8 @@
 #pragma once
 
-#include "vr_common.h"
+#include "vr_common.hpp"
 
-#include <openxr/openxr_dynamic_loader.hpp>
+//#include <openxr/openxr_dynamic_loader.hpp>
 
 namespace vr
 {

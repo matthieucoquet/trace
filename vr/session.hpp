@@ -1,14 +1,14 @@
 #pragma once
 
-#include "vr_common.h"
-#include "input_system.h"
-#include "vr_swapchain.h"
-#include "core/system.h"
-#include "core/scene.h"
-#include "vulkan/renderer.h"
-#include "vulkan/desktop_mirror.h"
-#include "vulkan/command_buffer.h"
-#include "vulkan/imgui_render.h"
+#include "vr_common.hpp"
+#include "input_system.hpp"
+#include "vr_swapchain.hpp"
+#include "core/system.hpp"
+#include "core/scene.hpp"
+#include "vulkan/renderer.hpp"
+#include "vulkan/desktop_mirror.hpp"
+#include "vulkan/command_buffer.hpp"
+#include "vulkan/imgui_render.hpp"
 #include <memory>
 
 struct GLFWwindow;

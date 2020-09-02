@@ -1,8 +1,8 @@
 #pragma once
+#include "shader_types.hpp"
+#include "entities.hpp"
 #include <vector>
 #include <chrono>
-#include "shader_types.h"
-#include "entities.h"
 
 class Scene
 {

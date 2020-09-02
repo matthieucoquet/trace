@@ -1,6 +1,6 @@
-#include "raytracing_pipeline.h"
-#include "context.h"
-#include "core/scene.h"
+#include "raytracing_pipeline.hpp"
+#include "context.hpp"
+#include "core/scene.hpp"
 
 #include <fstream>
 

@@ -1,6 +1,6 @@
-#include "Desktop_mirror.h"
-#include "context.h"
-#include "command_buffer.h"
+#include "desktop_mirror.hpp"
+#include "context.hpp"
+#include "command_buffer.hpp"
 #include <fmt/core.h>
 namespace vulkan
 {

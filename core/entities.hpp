@@ -2,7 +2,7 @@
 #include <map>
 #include <string>
 #include <vector>
-#include "vulkan/vk_common.h"
+#include "vulkan/vk_common.hpp"
 
 struct Shader_file
 {

@@ -1,6 +1,6 @@
 #pragma once
-#include "vr_common.h"
-#include "input_system.h"
+#include "vr_common.hpp"
+#include "input_system.hpp"
 
 namespace vr
 {

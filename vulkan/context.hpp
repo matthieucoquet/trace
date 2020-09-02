@@ -1,5 +1,5 @@
 #pragma once
-#include "vk_common.h"
+#include "vk_common.hpp"
 
 class Window;
 namespace vr {
