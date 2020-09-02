@@ -1,6 +1,7 @@
 #pragma once
 #include "vk_common.hpp"
-#include "allocation.hpp"
+#include "vma_buffer.hpp"
+#include "vma_image.hpp"
 #include <shaderc/shaderc.hpp>
 #include <imgui.h>
 
@@ -35,13 +36,13 @@ private:
     vk::PipelineLayout m_pipeline_layout;
     vk::Pipeline m_pipeline;
 
-    vulkan::Allocated_image m_font_image;
+    Vma_image m_font_image;
     vk::ImageView m_font_image_view;
 
     std::vector<uint32_t> m_size_index_buffer;
-    std::vector<vulkan::Allocated_buffer> m_index_buffer;
+    std::vector<Vma_buffer> m_index_buffer;
     std::vector<uint32_t> m_size_vertex_buffer;
-    std::vector<vulkan::Allocated_buffer> m_vertex_buffer;
+    std::vector<Vma_buffer> m_vertex_buffer;
 
     void create_render_pass(vk::Format swapchain_format);
     void create_pipeline(Context& context, vk::Extent2D extent);

@@ -278,7 +278,7 @@ void Imgui_render::draw(ImDrawData* draw_data, vk::CommandBuffer command_buffer,
         if (m_size_vertex_buffer[frame_id] < vertex_size)
         {
             m_size_vertex_buffer[frame_id] = static_cast<uint32_t>(vertex_size);
-            m_vertex_buffer[frame_id] = Allocated_buffer(vk::BufferCreateInfo()
+            m_vertex_buffer[frame_id] = Vma_buffer(vk::BufferCreateInfo()
                 .setSize(vertex_size)
                 .setSharingMode(vk::SharingMode::eExclusive)
                 .setUsage(vk::BufferUsageFlagBits::eVertexBuffer),
@@ -289,7 +289,7 @@ void Imgui_render::draw(ImDrawData* draw_data, vk::CommandBuffer command_buffer,
         if (m_size_index_buffer[frame_id] < index_size)
         {
             m_size_index_buffer[frame_id] = static_cast<uint32_t>(index_size);
-            m_index_buffer[frame_id] = Allocated_buffer(vk::BufferCreateInfo()
+            m_index_buffer[frame_id] = Vma_buffer(vk::BufferCreateInfo()
                 .setSize(index_size)
                 .setSharingMode(vk::SharingMode::eExclusive)
                 .setUsage(vk::BufferUsageFlagBits::eIndexBuffer),
@@ -378,7 +378,7 @@ void Imgui_render::create_fonts_texture(Context& context)
     io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
     size_t upload_size = width * height * 4 * sizeof(char);
 
-    m_font_image = vulkan::Allocated_image(vk::ImageCreateInfo{
+    m_font_image = vulkan::Vma_image(vk::ImageCreateInfo{
             .imageType = vk::ImageType::e2D,
             .format = vk::Format::eR8G8B8A8Unorm,
             .extent = { static_cast<uint32_t>(width), static_cast<uint32_t>(height), 1 },

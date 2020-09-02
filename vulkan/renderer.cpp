@@ -217,7 +217,7 @@ void Renderer::create_per_frame_data(Context& context, Scene& scene, vk::Extent2
     One_time_command_buffer command_buffer(m_device, context.command_pool, context.graphics_queue);
     for (uint32_t i = 0u; i < swapchain_size; i++) {
         // Images
-        auto image = Allocated_image(
+        auto image = Vma_image(
             vk::ImageCreateInfo{
                 .imageType = vk::ImageType::e2D,
                 .format = format,
@@ -263,13 +263,13 @@ void Renderer::create_per_frame_data(Context& context, Scene& scene, vk::Extent2
                     .layerCount = 1
                 }});
 
-        Allocated_buffer scene_buffer = Allocated_buffer(
+        Vma_buffer scene_buffer = Vma_buffer(
             vk::BufferCreateInfo{
                     .size = sizeof(Scene_global),
                     .usage = vk::BufferUsageFlagBits::eUniformBuffer | vk::BufferUsageFlagBits::eRayTracingKHR },
             VMA_MEMORY_USAGE_CPU_TO_GPU,
             context.device, context.allocator);
-        Allocated_buffer prim_buffer = Allocated_buffer(
+        Vma_buffer prim_buffer = Vma_buffer(
             vk::BufferCreateInfo{
                     .size = sizeof(Primitive) * scene.primitives.size(),
                     .usage = vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eRayTracingKHR },

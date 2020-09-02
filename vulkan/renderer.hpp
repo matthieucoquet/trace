@@ -3,7 +3,8 @@
 
 #include "raytracing_pipeline.hpp"
 #include "acceleration_structure.hpp"
-#include "allocation.hpp"
+#include "vma_buffer.hpp"
+#include "vma_image.hpp"
 #include "core/scene.hpp"
 
 namespace vulkan
@@ -14,9 +15,9 @@ class Context;
 struct Per_frame
 {
     Tlas tlas;
-    Allocated_buffer scene_uniform;
-    Allocated_buffer primitives;
-    Allocated_image storage_image;
+    Vma_buffer scene_uniform;
+    Vma_buffer primitives;
+    Vma_image storage_image;
     vk::ImageView image_view;
 };
 

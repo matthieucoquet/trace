@@ -1,6 +1,6 @@
 #pragma once
 #include "vk_common.hpp"
-#include "allocation.hpp"
+#include "vma_buffer.hpp"
 #include <filesystem>
 
 class Scene;
@@ -17,7 +17,7 @@ public:
     vk::Pipeline pipeline;
     vk::PhysicalDeviceRayTracingPropertiesKHR raytracing_properties;
     vk::DescriptorSetLayout descriptor_set_layout;
-    Allocated_buffer shader_binding_table{};
+    Vma_buffer shader_binding_table{};
     vk::DeviceSize offset_raygen_side_group;
     vk::DeviceSize offset_miss_group;
     vk::DeviceSize offset_hit_group;

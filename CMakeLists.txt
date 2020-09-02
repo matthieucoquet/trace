@@ -46,7 +46,6 @@ set(SOURCE_VR
     vr/vr_common.hpp)
 set(SOURCE_VULKAN
     vulkan/acceleration_structure.cpp vulkan/acceleration_structure.hpp
-    vulkan/allocation.cpp vulkan/allocation.hpp
     vulkan/command_buffer.hpp
     vulkan/command_checkpoint.hpp
     vulkan/context.cpp vulkan/context.hpp
@@ -55,6 +54,8 @@ set(SOURCE_VULKAN
     vulkan/imgui_render.cpp vulkan/imgui_render.hpp
     vulkan/raytracing_pipeline.cpp vulkan/raytracing_pipeline.hpp
     vulkan/renderer.cpp vulkan/renderer.hpp
+    vulkan/vma_buffer.cpp vulkan/vma_buffer.hpp
+    vulkan/vma_image.cpp vulkan/vma_image.hpp
     vulkan/vk_common.hpp)
 
 target_sources(trace

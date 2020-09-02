@@ -1,6 +1,6 @@
 #pragma once
 #include "vk_common.hpp"
-#include "allocation.hpp"
+#include "vma_buffer.hpp"
 
 class Scene; 
 
@@ -27,7 +27,7 @@ protected:
     VmaAllocation m_allocation{};
 
 
-    Allocated_buffer allocate_scratch_buffer() const;
+    Vma_buffer allocate_scratch_buffer() const;
     void allocate_object_memory();
 };
 
@@ -43,7 +43,7 @@ public:
     Blas& operator=(Blas&& other) = default;
     ~Blas() = default;
 private:
-    Allocated_buffer m_aabbs_buffer;
+    Vma_buffer m_aabbs_buffer;
 };
 
 class Tlas : public Acceleration_structure
@@ -58,8 +58,8 @@ public:
 
     void update(vk::CommandBuffer command_buffer, const Scene& scene, bool first_build);
 protected:
-    Allocated_buffer m_instance_buffer;
-    Allocated_buffer m_scratch_buffer;
+    Vma_buffer m_instance_buffer;
+    Vma_buffer m_scratch_buffer;
     std::vector<vk::AccelerationStructureInstanceKHR> m_instances{};
 };
 

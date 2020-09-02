@@ -43,14 +43,14 @@ Acceleration_structure::~Acceleration_structure()
     }
 }
 
-Allocated_buffer Acceleration_structure::allocate_scratch_buffer() const
+Vma_buffer Acceleration_structure::allocate_scratch_buffer() const
 {
     auto memory_requirement = m_device.getAccelerationStructureMemoryRequirementsKHR(vk::AccelerationStructureMemoryRequirementsInfoKHR()
         .setType(vk::AccelerationStructureMemoryRequirementsTypeKHR::eBuildScratch)
         .setBuildType(vk::AccelerationStructureBuildTypeKHR::eDevice)
         .setAccelerationStructure(acceleration_structure));
 
-    return Allocated_buffer(
+    return Vma_buffer(
         vk::BufferCreateInfo()
         .setSize(memory_requirement.memoryRequirements.size)
         .setUsage(vk::BufferUsageFlagBits::eShaderDeviceAddress | vk::BufferUsageFlagBits::eRayTracingKHR)
@@ -102,7 +102,7 @@ Blas::Blas(Context& context) :
 
 
     vk::AabbPositionsKHR aabb{ -1.0f, -1.0f, -1.0f, 1.0f, 1.0f, 1.0f };
-    m_aabbs_buffer = vulkan::Allocated_buffer(
+    m_aabbs_buffer = vulkan::Vma_buffer(
         vk::BufferCreateInfo{
             .size = sizeof(vk::AabbPositionsKHR),
             .usage = vk::BufferUsageFlagBits::eShaderDeviceAddress | vk::BufferUsageFlagBits::eRayTracingKHR },
@@ -179,7 +179,7 @@ Tlas::Tlas(vk::CommandBuffer command_buffer, Context& context, const Blas& blas,
         });
     }
 
-    m_instance_buffer = Allocated_buffer(
+    m_instance_buffer = Vma_buffer(
         vk::BufferCreateInfo{
             .size = sizeof(vk::AccelerationStructureInstanceKHR) * nb_instances,
             .usage = vk::BufferUsageFlagBits::eShaderDeviceAddress | vk::BufferUsageFlagBits::eRayTracingKHR
