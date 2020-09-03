@@ -98,16 +98,18 @@ Swapchain::~Swapchain()
 void Swapchain::create_image_views()
 {
     for (auto& image : images) {
-        image_views.push_back(m_device.createImageView(vk::ImageViewCreateInfo()
-            .setImage(image.image)
-            .setViewType(vk::ImageViewType::e2D)
-            .setFormat(required_format)
-            .setSubresourceRange(vk::ImageSubresourceRange()
-                .setAspectMask(vk::ImageAspectFlagBits::eColor)
-                .setBaseMipLevel(0u)
-                .setLevelCount(1u)
-                .setBaseArrayLayer(0u)
-                .setLayerCount(1u))));
+        image_views.push_back(m_device.createImageView(vk::ImageViewCreateInfo{
+            .image = image.image,
+            .viewType = vk::ImageViewType::e2D,
+            .format = required_format,
+            .subresourceRange = {
+                .aspectMask = vk::ImageAspectFlagBits::eColor,
+                .baseMipLevel = 0u,
+                .levelCount = 1u,
+                .baseArrayLayer = 0u,
+                .layerCount = 1u
+            }
+        }));
     }
 }
 

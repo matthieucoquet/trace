@@ -190,7 +190,6 @@ void Context::init_device(vr::Instance& vr_instance)
             .pNext = &vulkan_12_features,
             .rayTracing = true
         };
-        //.setRayTracingHostAccelerationStructureCommands(true);
         auto device_features = vk::PhysicalDeviceFeatures2{
             .pNext = &raytracing_features,
             .features = {

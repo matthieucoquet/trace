@@ -37,9 +37,9 @@ Vma_buffer::Vma_buffer(vk::BufferCreateInfo buffer_info, const void* data,
     m_device(device), m_allocator(allocator)
 {
     Vma_buffer staged_buffer(
-        vk::BufferCreateInfo()
-        .setSize(buffer_info.size)
-        .setUsage(vk::BufferUsageFlagBits::eTransferSrc),
+        vk::BufferCreateInfo{
+            .size = buffer_info.size,
+            .usage = vk::BufferUsageFlagBits::eTransferSrc },
         VMA_MEMORY_USAGE_CPU_ONLY,
         device, allocator);
 

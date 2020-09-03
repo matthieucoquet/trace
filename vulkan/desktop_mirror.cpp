@@ -39,20 +39,20 @@ void Desktop_mirror::copy(vk::CommandBuffer& command_buffer, vk::Image vr_image,
         vk::PipelineStageFlagBits::eTransfer,
         vk::PipelineStageFlagBits::eTransfer,
         {}, {}, {},
-        vk::ImageMemoryBarrier()
-        .setOldLayout(vk::ImageLayout::eUndefined)
-        .setNewLayout(vk::ImageLayout::eTransferDstOptimal)
-        .setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-        .setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-        .setImage(m_swapchain.images[m_image_id])
-        .setSrcAccessMask({})
-        .setDstAccessMask(vk::AccessFlagBits::eTransferWrite)
-        .setSubresourceRange(vk::ImageSubresourceRange()
-            .setLevelCount(1u)
-            .setLayerCount(1)
-            .setBaseArrayLayer(0)
-            .setBaseMipLevel(0)
-            .setAspectMask(vk::ImageAspectFlagBits::eColor)));
+        vk::ImageMemoryBarrier{
+            .srcAccessMask = {},
+            .dstAccessMask = vk::AccessFlagBits::eTransferWrite,
+            .oldLayout = vk::ImageLayout::eUndefined,
+            .newLayout = vk::ImageLayout::eTransferDstOptimal,
+            .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .image = m_swapchain.images[m_image_id],
+            .subresourceRange = {
+                .aspectMask = vk::ImageAspectFlagBits::eColor,
+                .baseMipLevel = 0,
+                .levelCount = 1u,
+                .baseArrayLayer = 0,
+                .layerCount = 1 } });
 
     command_buffer.blitImage(
         vr_image,
@@ -110,26 +110,25 @@ void Desktop_mirror::present(vk::CommandBuffer& command_buffer, vk::Fence fence,
 {
     vk::PipelineStageFlags wait_stages = vk::PipelineStageFlagBits::eTransfer;
     m_queue.submit(
-        vk::SubmitInfo()
-        .setWaitSemaphoreCount(1)
-        .setPWaitSemaphores(&m_semaphore_available[current_id])
-        .setPWaitDstStageMask(&wait_stages)
-        .setCommandBufferCount(1)
-        .setPCommandBuffers(&command_buffer)
-        .setSignalSemaphoreCount(1)
-        .setPSignalSemaphores(&m_semaphore_finished[current_id]),
+        vk::SubmitInfo{
+            .waitSemaphoreCount = 1,
+            .pWaitSemaphores = &m_semaphore_available[current_id],
+            .pWaitDstStageMask = &wait_stages,
+            .commandBufferCount = 1,
+            .pCommandBuffers = &command_buffer,
+            .signalSemaphoreCount = 1,
+            .pSignalSemaphores = &m_semaphore_finished[current_id] },
         fence);
 
-    auto present_result = m_queue.presentKHR(vk::PresentInfoKHR()
-        .setWaitSemaphoreCount(1)
-        .setPWaitSemaphores(&m_semaphore_finished[current_id])
-        .setSwapchainCount(1)
-        .setPSwapchains(&m_swapchain.swapchain)
-        .setPImageIndices(&m_image_id));
+    auto present_result = m_queue.presentKHR(vk::PresentInfoKHR{
+        .waitSemaphoreCount = 1,
+        .pWaitSemaphores = &m_semaphore_finished[current_id],
+        .swapchainCount = 1,
+        .pSwapchains = &m_swapchain.swapchain,
+        .pImageIndices = &m_image_id });
     if (present_result == vk::Result::eErrorOutOfDateKHR) {
         assert(false);
     }
-    //m_device.waitForFences(fence, true, std::numeric_limits<uint64_t>::max());
 }
 
 

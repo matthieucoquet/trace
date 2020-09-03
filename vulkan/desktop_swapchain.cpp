@@ -30,19 +30,19 @@ Desktop_swapchain::Desktop_swapchain(Context& context) :
     if (image_count < surface_capabilities.minImageCount && image_count > surface_capabilities.maxImageCount)
         throw std::runtime_error("Doesn't support required image count.");
 
-    auto swapchain_create_info = vk::SwapchainCreateInfoKHR()
-        .setSurface(context.surface)
-        .setMinImageCount(image_count)
-        .setImageFormat(format)
-        .setImageColorSpace(colorspace)
-        .setPresentMode(present_mode)
-        .setImageExtent(extent)
-        .setImageArrayLayers(1)
-        .setImageUsage(vk::ImageUsageFlagBits::eTransferDst)
-        .setImageSharingMode(vk::SharingMode::eExclusive)
-        .setPreTransform(surface_capabilities.currentTransform)
-        .setCompositeAlpha(vk::CompositeAlphaFlagBitsKHR::eOpaque)
-        .setClipped(true);
+    vk::SwapchainCreateInfoKHR swapchain_create_info {
+        .surface = context.surface,
+        .minImageCount = image_count,
+        .imageFormat = format,
+        .imageColorSpace = colorspace,
+        .imageExtent = extent,
+        .imageArrayLayers = 1,
+        .imageUsage = vk::ImageUsageFlagBits::eTransferDst,
+        .imageSharingMode = vk::SharingMode::eExclusive,
+        .preTransform = surface_capabilities.currentTransform,
+        .compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque,
+        .presentMode = present_mode,
+        .clipped = true };
 
     swapchain = m_device.createSwapchainKHR(swapchain_create_info);
 

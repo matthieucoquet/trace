@@ -30,13 +30,13 @@ Imgui_render::Imgui_render(Context& context, vk::Extent2D extent, uint32_t swapc
     m_framebuffers.reserve(swapchain_size);
     for (vk::ImageView image_view : image_views)
     {
-        m_framebuffers.push_back(m_device.createFramebuffer(vk::FramebufferCreateInfo()
-            .setRenderPass(m_render_pass)
-            .setAttachmentCount(1u)
-            .setPAttachments(&image_view)
-            .setWidth(extent.width)
-            .setHeight(extent.height)
-            .setLayers(1)));
+        m_framebuffers.push_back(m_device.createFramebuffer(vk::FramebufferCreateInfo{
+            .renderPass = m_render_pass,
+            .attachmentCount = 1u,
+            .pAttachments = &image_view,
+            .width = extent.width,
+            .height = extent.height,
+            .layers = 1 }));
     }
 }
 
@@ -55,40 +55,40 @@ Imgui_render::~Imgui_render()
 
 void Imgui_render::create_render_pass(vk::Format swapchain_format)
 {
-    auto attachment = vk::AttachmentDescription()
-        .setFormat(swapchain_format)
-        .setSamples(vk::SampleCountFlagBits::e1)
-        .setLoadOp(vk::AttachmentLoadOp::eClear)
-        .setStoreOp(vk::AttachmentStoreOp::eStore)
-        .setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
-        .setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)
-        .setInitialLayout(vk::ImageLayout::eUndefined)
-        .setFinalLayout(vk::ImageLayout::eColorAttachmentOptimal);
+    vk::AttachmentDescription attachment{
+        .format = swapchain_format,
+        .samples = vk::SampleCountFlagBits::e1,
+        .loadOp = vk::AttachmentLoadOp::eClear,
+        .storeOp = vk::AttachmentStoreOp::eStore,
+        .stencilLoadOp = vk::AttachmentLoadOp::eDontCare,
+        .stencilStoreOp = vk::AttachmentStoreOp::eDontCare,
+        .initialLayout = vk::ImageLayout::eUndefined,
+        .finalLayout = vk::ImageLayout::eColorAttachmentOptimal };
 
-    auto color_attachment_ref = vk::AttachmentReference()
-        .setAttachment(0)
-        .setLayout(vk::ImageLayout::eColorAttachmentOptimal);
+    vk::AttachmentReference color_attachment_ref{
+        .attachment = 0,
+        .layout = vk::ImageLayout::eColorAttachmentOptimal };
 
-    auto subpass = vk::SubpassDescription()
-        .setPipelineBindPoint(vk::PipelineBindPoint::eGraphics)
-        .setColorAttachmentCount(1)
-        .setPColorAttachments(&color_attachment_ref);
+    vk::SubpassDescription subpass{
+        .pipelineBindPoint = vk::PipelineBindPoint::eGraphics,
+        .colorAttachmentCount = 1,
+        .pColorAttachments = &color_attachment_ref };
 
     // I don't think i need this with openxr swapchain...
-    auto dependency = vk::SubpassDependency()
-        .setSrcSubpass(VK_SUBPASS_EXTERNAL)
-        .setDstSubpass(0)
-        .setSrcStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput)
-        .setDstStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput)
-        .setDstAccessMask(vk::AccessFlagBits::eColorAttachmentWrite);
+    vk::SubpassDependency dependency{
+        .srcSubpass = VK_SUBPASS_EXTERNAL,
+        .dstSubpass = 0,
+        .srcStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput,
+        .dstStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput,
+        .dstAccessMask = vk::AccessFlagBits::eColorAttachmentWrite };
 
-    m_render_pass = m_device.createRenderPass(vk::RenderPassCreateInfo()
-        .setAttachmentCount(1u)
-        .setPAttachments(&attachment)
-        .setSubpassCount(1)
-        .setPSubpasses(&subpass)
-        .setDependencyCount(1)
-        .setPDependencies(&dependency));
+    m_render_pass = m_device.createRenderPass(vk::RenderPassCreateInfo{
+        .attachmentCount = 1u,
+        .pAttachments = &attachment,
+        .subpassCount = 1,
+        .pSubpasses = &subpass,
+        .dependencyCount = 1,
+        .pDependencies = &dependency });
 }
 
 void Imgui_render::create_pipeline(Context& context, vk::Extent2D /*extent*/)
@@ -96,158 +96,142 @@ void Imgui_render::create_pipeline(Context& context, vk::Extent2D /*extent*/)
     vk::ShaderModule vertex_module = compile_glsl_file("imgui_vert_shader.glsl", shaderc_vertex_shader);
     vk::ShaderModule fragment_module = compile_glsl_file("imgui_frag_shader.glsl", shaderc_fragment_shader);
 
-    VkSamplerCreateInfo info = {};
-    info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-    info.magFilter = VK_FILTER_LINEAR;
-    info.minFilter = VK_FILTER_LINEAR;
-    info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-    info.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    info.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    info.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    info.minLod = -1000;
-    info.maxLod = 1000;
-    info.maxAnisotropy = 1.0f;
-    m_font_sampler = m_device.createSampler(vk::SamplerCreateInfo()
-        .setMinFilter(vk::Filter::eLinear)
-        .setMagFilter(vk::Filter::eLinear)
-        .setMipmapMode(vk::SamplerMipmapMode::eLinear)
-        .setAddressModeU(vk::SamplerAddressMode::eRepeat)
-        .setAddressModeV(vk::SamplerAddressMode::eRepeat)
-        .setAddressModeW(vk::SamplerAddressMode::eRepeat)
-        .setMinLod(-1000.0f)
-        .setMaxLod(1000.0f)
-        .setMaxAnisotropy(1.0f)
-    );
+    m_font_sampler = m_device.createSampler(vk::SamplerCreateInfo{
+        .magFilter = vk::Filter::eLinear,
+        .minFilter = vk::Filter::eLinear,
+        .mipmapMode = vk::SamplerMipmapMode::eLinear,
+        .addressModeU = vk::SamplerAddressMode::eRepeat,
+        .addressModeV = vk::SamplerAddressMode::eRepeat,
+        .addressModeW = vk::SamplerAddressMode::eRepeat,
+        .maxAnisotropy = 1.0f,
+        .minLod = -1000.0f,
+        .maxLod = 1000.0f
+        });
 
     constexpr uint32_t binding = 0u;
-    auto layout_binding = vk::DescriptorSetLayoutBinding()
-        .setBinding(binding)
-        .setDescriptorType(vk::DescriptorType::eCombinedImageSampler)
-        .setDescriptorCount(1u)
-        .setStageFlags(vk::ShaderStageFlagBits::eFragment)
-        .setPImmutableSamplers(&m_font_sampler);
-    m_descriptor_set_layout = m_device.createDescriptorSetLayout(vk::DescriptorSetLayoutCreateInfo()
-        .setBindingCount(1u)
-        .setPBindings(&layout_binding));
-    m_descriptor_sets = m_device.allocateDescriptorSets(vk::DescriptorSetAllocateInfo()
-        .setDescriptorPool(context.descriptor_pool)
-        .setDescriptorSetCount(1u)
-        .setPSetLayouts(&m_descriptor_set_layout));
+    vk::DescriptorSetLayoutBinding layout_binding{
+        .binding = binding,
+        .descriptorType = vk::DescriptorType::eCombinedImageSampler,
+        .descriptorCount = 1u,
+        .stageFlags = vk::ShaderStageFlagBits::eFragment,
+        .pImmutableSamplers = &m_font_sampler };
+    m_descriptor_set_layout = m_device.createDescriptorSetLayout(vk::DescriptorSetLayoutCreateInfo{
+        .bindingCount = 1u,
+        .pBindings = &layout_binding });
+    m_descriptor_sets = m_device.allocateDescriptorSets(vk::DescriptorSetAllocateInfo{
+        .descriptorPool = context.descriptor_pool,
+        .descriptorSetCount = 1u,
+        .pSetLayouts = &m_descriptor_set_layout });
 
     // Constants: we are using 'vec2 offset' and 'vec2 scale' instead of a full 3d projection matrix
-    auto push_constants = vk::PushConstantRange()
-        .setStageFlags(vk::ShaderStageFlagBits::eVertex)
-        .setOffset(sizeof(float) * 0)
-        .setSize(sizeof(float) * 4);
-    m_pipeline_layout = m_device.createPipelineLayout(vk::PipelineLayoutCreateInfo()
-        .setPSetLayouts(&m_descriptor_set_layout)
-        .setSetLayoutCount(1u)
-        .setPushConstantRangeCount(1u)
-        .setPPushConstantRanges(&push_constants));
+    vk::PushConstantRange push_constants{
+        .stageFlags = vk::ShaderStageFlagBits::eVertex,
+        .offset = 0,
+        .size = sizeof(float) * 4 };
+    m_pipeline_layout = m_device.createPipelineLayout(vk::PipelineLayoutCreateInfo{
+        .setLayoutCount = 1u,
+        .pSetLayouts = &m_descriptor_set_layout,
+        .pushConstantRangeCount = 1u,
+        .pPushConstantRanges = &push_constants });
 
-    auto vertex_shader_stage_info = vk::PipelineShaderStageCreateInfo()
-        .setStage(vk::ShaderStageFlagBits::eVertex)
-        .setModule(vertex_module)
-        .setPName("main");
-    auto fragment_shader_stage_info = vk::PipelineShaderStageCreateInfo()
-        .setStage(vk::ShaderStageFlagBits::eFragment)
-        .setModule(fragment_module)
-        .setPName("main");
+    vk::PipelineShaderStageCreateInfo vertex_shader_stage_info{
+        .stage = vk::ShaderStageFlagBits::eVertex,
+        .module = vertex_module,
+        .pName = "main" };
+    vk::PipelineShaderStageCreateInfo fragment_shader_stage_info{
+        .stage = vk::ShaderStageFlagBits::eFragment,
+        .module = fragment_module,
+        .pName = "main" };
     vk::PipelineShaderStageCreateInfo shader_stages[] = { vertex_shader_stage_info, fragment_shader_stage_info };
 
-    auto binding_descr = vk::VertexInputBindingDescription().setBinding(0)
-        .setStride(sizeof(ImDrawVert))
-        .setInputRate(vk::VertexInputRate::eVertex);
-    auto attribute_descr = std::array<vk::VertexInputAttributeDescription, 3>{
-        vk::VertexInputAttributeDescription()
-            .setBinding(binding)
-            .setLocation(0)
-            .setFormat(vk::Format::eR32G32Sfloat)
-            .setOffset(IM_OFFSETOF(ImDrawVert, pos)),
-            vk::VertexInputAttributeDescription()
-            .setBinding(binding)
-            .setLocation(1)
-            .setFormat(vk::Format::eR32G32Sfloat)
-            .setOffset(IM_OFFSETOF(ImDrawVert, uv)),
-            vk::VertexInputAttributeDescription()
-            .setBinding(binding)
-            .setLocation(2)
-            .setFormat(vk::Format::eR8G8B8A8Unorm)
-            .setOffset(IM_OFFSETOF(ImDrawVert, col))
+    vk::VertexInputBindingDescription binding_descr{
+        .binding = 0,
+        .stride = sizeof(ImDrawVert),
+        .inputRate = vk::VertexInputRate::eVertex };
+    auto attribute_descr = std::array{
+        vk::VertexInputAttributeDescription{
+            .location = 0,
+            .binding = binding,
+            .format = vk::Format::eR32G32Sfloat,
+            .offset = IM_OFFSETOF(ImDrawVert, pos)},
+        vk::VertexInputAttributeDescription{
+            .location = 1,
+            .binding = binding,
+            .format = vk::Format::eR32G32Sfloat,
+            .offset = IM_OFFSETOF(ImDrawVert, uv)},
+        vk::VertexInputAttributeDescription{
+            .location = 2,
+            .binding = binding,
+            .format = vk::Format::eR8G8B8A8Unorm,
+            .offset = IM_OFFSETOF(ImDrawVert, col)}
     };
-    auto vertex_input_info = vk::PipelineVertexInputStateCreateInfo()
-        .setVertexBindingDescriptionCount(1)
-        .setPVertexBindingDescriptions(&binding_descr)
-        .setVertexAttributeDescriptionCount(static_cast<uint32_t>(attribute_descr.size()))
-        .setPVertexAttributeDescriptions(attribute_descr.data());
-    auto input_assembly = vk::PipelineInputAssemblyStateCreateInfo()
-        .setTopology(vk::PrimitiveTopology::eTriangleList)
-        .setPrimitiveRestartEnable(false);
+    vk::PipelineVertexInputStateCreateInfo vertex_input_info{
+        .vertexBindingDescriptionCount = 1,
+        .pVertexBindingDescriptions = &binding_descr,
+        .vertexAttributeDescriptionCount = static_cast<uint32_t>(attribute_descr.size()),
+        .pVertexAttributeDescriptions = attribute_descr.data() };
+    vk::PipelineInputAssemblyStateCreateInfo input_assembly {
+        .topology = vk::PrimitiveTopology::eTriangleList,
+        .primitiveRestartEnable = false };
 
-    /*auto viewport = vk::Viewport()
-        .setWidth(static_cast<float>(extent.width))
-        .setHeight(static_cast<float>(extent.height))
-        .setMaxDepth(1.0f);
-    auto scissor = vk::Rect2D().setExtent(extent);*/
-    auto viewport_info = vk::PipelineViewportStateCreateInfo()
-        .setViewportCount(1u)
-        //.setPViewports(&viewport)
-        .setScissorCount(1u);
-        //.setPScissors(&scissor);
+    vk::PipelineViewportStateCreateInfo viewport_info{
+        .viewportCount = 1u,
+        .scissorCount = 1u };
 
-    auto rasterizer = vk::PipelineRasterizationStateCreateInfo()
-        .setDepthClampEnable(false)
-        .setRasterizerDiscardEnable(false)
-        .setPolygonMode(vk::PolygonMode::eFill)
-        .setLineWidth(1.0f)
-        .setCullMode(vk::CullModeFlagBits::eNone)
-        .setFrontFace(vk::FrontFace::eCounterClockwise)
-        .setDepthBiasEnable(false);
+    vk::PipelineRasterizationStateCreateInfo rasterizer{
+        .depthClampEnable = false,
+        .rasterizerDiscardEnable = false,
+        .polygonMode = vk::PolygonMode::eFill,
+        .cullMode = vk::CullModeFlagBits::eNone,
+        .frontFace = vk::FrontFace::eCounterClockwise,
+        .depthBiasEnable = false,
+        .lineWidth = 1.0f };
 
-    auto multisampling = vk::PipelineMultisampleStateCreateInfo()
-        .setSampleShadingEnable(false)
-        .setRasterizationSamples(vk::SampleCountFlagBits::e1);
+    vk::PipelineMultisampleStateCreateInfo multisampling{
+        .rasterizationSamples = vk::SampleCountFlagBits::e1,
+        .sampleShadingEnable = false };
 
-    auto color_blend_attachment = vk::PipelineColorBlendAttachmentState()
-        .setColorWriteMask(vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA)
-        .setBlendEnable(true)
-        .setSrcColorBlendFactor(vk::BlendFactor::eSrcAlpha)
-        .setDstColorBlendFactor(vk::BlendFactor::eOneMinusSrcAlpha)
-        .setColorBlendOp(vk::BlendOp::eAdd)
-        .setSrcAlphaBlendFactor(vk::BlendFactor::eOneMinusSrcAlpha)
-        .setDstAlphaBlendFactor(vk::BlendFactor::eZero)
-        .setAlphaBlendOp(vk::BlendOp::eAdd);
+    vk::PipelineColorBlendAttachmentState color_blend_attachment{
+        .blendEnable = true,
+        .srcColorBlendFactor = vk::BlendFactor::eSrcAlpha,
+        .dstColorBlendFactor = vk::BlendFactor::eOneMinusSrcAlpha,
+        .colorBlendOp = vk::BlendOp::eAdd,
+        .srcAlphaBlendFactor = vk::BlendFactor::eOneMinusSrcAlpha,
+        .dstAlphaBlendFactor = vk::BlendFactor::eZero,
+        .alphaBlendOp = vk::BlendOp::eAdd,
+        .colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA
+    };
 
-    auto depth_test = vk::PipelineDepthStencilStateCreateInfo()
-        .setDepthTestEnable(false)
-        .setDepthWriteEnable(false)
-        .setDepthBoundsTestEnable(false)
-        .setStencilTestEnable(false);
+    vk::PipelineDepthStencilStateCreateInfo depth_test{
+        .depthTestEnable = false,
+        .depthWriteEnable = false,
+        .depthBoundsTestEnable = false,
+        .stencilTestEnable = false };
 
-    auto color_blending = vk::PipelineColorBlendStateCreateInfo()
-        .setLogicOpEnable(false)
-        .setAttachmentCount(1)
-        .setPAttachments(&color_blend_attachment);
+    vk::PipelineColorBlendStateCreateInfo color_blending{
+        .logicOpEnable = false,
+        .attachmentCount = 1,
+        .pAttachments = &color_blend_attachment };
 
     std::array dynamic_states{ vk::DynamicState::eViewport, vk::DynamicState::eScissor };
-    auto dynamic_state = vk::PipelineDynamicStateCreateInfo()
-        .setDynamicStateCount(static_cast<uint32_t>(dynamic_states.size()))
-        .setPDynamicStates(dynamic_states.data());
+    vk::PipelineDynamicStateCreateInfo dynamic_state{
+        .dynamicStateCount = static_cast<uint32_t>(dynamic_states.size()),
+        .pDynamicStates = dynamic_states.data() };
 
-    m_pipeline = m_device.createGraphicsPipeline(nullptr, vk::GraphicsPipelineCreateInfo()
-        .setStageCount(2)
-        .setPStages(shader_stages)
-        .setPVertexInputState(&vertex_input_info)
-        .setPInputAssemblyState(&input_assembly)
-        .setPViewportState(&viewport_info)
-        .setPRasterizationState(&rasterizer)
-        .setPMultisampleState(&multisampling)
-        .setPColorBlendState(&color_blending)
-        .setPDepthStencilState(&depth_test)
-        .setPDynamicState(&dynamic_state)
-        .setLayout(m_pipeline_layout)
-        .setRenderPass(m_render_pass)
-        .setSubpass(0)).value;
+    m_pipeline = m_device.createGraphicsPipeline(nullptr, vk::GraphicsPipelineCreateInfo{
+        .stageCount = 2,
+        .pStages = shader_stages,
+        .pVertexInputState = &vertex_input_info,
+        .pInputAssemblyState = &input_assembly,
+        .pViewportState = &viewport_info,
+        .pRasterizationState = &rasterizer,
+        .pMultisampleState = &multisampling,
+        .pDepthStencilState = &depth_test,
+        .pColorBlendState = &color_blending,
+        .pDynamicState = &dynamic_state,
+        .layout = m_pipeline_layout,
+        .renderPass = m_render_pass,
+        .subpass = 0 }).value;
 
     m_device.destroyShaderModule(vertex_module);
     m_device.destroyShaderModule(fragment_module);
@@ -278,10 +262,10 @@ void Imgui_render::draw(ImDrawData* draw_data, vk::CommandBuffer command_buffer,
         if (m_size_vertex_buffer[frame_id] < vertex_size)
         {
             m_size_vertex_buffer[frame_id] = static_cast<uint32_t>(vertex_size);
-            m_vertex_buffer[frame_id] = Vma_buffer(vk::BufferCreateInfo()
-                .setSize(vertex_size)
-                .setSharingMode(vk::SharingMode::eExclusive)
-                .setUsage(vk::BufferUsageFlagBits::eVertexBuffer),
+            m_vertex_buffer[frame_id] = Vma_buffer(vk::BufferCreateInfo{
+                    .size = vertex_size,
+                    .usage = vk::BufferUsageFlagBits::eVertexBuffer,
+                    .sharingMode = vk::SharingMode::eExclusive },
                 VMA_MEMORY_USAGE_CPU_TO_GPU,
                 m_device, m_allocator);
         }
@@ -289,10 +273,10 @@ void Imgui_render::draw(ImDrawData* draw_data, vk::CommandBuffer command_buffer,
         if (m_size_index_buffer[frame_id] < index_size)
         {
             m_size_index_buffer[frame_id] = static_cast<uint32_t>(index_size);
-            m_index_buffer[frame_id] = Vma_buffer(vk::BufferCreateInfo()
-                .setSize(index_size)
-                .setSharingMode(vk::SharingMode::eExclusive)
-                .setUsage(vk::BufferUsageFlagBits::eIndexBuffer),
+            m_index_buffer[frame_id] = Vma_buffer(vk::BufferCreateInfo{
+                    .size = index_size,
+                    .usage = vk::BufferUsageFlagBits::eIndexBuffer,
+                    .sharingMode = vk::SharingMode::eExclusive },
                 VMA_MEMORY_USAGE_CPU_TO_GPU,
                 m_device, m_allocator);
         }
@@ -393,29 +377,29 @@ void Imgui_render::create_fonts_texture(Context& context)
         pixels, upload_size,
         m_device, context.allocator, context.command_pool, context.graphics_queue);
 
-    m_font_image_view = m_device.createImageView(vk::ImageViewCreateInfo()
-        .setImage(m_font_image.image)
-        .setViewType(vk::ImageViewType::e2D)
-        .setFormat(vk::Format::eR8G8B8A8Unorm)
-        .setSubresourceRange(vk::ImageSubresourceRange()
-            .setAspectMask(vk::ImageAspectFlagBits::eColor)
-            .setBaseMipLevel(0u)
-            .setLevelCount(1u)
-            .setBaseArrayLayer(0u)
-            .setLayerCount(1u)));
+    m_font_image_view = m_device.createImageView(vk::ImageViewCreateInfo{
+        .image = m_font_image.image,
+        .viewType = vk::ImageViewType::e2D,
+        .format = vk::Format::eR8G8B8A8Unorm,
+        .subresourceRange = {
+            .aspectMask = vk::ImageAspectFlagBits::eColor,
+            .baseMipLevel = 0u,
+            .levelCount = 1u,
+            .baseArrayLayer = 0u,
+            .layerCount = 1u } });
 
-    auto image_info = vk::DescriptorImageInfo()
-        .setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
-        .setSampler(m_font_sampler)
-        .setImageView(m_font_image_view);
+    vk::DescriptorImageInfo image_info{
+        .sampler = m_font_sampler,
+        .imageView = m_font_image_view,
+        .imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal };
     m_device.updateDescriptorSets(std::array{
-            vk::WriteDescriptorSet()
-                .setDstSet(m_descriptor_sets[0])
-                .setDstBinding(0)
-                .setDstArrayElement(0)
-                .setDescriptorType(vk::DescriptorType::eCombinedImageSampler)
-                .setDescriptorCount(1)
-                .setPImageInfo(&image_info) }, {}),
+            vk::WriteDescriptorSet{
+                .dstSet = m_descriptor_sets[0],
+                .dstBinding = 0,
+                .dstArrayElement = 0,
+                .descriptorCount = 1,
+                .descriptorType = vk::DescriptorType::eCombinedImageSampler,
+                .pImageInfo = &image_info} }, {}),
 
     io.Fonts->TexID = (ImTextureID)(intptr_t)VkImage(m_font_image.image);
 }
@@ -432,10 +416,12 @@ void Imgui_render::setup_render_state(ImDrawData* draw_data, vk::CommandBuffer c
         command_buffer.bindIndexBuffer(m_index_buffer[frame_id].buffer, 0u, sizeof(ImDrawIdx) == 2 ? vk::IndexType::eUint16 : vk::IndexType::eUint32);
     }
 
-    command_buffer.setViewport(0, vk::Viewport().setX(0).setY(0)
-        .setWidth(static_cast<float>(fb_width))
-        .setHeight(static_cast<float>(fb_height))
-        .setMinDepth(0.0f).setMaxDepth(0.0f));
+    command_buffer.setViewport(0, vk::Viewport{
+        .x = 0, .y = 0,
+        .width = static_cast<float>(fb_width),
+        .height = static_cast<float>(fb_height),
+        .minDepth = 0.0f,
+        .maxDepth = 0.0f });
 
     std::array<float, 2> scale{
         2.0f / draw_data->DisplaySize.x,
@@ -469,9 +455,9 @@ vk::ShaderModule Imgui_render::compile_glsl_file(const char* filename, shaderc_s
         fmt::print("{}\n", compile_result.GetErrorMessage());
         throw std::runtime_error("Imgui shader compilation error");
     }
-    return  m_device.createShaderModule(vk::ShaderModuleCreateInfo()
-        .setCodeSize(sizeof(shaderc::SpvCompilationResult::element_type) * std::distance(compile_result.begin(), compile_result.end()))
-        .setPCode(compile_result.begin()));
+    return  m_device.createShaderModule(vk::ShaderModuleCreateInfo{
+        .codeSize = sizeof(shaderc::SpvCompilationResult::element_type) * std::distance(compile_result.begin(), compile_result.end()),
+        .pCode = compile_result.begin() });
 }
 
 }

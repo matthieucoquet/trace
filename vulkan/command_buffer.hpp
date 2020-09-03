@@ -15,22 +15,21 @@ public:
         m_command_pool(command_pool),
         m_queue(queue)
     {
-        std::vector<vk::CommandBuffer> command_buffers = device.allocateCommandBuffers(vk::CommandBufferAllocateInfo()
-            .setCommandPool(command_pool)
-            .setLevel(vk::CommandBufferLevel::ePrimary)
-            .setCommandBufferCount(1));
+        std::vector<vk::CommandBuffer> command_buffers = device.allocateCommandBuffers(vk::CommandBufferAllocateInfo{
+            .commandPool = command_pool,
+            .level = vk::CommandBufferLevel::ePrimary,
+            .commandBufferCount = 1 });
         command_buffer = command_buffers.front();
-        command_buffer.begin(vk::CommandBufferBeginInfo()
-            .setFlags(vk::CommandBufferUsageFlagBits::eOneTimeSubmit));
+        command_buffer.begin(vk::CommandBufferBeginInfo{ .flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit });
     }
 
     // Would be better to set a fence for synchronisation
     void submit_and_wait_idle()
     {
         command_buffer.end();
-        m_queue.submit(vk::SubmitInfo()
-            .setCommandBufferCount(1)
-            .setPCommandBuffers(&command_buffer), {});
+        m_queue.submit(vk::SubmitInfo{
+            .commandBufferCount = 1,
+            .pCommandBuffers = &command_buffer }, {});
         m_queue.waitIdle();
         m_device.freeCommandBuffers(m_command_pool, command_buffer);
     }
@@ -53,14 +52,14 @@ public:
         m_command_pool(command_pool),
         m_queue(queue)
     {
-        command_buffers = device.allocateCommandBuffers(vk::CommandBufferAllocateInfo()
-            .setCommandPool(command_pool)
-            .setLevel(vk::CommandBufferLevel::ePrimary)
-            .setCommandBufferCount(static_cast<uint32_t>(size)));
+        command_buffers = device.allocateCommandBuffers(vk::CommandBufferAllocateInfo{
+            .commandPool = command_pool,
+            .level = vk::CommandBufferLevel::ePrimary,
+            .commandBufferCount = static_cast<uint32_t>(size) });
         fences.reserve(size);
         for(size_t i = 0; i < size; i++)
         {
-            fences.push_back(m_device.createFence(vk::FenceCreateInfo().setFlags(vk::FenceCreateFlagBits::eSignaled)));
+            fences.push_back(m_device.createFence(vk::FenceCreateInfo{ .flags = vk::FenceCreateFlagBits::eSignaled }));
         }
     }
 

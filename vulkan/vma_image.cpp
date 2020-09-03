@@ -46,9 +46,9 @@ Vma_image::Vma_image(vk::ImageCreateInfo image_info, const void* data, size_t si
     m_device(device), m_allocator(allocator)
 {
     Vma_buffer staged_buffer(
-        vk::BufferCreateInfo()
-        .setSize(size)
-        .setUsage(vk::BufferUsageFlagBits::eTransferSrc),
+        vk::BufferCreateInfo {
+            .size = size,
+            .usage = vk::BufferUsageFlagBits::eTransferSrc },
         VMA_MEMORY_USAGE_CPU_ONLY,
         device, allocator);
     staged_buffer.copy(data, size);
@@ -60,41 +60,46 @@ Vma_image::Vma_image(vk::ImageCreateInfo image_info, const void* data, size_t si
         vk::PipelineStageFlagBits::eTopOfPipe,
         vk::PipelineStageFlagBits::eTransfer,
         {}, {}, {},
-        vk::ImageMemoryBarrier()
-        .setOldLayout(vk::ImageLayout::eUndefined)
-        .setNewLayout(vk::ImageLayout::eTransferDstOptimal)
-        .setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-        .setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-        .setImage(image)
-        .setSrcAccessMask({})
-        .setDstAccessMask(vk::AccessFlagBits::eTransferWrite)
-        .setSubresourceRange(vk::ImageSubresourceRange()
-            .setLevelCount(1u)
-            .setLayerCount(1)
-            .setBaseArrayLayer(0)
-            .setBaseMipLevel(0)
-            .setAspectMask(vk::ImageAspectFlagBits::eColor)));
-    command_buffer.command_buffer.copyBufferToImage(staged_buffer.buffer, image, vk::ImageLayout::eTransferDstOptimal, vk::BufferImageCopy()
-        .setImageExtent(image_info.extent)
-        .setImageSubresource(vk::ImageSubresourceLayers().setLayerCount(1).setAspectMask(vk::ImageAspectFlagBits::eColor)));
+        vk::ImageMemoryBarrier{
+            .srcAccessMask = {},
+            .dstAccessMask = vk::AccessFlagBits::eTransferWrite,
+            .oldLayout = vk::ImageLayout::eUndefined,
+            .newLayout = vk::ImageLayout::eTransferDstOptimal,
+            .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .image = image,
+            .subresourceRange = {
+                .aspectMask = vk::ImageAspectFlagBits::eColor,
+                .baseMipLevel = 0,
+                .levelCount = 1u,
+                .baseArrayLayer = 0,
+                .layerCount = 1 }
+        });
+    command_buffer.command_buffer.copyBufferToImage(staged_buffer.buffer, image, vk::ImageLayout::eTransferDstOptimal, 
+        vk::BufferImageCopy{
+            .imageSubresource = {
+                .aspectMask = vk::ImageAspectFlagBits::eColor,
+                .layerCount = 1 },
+            .imageExtent = image_info.extent });
     command_buffer.command_buffer.pipelineBarrier(
-            vk::PipelineStageFlagBits::eTransfer,
-            vk::PipelineStageFlagBits::eBottomOfPipe,
-            {}, {}, {},
-            vk::ImageMemoryBarrier()
-            .setOldLayout(vk::ImageLayout::eTransferDstOptimal)
-            .setNewLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
-            .setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-            .setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-            .setImage(image)
-            .setSrcAccessMask(vk::AccessFlagBits::eTransferWrite)
-            .setDstAccessMask({})
-            .setSubresourceRange(vk::ImageSubresourceRange()
-                .setLevelCount(1u)
-                .setLayerCount(1)
-                .setBaseArrayLayer(0)
-                .setBaseMipLevel(0)
-                .setAspectMask(vk::ImageAspectFlagBits::eColor)));
+        vk::PipelineStageFlagBits::eTransfer,
+        vk::PipelineStageFlagBits::eBottomOfPipe,
+        {}, {}, {},
+        vk::ImageMemoryBarrier{
+            .srcAccessMask = vk::AccessFlagBits::eTransferWrite,
+            .dstAccessMask = {},
+            .oldLayout = vk::ImageLayout::eTransferDstOptimal,
+            .newLayout = vk::ImageLayout::eShaderReadOnlyOptimal,
+            .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .image = image,
+            .subresourceRange = {
+                .aspectMask = vk::ImageAspectFlagBits::eColor,
+                .baseMipLevel = 0,
+                .levelCount = 1u,
+                .baseArrayLayer = 0,
+                .layerCount = 1 } 
+        });
     command_buffer.submit_and_wait_idle();
 }
 

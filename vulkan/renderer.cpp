@@ -291,48 +291,51 @@ void Renderer::update_per_frame_data(Scene& scene, uint32_t swapchain_index)
 void Renderer::create_descriptor_sets(vk::DescriptorPool descriptor_pool, uint32_t swapchain_size)
 {
     std::vector<vk::DescriptorSetLayout> layouts(swapchain_size, m_pipeline.descriptor_set_layout);
-    m_descriptor_sets = m_device.allocateDescriptorSets(vk::DescriptorSetAllocateInfo()
-        .setDescriptorPool(descriptor_pool)
-        .setDescriptorSetCount(static_cast<uint32_t>(layouts.size()))
-        .setPSetLayouts(layouts.data()));
+    m_descriptor_sets = m_device.allocateDescriptorSets(vk::DescriptorSetAllocateInfo{
+        .descriptorPool = descriptor_pool,
+        .descriptorSetCount = static_cast<uint32_t>(layouts.size()),
+        .pSetLayouts = layouts.data()});
 
     for (uint32_t i = 0; i < swapchain_size; i++)
     {
-        auto descriptor_acceleration_structure_info = vk::WriteDescriptorSetAccelerationStructureKHR()
-            .setAccelerationStructureCount(1u)
-            .setPAccelerationStructures(&(per_frame[i].tlas.acceleration_structure));
+        vk::WriteDescriptorSetAccelerationStructureKHR descriptor_acceleration_structure_info{
+            .accelerationStructureCount = 1u,
+            .pAccelerationStructures = &(per_frame[i].tlas.acceleration_structure) 
+        };
 
-        auto image_info = vk::DescriptorImageInfo()
-            .setImageLayout(vk::ImageLayout::eGeneral)
-            .setImageView(per_frame[i].image_view);
+        vk::DescriptorImageInfo image_info{
+            .imageView = per_frame[i].image_view,
+            .imageLayout = vk::ImageLayout::eGeneral
+        };
 
-        auto primitives_info = vk::DescriptorBufferInfo()
-            .setBuffer(per_frame[i].primitives.buffer)
-            .setOffset(0u)
-            .setRange(VK_WHOLE_SIZE);
+        vk::DescriptorBufferInfo primitives_info{
+            .buffer = per_frame[i].primitives.buffer,
+            .offset = 0u,
+            .range = VK_WHOLE_SIZE
+        };
 
         m_device.updateDescriptorSets(std::array{
-            vk::WriteDescriptorSet()
-                .setPNext(&descriptor_acceleration_structure_info)
-                .setDstSet(m_descriptor_sets[i])
-                .setDstBinding(0)
-                .setDstArrayElement(0)
-                .setDescriptorType(vk::DescriptorType::eAccelerationStructureKHR)
-                .setDescriptorCount(1),
-            vk::WriteDescriptorSet()
-                .setDstSet(m_descriptor_sets[i])
-                .setDstBinding(1)
-                .setDstArrayElement(0)
-                .setDescriptorType(vk::DescriptorType::eStorageImage)
-                .setDescriptorCount(1)
-                .setPImageInfo(&image_info),
-            vk::WriteDescriptorSet()
-                .setDstSet(m_descriptor_sets[i])
-                .setDstBinding(2)
-                .setDstArrayElement(0)
-                .setDescriptorType(vk::DescriptorType::eStorageBuffer)
-                .setDescriptorCount(1)
-                .setPBufferInfo(&primitives_info)
+            vk::WriteDescriptorSet{
+                .pNext = &descriptor_acceleration_structure_info,
+                .dstSet = m_descriptor_sets[i],
+                .dstBinding = 0,
+                .dstArrayElement = 0,
+                .descriptorCount = 1,
+                .descriptorType = vk::DescriptorType::eAccelerationStructureKHR },
+            vk::WriteDescriptorSet{
+                .dstSet = m_descriptor_sets[i],
+                .dstBinding = 1,
+                .dstArrayElement = 0,
+                .descriptorCount = 1,
+                .descriptorType = vk::DescriptorType::eStorageImage,
+                .pImageInfo = &image_info},
+            vk::WriteDescriptorSet{
+                .dstSet = m_descriptor_sets[i],
+                .dstBinding = 2,
+                .dstArrayElement = 0,
+                .descriptorCount = 1,
+                .descriptorType = vk::DescriptorType::eStorageBuffer,
+                .pBufferInfo = &primitives_info},
             }, {});
     }
 }

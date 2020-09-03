@@ -101,9 +101,10 @@ void Shader_system::compile(Scene& scene, Shader& shader, shaderc_shader_kind sh
     if (compile_result.GetCompilationStatus() != shaderc_compilation_status_success) {
         shader.error = compile_result.GetErrorMessage();
     }
-    shader.shader_module = m_device.createShaderModule(vk::ShaderModuleCreateInfo()
-        .setCodeSize(sizeof(shaderc::SpvCompilationResult::element_type) * std::distance(compile_result.begin(), compile_result.end()))
-        .setPCode(compile_result.begin()));
+    shader.shader_module = m_device.createShaderModule(vk::ShaderModuleCreateInfo{
+        .codeSize = sizeof(shaderc::SpvCompilationResult::element_type) * std::distance(compile_result.begin(), compile_result.end()),
+        .pCode = compile_result.begin()
+    });
 }
 
 std::vector<char> Shader_system::read_file(std::filesystem::path path) const
