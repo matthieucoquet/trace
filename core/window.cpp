@@ -3,7 +3,6 @@
 #include <fmt/core.h>
 
 constexpr bool verbose = false;
-//constexpr unsigned int initial_width = 1800u;
 constexpr unsigned int initial_height = 900;
 
 Window::Window(float recommended_ratio)

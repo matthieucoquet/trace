@@ -1,6 +1,6 @@
 #pragma once
 #include "core/system.hpp"
-#include "core/entities.hpp"
+#include "core/shader_data.hpp"
 #include <filesystem>
 #include <shaderc/shaderc.hpp>
 

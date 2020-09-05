@@ -1,7 +1,7 @@
 #pragma once
 #include "vulkan/vk_common.hpp"
 
-#include "window.hpp"
+#include "core/window.hpp"
 #include "core/system.hpp"
 #include "core/scene.hpp"
 #include "vulkan/context.hpp"

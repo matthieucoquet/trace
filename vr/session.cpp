@@ -17,7 +17,6 @@ constexpr float offset_y_space = standing ? 0.0f : 1.7f;
 
 Session::Session(xr::Session new_session, Instance& instance, vulkan::Context& context, Scene& scene) :
     session(new_session),
-    //m_input(instance.instance, session),
     m_main_swapchain(instance, session, context),
     m_ui_swapchain(session, context, xr::Extent2Di{ .width = 1000, .height = 1000 }),
     m_renderer(context, scene),
@@ -44,12 +43,9 @@ Session::Session(xr::Session new_session, Instance& instance, vulkan::Context& c
     for(size_t eye_id = 0u; eye_id < 2u; eye_id++)
     {
         composition_layer_views[eye_id] = xr::CompositionLayerProjectionView{
-            //.pose = xr::Posef{},
-            //.fov = xr::Fovf{},
-            .subImage = /*xr::SwapchainSubImage*/ {
+            .subImage = {
                 .swapchain = m_main_swapchain.swapchain,
                 .imageRect = {
-                    //.offset = {},
                     .extent = m_main_swapchain.view_extent
                 },
                 .imageArrayIndex = 0u
@@ -69,16 +65,15 @@ Session::Session(xr::Session new_session, Instance& instance, vulkan::Context& c
     composition_layer_ui = xr::CompositionLayerQuad{
         .space = m_stage_space,
         .eyeVisibility = xr::EyeVisibility::Both,
-        .subImage = /*xr::SwapchainSubImage*/{
+        .subImage = {
                 .swapchain = m_ui_swapchain.swapchain,
-                .imageRect = /*xr::Rect2Di*/ {
-                    //.offset = {},
+                .imageRect = {
                     .extent = m_ui_swapchain.view_extent
                 },
                 .imageArrayIndex = 0u
             },
-        .pose = /*xr::Posef*/{.position = { 0.f, 1.5f - offset_y_space, -0.5f } },
-        .size = /*xr::Extent2Df*/{ .width = 0.4f, .height = 0.4f }
+        .pose = {.position = { 0.f, 1.5f - offset_y_space, -0.5f } },
+        .size = { .width = 0.4f, .height = 0.4f }
     };
 
     m_input_systems.emplace_back(std::make_unique<Main_input_system>(instance.instance, session, m_action_sets));
@@ -210,7 +205,7 @@ void Session::draw_frame(Scene& scene, std::vector<std::unique_ptr<System>>& sys
 
             m_renderer.start_recording(command_buffer, scene, m_main_swapchain.vk_images[swapchain_index], swapchain_index, m_main_swapchain.vk_view_extent());
             m_mirror.copy(command_buffer, m_renderer.per_frame[swapchain_index].storage_image.image, command_buffer_id, m_main_swapchain.vk_view_extent());
-            m_renderer.end_recording(command_buffer, m_main_swapchain.vk_images[swapchain_index], swapchain_index);
+            m_renderer.end_recording(command_buffer, swapchain_index);
 
             swapchain_index = m_ui_swapchain.swapchain.acquireSwapchainImage({});
             m_ui_swapchain.swapchain.waitSwapchainImage({ .timeout = xr::Duration::infinite() });

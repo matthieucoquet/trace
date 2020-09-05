@@ -68,11 +68,11 @@ Shader_system::Shader_system(vulkan::Context& context, Scene& scene) :
     scene.miss_shader.shader_file_id = find_file("miss.rmiss");
     compile(scene, scene.miss_shader, shaderc_miss_shader);
 
-    for (auto& entity : scene.entities) {
-        entity.intersection.shader_file_id = find_file(entity.name + ".rint");
-        compile(scene, entity.intersection, shaderc_intersection_shader);
-        entity.closest_hit.shader_file_id = find_file(entity.name + ".rchit");
-        compile(scene, entity.closest_hit, shaderc_closesthit_shader);
+    for (auto& shader_group : scene.shader_groups) {
+        shader_group.intersection.shader_file_id = find_file(shader_group.name + ".rint");
+        compile(scene, shader_group.intersection, shaderc_intersection_shader);
+        shader_group.closest_hit.shader_file_id = find_file(shader_group.name + ".rchit");
+        compile(scene, shader_group.closest_hit, shaderc_closesthit_shader);
     }
 }
 
@@ -86,9 +86,9 @@ void Shader_system::cleanup(Scene& scene)
     m_device.destroyShaderModule(scene.raygen_center_shader.shader_module);
     m_device.destroyShaderModule(scene.raygen_side_shader.shader_module);
     m_device.destroyShaderModule(scene.miss_shader.shader_module);
-    for (auto& entity : scene.entities) {
-        m_device.destroyShaderModule(entity.intersection.shader_module);
-        m_device.destroyShaderModule(entity.closest_hit.shader_module);
+    for (auto& shader_group : scene.shader_groups) {
+        m_device.destroyShaderModule(shader_group.intersection.shader_module);
+        m_device.destroyShaderModule(shader_group.closest_hit.shader_module);
     }
 }
 

@@ -25,17 +25,17 @@ find_package(shaderc MODULE REQUIRED)
 add_executable (trace)
 
 set(SOURCE_CORE
-    core/entities.cpp core/entities.hpp
+    core/shader_data.hpp
     core/scene.cpp core/scene.hpp
-    core/shader_types.hpp
-    core/system.hpp)
+    core/device_data.hpp
+    core/system.hpp
+    core/window.cpp core/window.hpp)
 set(SOURCE_ENGINE
     engine/main.cpp
     engine/engine.cpp engine/engine.hpp
     engine/input_glfw_system.cpp engine/input_glfw_system.hpp
     engine/shader_system.cpp engine/shader_system.hpp
-    engine/ui_system.cpp engine/ui_system.hpp
-    engine/window.cpp engine/window.hpp)
+    engine/ui_system.cpp engine/ui_system.hpp)
 set(SOURCE_VR
     vr/input_system.hpp
     vr/ui_input_system.cpp vr/ui_input_system.hpp

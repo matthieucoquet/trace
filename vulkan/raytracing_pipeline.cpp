@@ -127,10 +127,10 @@ void Raytracing_pipeline::create_pipeline(Context& context, Scene& scene)
             .intersectionShader = VK_SHADER_UNUSED_KHR}
     };
 
-    shader_stages.reserve(shader_stages.size() + 2 * scene.entities.size());
-    groups.reserve(shader_stages.size() + scene.entities.size());
+    shader_stages.reserve(shader_stages.size() + 2 * scene.shader_groups.size());
+    groups.reserve(shader_stages.size() + scene.shader_groups.size());
     uint32_t id = 3;
-    for (const auto shader_group : scene.entities) {
+    for (const auto shader_group : scene.shader_groups) {
         shader_stages.push_back(vk::PipelineShaderStageCreateInfo{
             .stage = vk::ShaderStageFlagBits::eIntersectionKHR,
             .module = shader_group.intersection.shader_module,

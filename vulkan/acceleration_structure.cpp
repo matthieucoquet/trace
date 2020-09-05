@@ -2,7 +2,7 @@
 #include "context.hpp"
 #include "command_buffer.hpp"
 #include "core/scene.hpp"
-#include "core/shader_types.hpp"
+#include "core/device_data.hpp"
 
 #include <glm/gtx/string_cast.hpp>
 #include <fmt/core.h>
@@ -173,7 +173,7 @@ Tlas::Tlas(vk::CommandBuffer command_buffer, Context& context, const Blas& blas,
             } },
             .instanceCustomIndex = i,
             .mask = 0xFF,
-            .instanceShaderBindingTableRecordOffset = static_cast<std::underlying_type_t<Object_kind>>(scene.kinds[i]),
+            .instanceShaderBindingTableRecordOffset = static_cast<uint32_t>(scene.primitive_group_ids[i]),
             .accelerationStructureReference = blas.structure_address
         });
     }

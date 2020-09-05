@@ -6,12 +6,6 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <array>
 
-enum class Object_kind : unsigned int
-{
-    sphere = 0u,
-    cube = 1u
-};
-
 struct Primitive
 {
     glm::mat4 world_to_model;

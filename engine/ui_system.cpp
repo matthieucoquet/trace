@@ -29,16 +29,16 @@ void Ui_system::step(Scene& scene)
 
     if (ImGui::TreeNodeEx("Scene", ImGuiTreeNodeFlags_DefaultOpen))
     {
-        add_leaf("Raygen", &scene.raygen_center_shader);
-        add_leaf("Raygen", &scene.raygen_side_shader);
+        add_leaf("Raygen narrow", &scene.raygen_center_shader);
+        add_leaf("Raygen wide", &scene.raygen_side_shader);
         add_leaf("Miss", &scene.miss_shader);
 
-        for (auto& entity: scene.entities)
+        for (auto& shader_group : scene.shader_groups)
         {
-            if (ImGui::TreeNode(entity.name.c_str()))
+            if (ImGui::TreeNode(shader_group.name.c_str()))
             {
-                add_leaf("Intersection", &entity.intersection);
-                add_leaf("Closest hit", &entity.closest_hit);
+                add_leaf("Intersection", &shader_group.intersection);
+                add_leaf("Closest hit", &shader_group.closest_hit);
                 ImGui::TreePop();
             }
         }

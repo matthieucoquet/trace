@@ -1,6 +1,6 @@
 #define VMA_IMPLEMENTATION  // VMA implementation: Need to be define before any header
 #include "context.hpp"
-#include "engine/window.hpp"
+#include "core/window.hpp"
 #include "vr/instance.hpp"
 #include "debug_callback.hpp"
 
