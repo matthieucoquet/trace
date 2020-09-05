@@ -167,7 +167,7 @@ void Renderer::start_recording(vk::CommandBuffer command_buffer, Scene& scene, v
     );
 }
 
-void Renderer::end_recording(vk::CommandBuffer command_buffer, vk::Image swapchain_image, uint32_t swapchain_id)
+void Renderer::end_recording(vk::CommandBuffer command_buffer, uint32_t swapchain_id)
 {
     //  Img to storage
     command_buffer.pipelineBarrier(
@@ -182,30 +182,7 @@ void Renderer::end_recording(vk::CommandBuffer command_buffer, vk::Image swapcha
             .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
             .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
             .image = per_frame[swapchain_id].storage_image.image,
-            .subresourceRange = /*vk::ImageSubresourceRange*/{
-                .aspectMask = vk::ImageAspectFlagBits::eColor,
-                .baseMipLevel = 0,
-                .levelCount = 1u,
-                .baseArrayLayer = 0,
-                .layerCount = 1
-            }
-        });
-
-    //  Swapchain to attachment optiomal
-    command_buffer.pipelineBarrier(
-        vk::PipelineStageFlagBits::eTransfer,
-        vk::PipelineStageFlagBits::eBottomOfPipe,
-        //vk::PipelineStageFlagBits::eAllCommands,
-        {}, {}, {},
-        vk::ImageMemoryBarrier{
-            .srcAccessMask = vk::AccessFlagBits::eTransferWrite,
-            .dstAccessMask = {},
-            .oldLayout = vk::ImageLayout::eTransferDstOptimal,
-            .newLayout = vk::ImageLayout::eColorAttachmentOptimal,
-            .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-            .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-            .image = swapchain_image,
-            .subresourceRange = /*vk::ImageSubresourceRange*/{
+            .subresourceRange = {
                 .aspectMask = vk::ImageAspectFlagBits::eColor,
                 .baseMipLevel = 0,
                 .levelCount = 1u,

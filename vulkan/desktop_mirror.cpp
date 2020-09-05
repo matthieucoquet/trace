@@ -129,6 +129,7 @@ void Desktop_mirror::present(vk::CommandBuffer& command_buffer, vk::Fence fence,
     if (present_result == vk::Result::eErrorOutOfDateKHR) {
         assert(false);
     }
+    m_device.waitForFences(fence, true, std::numeric_limits<uint64_t>::max());
 }
 
 

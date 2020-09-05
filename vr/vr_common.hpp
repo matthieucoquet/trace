@@ -1,6 +1,7 @@
 #pragma once
 #include "vulkan/vk_common.hpp"
 
+#define XR_USE_TIMESPEC
 //#define XR_NO_PROTOTYPES
 #define OPENXR_HPP_DISPATCH_LOADER_DYNAMIC 1
 //#define OPENXR_HPP_NO_SMART_HANDLE

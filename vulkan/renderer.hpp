@@ -34,7 +34,7 @@ public:
 
     void update_per_frame_data(Scene& scene, uint32_t swapchain_index);
     void start_recording(vk::CommandBuffer command_buffer, Scene& scene, vk::Image swapchain_image, uint32_t swapchain_id, vk::Extent2D extent);
-    void end_recording(vk::CommandBuffer command_buffer, vk::Image swapchain_image, uint32_t swapchain_id);
+    void end_recording(vk::CommandBuffer command_buffer, uint32_t swapchain_id);
 
     void create_per_frame_data(Context& context, Scene& scene, vk::Extent2D extent, vk::Format format, uint32_t swapchain_size);
     // OpenXR doesn't expose Storage bit so we have to first render to another image and copy

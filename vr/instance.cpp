@@ -20,7 +20,8 @@ constexpr bool verbose = true;
 Instance::Instance()
 {
     std::vector<const char*> required_extensions{
-        XR_KHR_VULKAN_ENABLE_EXTENSION_NAME
+        XR_KHR_VULKAN_ENABLE_EXTENSION_NAME,
+        XR_KHR_CONVERT_TIMESPEC_TIME_EXTENSION_NAME
     };
     //auto xrGetInstanceProcAddr = m_dynamic_loader.getProcAddress<PFN_xrGetInstanceProcAddr>("xrGetInstanceProcAddr");
     //OPENXR_HPP_DEFAULT_DISPATCHER.populateBase(xrGetInstanceProcAddr);
