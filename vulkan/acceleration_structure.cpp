@@ -163,7 +163,7 @@ Tlas::Tlas(vk::CommandBuffer command_buffer, Context& context, const Blas& blas,
     std::vector<vk::AccelerationStructureInstanceKHR> instances{};
     for (uint32_t i = 0u; i < scene.primitives.size(); i++)
     {
-        glm::mat4 inv = glm::inverse(scene.primitives[i].world_to_model);
+        glm::mat4 inv = glm::inverse(scene.primitive_transform[i]);
         m_instances.push_back(vk::AccelerationStructureInstanceKHR{
             .transform = {
                 .matrix = std::array<std::array<float, 4>, 3>{
@@ -195,7 +195,7 @@ void Tlas::update(vk::CommandBuffer command_buffer, const Scene& scene, bool fir
     // Update instances
     for (uint32_t i = 0u; i < scene.primitives.size(); i++)
     {
-        glm::mat4 inv = glm::inverse(scene.primitives[i].world_to_model);
+        glm::mat4 inv = glm::inverse(scene.primitive_transform[i]);
         m_instances[i].transform.matrix = std::array<std::array<float, 4>, 3>{
             std::array<float, 4>{ inv[0].x, inv[1].x, inv[2].x, inv[3].x },
                 std::array<float, 4>{ inv[0].y, inv[1].y, inv[2].y, inv[3].y },

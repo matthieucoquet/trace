@@ -246,7 +246,7 @@ void Renderer::create_per_frame_data(Context& context, Scene& scene, vk::Extent2
 
         Vma_buffer prim_buffer = Vma_buffer(
             vk::BufferCreateInfo{
-                    .size = sizeof(Primitive) * scene.primitives.size(),
+                    .size = sizeof(glm::mat4) * scene.primitive_transform.size(),
                     .usage = vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eRayTracingKHR },
             VMA_MEMORY_USAGE_CPU_TO_GPU,
             context.device, context.allocator);
@@ -262,7 +262,7 @@ void Renderer::create_per_frame_data(Context& context, Scene& scene, vk::Extent2
 
 void Renderer::update_per_frame_data(Scene& scene, uint32_t swapchain_index)
 {
-    per_frame[swapchain_index].primitives.copy(scene.primitives.data(), sizeof(Primitive) * scene.primitives.size());
+    per_frame[swapchain_index].primitives.copy(scene.primitive_transform.data(), sizeof(glm::mat4) * scene.primitive_transform.size());
 }
 
 void Renderer::create_descriptor_sets(vk::DescriptorPool descriptor_pool, uint32_t swapchain_size)

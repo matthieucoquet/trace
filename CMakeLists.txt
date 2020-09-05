@@ -29,6 +29,7 @@ set(SOURCE_CORE
     core/scene.cpp core/scene.hpp
     core/device_data.hpp
     core/system.hpp
+    core/transform_helpers.hpp
     core/window.cpp core/window.hpp)
 set(SOURCE_ENGINE
     engine/main.cpp

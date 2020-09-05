@@ -3,6 +3,16 @@
 #include "shader_data.hpp"
 #include <vector>
 #include <chrono>
+#define GLM_FORCE_RADIANS
+#include <glm/glm.hpp>
+#include <glm/gtc/quaternion.hpp>
+
+struct Primitive
+{
+    glm::vec3 position;
+    glm::quat rotation;
+    float scale;
+};
 
 class Scene
 {
@@ -10,6 +20,7 @@ public:
     Scene_global scene_global = {};
 
     std::vector<Primitive> primitives;
+    std::vector<glm::mat4> primitive_transform;
     std::vector<size_t> primitive_group_ids;
 
     std::vector<Shader_file> shader_files;
@@ -17,8 +28,6 @@ public:
     Shader raygen_center_shader;
     Shader miss_shader;
     std::vector<Shader_group> shader_groups;
-
-    std::array<xr::Posef, 2> last_known_hand_pose;
 
     Scene();
 
