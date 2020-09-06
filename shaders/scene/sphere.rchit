@@ -8,7 +8,7 @@
 
 layout(binding = 0, set = 0) uniform accelerationStructureEXT topLevelAS;
 
-layout(location = 0) rayPayloadInEXT vec3 hit_value;
+layout(location = 0) rayPayloadInEXT vec4 hit_value;
 hitAttributeEXT vec3 attributes;
 
 layout(binding = 2, set = 0, scalar) buffer Primitives { Primitive p[]; } primitives;
@@ -44,6 +44,7 @@ void main()
                     );
         }*/
 
-    vec3 spec = hit_value * max(dot(normal, reflection), 0.0);
-    hit_value = (spec + ambient + diffuse) * vec3(0.5, 0.5, 0.1);
+    vec3 spec = hit_value.xyz * max(dot(normal, reflection), 0.0);
+    float front = dot(position - scene_global.ui_position, scene_global.ui_normal) <= 0.0f ? 0.0f : 1.0f;
+    hit_value = vec4((spec + ambient + diffuse) * vec3(0.5, 0.5, 0.1), front);
 }

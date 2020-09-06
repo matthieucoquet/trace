@@ -90,7 +90,7 @@ void Renderer::start_recording(vk::CommandBuffer command_buffer, Scene& scene, v
 
     command_buffer.pushConstants(
         m_pipeline.pipeline_layout,
-        vk::ShaderStageFlagBits::eRaygenKHR | vk::ShaderStageFlagBits::eIntersectionKHR | vk::ShaderStageFlagBits::eClosestHitKHR, 0,
+        vk::ShaderStageFlagBits::eRaygenKHR | vk::ShaderStageFlagBits::eIntersectionKHR | vk::ShaderStageFlagBits::eClosestHitKHR | vk::ShaderStageFlagBits::eMissKHR, 0,
         sizeof(Scene_global), &scene.scene_global);
 
     constexpr unsigned int foveated_rate = 8u;

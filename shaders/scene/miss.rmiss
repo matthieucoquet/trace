@@ -8,7 +8,7 @@
 
 layout(binding = 0, set = 0) uniform accelerationStructureEXT topLevelAS;
 
-layout(location = 0) rayPayloadInEXT vec3 hit_value;
+layout(location = 0) rayPayloadInEXT vec4 hit_value;
 
 void main()
 {
@@ -44,11 +44,12 @@ void main()
                         );
             }*/
 
-        vec3 spec = 1.12 * hit_value * max(dot(normal, reflection), 0.0);
-        hit_value = (spec + ambient + diffuse) * vec3(0.4, 0.4, 0.4);
+        vec3 spec = 1.12 * hit_value.xyz * max(dot(normal, reflection), 0.0);
+        float front = dot(position - scene_global.ui_position, scene_global.ui_normal) <= 0.0f ? 0.0f : 1.0f;
+        hit_value = vec4((spec + ambient + diffuse) * vec3(0.4, 0.4, 0.4), front);
     }
     else
     {
-        hit_value = vec3(0.0, 0.0, 0.2);
+        hit_value = vec4(0.0, 0.0, 0.2, 0.0);
     }
 }

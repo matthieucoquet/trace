@@ -88,6 +88,8 @@ void Main_input_system::step(Scene& scene, xr::Session session, xr::Time display
                     auto [pos, rot] = transform(hand.position, hand.rotation, m_diff_pos[i], m_diff_rot[i]);
                     prim.position = pos;
                     prim.rotation = rot;
+                    scene.scene_global.ui_position = pos;
+                    scene.scene_global.ui_normal = glm::rotate(rot, glm::vec3(0.0f, 0.0f, 1.0f));
                 }
                 else {
                     Primitive& prim = scene.primitives[m_grabed_id[i]];

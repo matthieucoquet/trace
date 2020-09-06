@@ -36,6 +36,8 @@ Scene::Scene()
     }
 
     ui_primitive = Primitive{ .position = glm::vec3(0.f, 1.5f - vr_offset_y, -0.5f), .rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f), .scale = 0.4f };
+    scene_global.ui_position = ui_primitive.position;
+    scene_global.ui_normal = glm::rotate(ui_primitive.rotation, glm::vec3(0.0f, 0.0f, 1.0f));
 }
 
 void Scene::step()

@@ -21,6 +21,8 @@ struct Eye
 layout(push_constant, scalar) uniform Scene_global {
     Eye left;
     Eye right;
+    vec3 ui_position;
+    vec3 ui_normal;
     float time;
 } scene_global;
 

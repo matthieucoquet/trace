@@ -37,7 +37,7 @@ Raytracing_pipeline::Raytracing_pipeline(Context& context, Scene& scene) :
         .pBindings = array_bindings.data() });
 
     vk::PushConstantRange push_constants{
-        .stageFlags = vk::ShaderStageFlagBits::eRaygenKHR | vk::ShaderStageFlagBits::eIntersectionKHR | vk::ShaderStageFlagBits::eClosestHitKHR,
+        .stageFlags = vk::ShaderStageFlagBits::eRaygenKHR | vk::ShaderStageFlagBits::eIntersectionKHR | vk::ShaderStageFlagBits::eClosestHitKHR | vk::ShaderStageFlagBits::eMissKHR,
         .offset = 0,
         .size = sizeof(Scene_global) };
 

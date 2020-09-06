@@ -18,7 +18,7 @@ constexpr float offset_y_space = standing ? 0.0f : 1.7f;
 
 Session::Session(xr::Session new_session, Instance& instance, vulkan::Context& context, Scene& scene) :
     session(new_session),
-    m_main_swapchain(instance, session, context),
+    m_ray_swapchain(instance, session, context),
     m_ui_swapchain(session, context, xr::Extent2Di{ .width = 1000, .height = 1000 }),
     m_renderer(context, scene),
     m_mirror(context, size_command_buffers),
@@ -35,34 +35,40 @@ Session::Session(xr::Session new_session, Instance& instance, vulkan::Context& c
     m_stage_space = session.createReferenceSpace(xr::ReferenceSpaceCreateInfo{
         .referenceSpaceType = standing ? xr::ReferenceSpaceType::Stage : xr::ReferenceSpaceType::Local });
 
-    uint32_t size_swapchain = m_main_swapchain.size();
-    auto extent = m_main_swapchain.vk_view_extent();
+    uint32_t size_swapchain = m_ray_swapchain.size();
+    auto extent = m_ray_swapchain.vk_view_extent();
     extent.width *= 2;
-    m_renderer.create_per_frame_data(context, scene, extent, m_main_swapchain.required_format, size_swapchain);
+    m_renderer.create_per_frame_data(context, scene, extent, m_ray_swapchain.required_format, size_swapchain);
     m_renderer.create_descriptor_sets(context.descriptor_pool, size_swapchain);
 
     for(size_t eye_id = 0u; eye_id < 2u; eye_id++)
     {
         composition_layer_views[eye_id] = xr::CompositionLayerProjectionView{
             .subImage = {
-                .swapchain = m_main_swapchain.swapchain,
+                .swapchain = m_ray_swapchain.swapchain,
                 .imageRect = {
-                    .extent = m_main_swapchain.view_extent
+                    .extent = m_ray_swapchain.view_extent
                 },
                 .imageArrayIndex = 0u
             }
         };
     }
     composition_layer_views[1].subImage.imageRect.offset = xr::Offset2Di{
-        .x = m_main_swapchain.view_extent.width,
+        .x = m_ray_swapchain.view_extent.width,
         .y = 0
     };
-
-    composition_layer_proj = xr::CompositionLayerProjection{
+    composition_layer_front = xr::CompositionLayerProjection{
+        .layerFlags = xr::CompositionLayerFlagBits::BlendTextureSourceAlpha | xr::CompositionLayerFlagBits::UnpremultipliedAlpha,
         .space = m_stage_space,
         .viewCount = 2u,
         .views = composition_layer_views.data()
     };
+    composition_layer_back = xr::CompositionLayerProjection{
+        .space = m_stage_space,
+        .viewCount = 2u,
+        .views = composition_layer_views.data()
+    };
+
     composition_layer_ui = xr::CompositionLayerQuad{
         .space = m_stage_space,
         .eyeVisibility = xr::EyeVisibility::Both,
@@ -200,13 +206,13 @@ void Session::draw_frame(Scene& scene, std::vector<std::unique_ptr<System>>& sys
 
             size_t command_buffer_id = m_command_buffers.find_available();
             auto command_buffer = m_command_buffers.command_buffers[command_buffer_id];
-            uint32_t swapchain_index = m_main_swapchain.swapchain.acquireSwapchainImage({});
-            m_main_swapchain.swapchain.waitSwapchainImage({ .timeout = xr::Duration::infinite() });
+            uint32_t swapchain_index = m_ray_swapchain.swapchain.acquireSwapchainImage({});
+            m_ray_swapchain.swapchain.waitSwapchainImage({ .timeout = xr::Duration::infinite() });
 
             m_renderer.update_per_frame_data(scene, swapchain_index);
 
-            m_renderer.start_recording(command_buffer, scene, m_main_swapchain.vk_images[swapchain_index], swapchain_index, m_main_swapchain.vk_view_extent());
-            m_mirror.copy(command_buffer, m_renderer.per_frame[swapchain_index].storage_image.image, command_buffer_id, m_main_swapchain.vk_view_extent());
+            m_renderer.start_recording(command_buffer, scene, m_ray_swapchain.vk_images[swapchain_index], swapchain_index, m_ray_swapchain.vk_view_extent());
+            m_mirror.copy(command_buffer, m_renderer.per_frame[swapchain_index].storage_image.image, command_buffer_id, m_ray_swapchain.vk_view_extent());
             m_renderer.end_recording(command_buffer, swapchain_index);
 
             swapchain_index = m_ui_swapchain.swapchain.acquireSwapchainImage({});
@@ -217,10 +223,11 @@ void Session::draw_frame(Scene& scene, std::vector<std::unique_ptr<System>>& sys
 
             m_mirror.present(command_buffer, m_command_buffers.fences[command_buffer_id], command_buffer_id);
 
-            m_main_swapchain.swapchain.releaseSwapchainImage({});
+            m_ray_swapchain.swapchain.releaseSwapchainImage({});
             m_ui_swapchain.swapchain.releaseSwapchainImage({});
+            layers_pointers.push_back(reinterpret_cast<xr::CompositionLayerBaseHeader*>(&composition_layer_back));
             layers_pointers.push_back(reinterpret_cast<xr::CompositionLayerBaseHeader*>(&composition_layer_ui));
-            layers_pointers.push_back(reinterpret_cast<xr::CompositionLayerBaseHeader*>(&composition_layer_proj));
+            layers_pointers.push_back(reinterpret_cast<xr::CompositionLayerBaseHeader*>(&composition_layer_front));
             session.endFrame(xr::FrameEndInfo{
                 .displayTime = frame_state.predictedDisplayTime,
                 .environmentBlendMode = xr::EnvironmentBlendMode::Opaque,

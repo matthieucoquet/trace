@@ -171,6 +171,9 @@ void Input_glfw_system::update_mouse_pos_and_buttons()
     glfwGetCursorPos(window, &mouse_x, &mouse_y);
     float updated_mouse_x = std::clamp(static_cast<float>(mouse_x), 0.0f, io.DisplaySize.x);
     float updated_mouse_y = std::clamp(static_cast<float>(mouse_y), 0.0f, io.DisplaySize.y);
+    if (updated_mouse_x != mouse_x || updated_mouse_y != mouse_y) {
+        glfwSetCursorPos(window, updated_mouse_x, updated_mouse_y);
+    }
 
     io.MousePos = ImVec2(updated_mouse_x, updated_mouse_y);
 }

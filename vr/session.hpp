@@ -39,7 +39,7 @@ private:
     xr::Space m_stage_space;
     xr::SessionState m_session_state;
 
-    Swapchain m_main_swapchain;
+    Swapchain m_ray_swapchain;
     Swapchain m_ui_swapchain;
 
     vulkan::Renderer m_renderer;
@@ -47,7 +47,8 @@ private:
     vulkan::Reusable_command_buffers m_command_buffers;
     vulkan::Imgui_render m_imgui_render;
 
-    xr::CompositionLayerProjection composition_layer_proj{};
+    xr::CompositionLayerProjection composition_layer_front{};
+    xr::CompositionLayerProjection composition_layer_back{};
     std::array<xr::CompositionLayerProjectionView, 2> composition_layer_views;
     xr::CompositionLayerQuad composition_layer_ui{};
 
