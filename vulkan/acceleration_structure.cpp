@@ -101,7 +101,7 @@ Blas::Blas(Context& context) :
     allocate_object_memory();
 
 
-    vk::AabbPositionsKHR aabb{ -1.0f, -1.0f, -1.0f, 1.0f, 1.0f, 1.0f };
+    vk::AabbPositionsKHR aabb{ -0.5f, -0.5f, -0.5f, 0.5f, 0.5f, 0.5f };
     m_aabbs_buffer = vulkan::Vma_buffer(
         vk::BufferCreateInfo{
             .size = sizeof(vk::AabbPositionsKHR),

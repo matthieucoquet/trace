@@ -17,11 +17,17 @@ struct Primitive
 class Scene
 {
 public:
+    // Should probably be a runtime setting in the future
+    static constexpr bool standing = true;
+    static constexpr float vr_offset_y = standing ? 0.0f : 1.7f;
+
     Scene_global scene_global = {};
 
     std::vector<Primitive> primitives;
     std::vector<glm::mat4> primitive_transform;
     std::vector<size_t> primitive_group_ids;
+
+    Primitive ui_primitive;
 
     std::vector<Shader_file> shader_files;
     Shader raygen_side_shader;

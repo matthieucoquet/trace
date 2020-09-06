@@ -28,6 +28,8 @@ private:
     std::array<xr::Space, 2> m_hand_space;
 
     std::array<bool, 2> m_was_grabing;
+
+    std::array<bool, 2> m_grabed_ui;
     std::array<size_t, 2> m_grabed_id;
     std::array<glm::vec3, 2> m_diff_pos;
     std::array<glm::quat, 2> m_diff_rot;

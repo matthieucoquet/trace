@@ -25,7 +25,7 @@ Scene::Scene()
 
     for (unsigned int i = 0u; i < 4u; i++) {
         for (unsigned int j = 0u; j < 4u; j++) {
-            primitives.emplace_back(Primitive{ .position = glm::vec3(-6.0f + 4.0f * i, 5.0f, -6.0f + 4.0f * j), .rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f), .scale = 1.0f });
+            primitives.emplace_back(Primitive{ .position = glm::vec3(-3.0f + 2.0f * i, 3.0f, -3.0f + 2.0f * j), .rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f), .scale = 1.0f });
             primitive_group_ids.emplace_back(cube_id);
         }
     }
@@ -34,6 +34,8 @@ Scene::Scene()
         glm::mat4 model_to_world = glm::translate(primitive.position) * glm::toMat4(primitive.rotation) * glm::scale(glm::vec3(primitive.scale));
         primitive_transform.emplace_back(glm::inverse(model_to_world));
     }
+
+    ui_primitive = Primitive{ .position = glm::vec3(0.f, 1.5f - vr_offset_y, -0.5f), .rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f), .scale = 0.4f };
 }
 
 void Scene::step()

@@ -83,25 +83,45 @@ void Main_input_system::step(Scene& scene, xr::Session session, xr::Time display
             const auto& hand = scene.primitives[i];
             if (m_was_grabing[i])
             {
-                Primitive& prim = scene.primitives[m_grabed_id[i]];
-                auto [pos, rot] = transform(hand.position, hand.rotation, m_diff_pos[i], m_diff_rot[i]);
-                prim.position = pos;
-                prim.rotation = rot;
-
-                glm::mat4 model_to_world = glm::translate(prim.position) * glm::toMat4(prim.rotation) * glm::scale(glm::vec3(prim.scale));
-                scene.primitive_transform[m_grabed_id[i]] = glm::inverse(model_to_world);
+                if (m_grabed_ui[i]) {
+                    Primitive& prim = scene.ui_primitive;
+                    auto [pos, rot] = transform(hand.position, hand.rotation, m_diff_pos[i], m_diff_rot[i]);
+                    prim.position = pos;
+                    prim.rotation = rot;
+                }
+                else {
+                    Primitive& prim = scene.primitives[m_grabed_id[i]];
+                    auto [pos, rot] = transform(hand.position, hand.rotation, m_diff_pos[i], m_diff_rot[i]);
+                    prim.position = pos;
+                    prim.rotation = rot;
+                    glm::mat4 model_to_world = glm::translate(prim.position) * glm::toMat4(prim.rotation) * glm::scale(glm::vec3(prim.scale));
+                    scene.primitive_transform[m_grabed_id[i]] = glm::inverse(model_to_world);
+                }
             }
             else
             {
-                for (size_t p_id = 2u; p_id < scene.primitives.size(); p_id++) {
-                    auto& prim = scene.primitives[p_id];
-                    if (glm::length2(prim.position - hand.position) <= (prim.scale * prim.scale)) {
-                        m_grabed_id[i] = p_id; 
-                        auto [pos, rot] = compute_local_transform(hand.position, hand.rotation, prim.position, prim.rotation);
-                        m_diff_rot[i] = rot;
-                        m_diff_pos[i] = pos;
-                        m_was_grabing[i] = true;
-                        break;
+                // Check UI first
+                Primitive& ui = scene.ui_primitive;
+                glm::vec3 ui_normal = glm::rotate(ui.rotation, glm::vec3(0.0f, 0.0f, 1.0f));
+                float z_dist = std::abs(glm::dot(ui_normal, ui.position - hand.position));
+                m_grabed_ui[i] = z_dist < 0.1f && glm::length2(ui.position - hand.position) <= (0.25 * ui.scale * ui.scale);
+                if (m_grabed_ui[i]) {
+                    auto [pos, rot] = compute_local_transform(hand.position, hand.rotation, ui.position, ui.rotation);
+                    m_diff_rot[i] = rot;
+                    m_diff_pos[i] = pos;
+                    m_was_grabing[i] = true;
+                }
+                else {
+                    for (size_t p_id = 2u; p_id < scene.primitives.size(); p_id++) {
+                        auto& prim = scene.primitives[p_id];
+                        if (glm::length2(prim.position - hand.position) <= (0.25 * prim.scale * prim.scale)) {
+                            m_grabed_id[i] = p_id;
+                            auto [pos, rot] = compute_local_transform(hand.position, hand.rotation, prim.position, prim.rotation);
+                            m_diff_rot[i] = rot;
+                            m_diff_pos[i] = pos;
+                            m_was_grabing[i] = true;
+                            break;
+                        }
                     }
                 }
             }
@@ -110,8 +130,6 @@ void Main_input_system::step(Scene& scene, xr::Session session, xr::Time display
             m_was_grabing[i] = false;
         }
     }
-
-
 }
 
 }

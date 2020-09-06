@@ -23,20 +23,31 @@ Instance::Instance()
         XR_KHR_VULKAN_ENABLE_EXTENSION_NAME,
         XR_KHR_CONVERT_TIMESPEC_TIME_EXTENSION_NAME
     };
-    //auto xrGetInstanceProcAddr = m_dynamic_loader.getProcAddress<PFN_xrGetInstanceProcAddr>("xrGetInstanceProcAddr");
-    //OPENXR_HPP_DEFAULT_DISPATCHER.populateBase(xrGetInstanceProcAddr);
+
+#ifdef TRACE_USE_DYNAMIC_LOADER
+    auto xrGetInstanceProcAddr = m_dynamic_loader.getProcAddress<PFN_xrGetInstanceProcAddr>("xrGetInstanceProcAddr");
+    OPENXR_HPP_DEFAULT_DISPATCHER.populateBase(xrGetInstanceProcAddr);
+#endif
 
     if constexpr (verbose) {
         {
             fmt::print("OpenXR API layers:\n");
-            auto properties = xr::enumerateApiLayerProperties(xr::DispatchLoaderStatic());
+            auto properties = xr::enumerateApiLayerProperties(
+#ifndef TRACE_USE_DYNAMIC_LOADER
+                xr::DispatchLoaderStatic()
+#endif
+            );
             for (const auto& property : properties) {
                 fmt::print("\t{}\n", property.layerName);
             }
         }
         {
             fmt::print("Available OpenXR instance extensions:\n");
-            auto properties = xr::enumerateInstanceExtensionProperties(nullptr, xr::DispatchLoaderStatic());
+            auto properties = xr::enumerateInstanceExtensionProperties(nullptr
+#ifndef TRACE_USE_DYNAMIC_LOADER
+                , xr::DispatchLoaderStatic()
+#endif
+            );
             for (const auto& property : properties) {
                 fmt::print("\t{}\n", property.extensionName);
             }
@@ -62,7 +73,11 @@ Instance::Instance()
         .enabledApiLayerNames = nullptr,
         .enabledExtensionCount = static_cast<uint32_t>(required_extensions.size()),
         .enabledExtensionNames = required_extensions.data()
-    }, xr::DispatchLoaderStatic());
+    }
+#ifndef TRACE_USE_DYNAMIC_LOADER
+        , xr::DispatchLoaderStatic()
+#endif
+    );
     OPENXR_HPP_DEFAULT_DISPATCHER.populateFully(instance);
 
     system_id = instance.getSystem(xr::SystemGetInfo{

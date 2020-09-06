@@ -38,6 +38,7 @@ set(SOURCE_ENGINE
     engine/shader_system.cpp engine/shader_system.hpp
     engine/ui_system.cpp engine/ui_system.hpp)
 set(SOURCE_VR
+    vr/glm_helpers.hpp
     vr/input_system.hpp
     vr/ui_input_system.cpp vr/ui_input_system.hpp
     vr/main_input_system.cpp vr/main_input_system.hpp
@@ -86,6 +87,7 @@ target_link_libraries(trace
     PRIVATE
     glm
     glfw
+    # OpenXR::headers
     OpenXR::openxr_loader
     shaderc::shaderc_combined 
     imgui::imgui

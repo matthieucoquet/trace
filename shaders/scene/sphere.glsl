@@ -7,5 +7,5 @@ float sd_sphere(in vec3 position, in float radius)
 
 float map(in vec3 position)
 {
-    return sd_sphere(position, 0.5);
+    return sd_sphere(position, 0.4);
 }

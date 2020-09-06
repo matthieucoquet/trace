@@ -1,5 +1,6 @@
 #include "session.hpp"
 #include "instance.hpp"
+#include "glm_helpers.hpp"
 #include "vulkan/context.hpp"
 #include "main_input_system.hpp"
 #include "ui_input_system.hpp"
@@ -71,9 +72,7 @@ Session::Session(xr::Session new_session, Instance& instance, vulkan::Context& c
                     .extent = m_ui_swapchain.view_extent
                 },
                 .imageArrayIndex = 0u
-            },
-        .pose = {.position = { 0.f, 1.5f - offset_y_space, -0.5f } },
-        .size = { .width = 0.4f, .height = 0.4f }
+            }
     };
 
     m_input_systems.emplace_back(std::make_unique<Main_input_system>(instance.instance, session, m_action_sets));
@@ -172,6 +171,9 @@ void Session::draw_frame(Scene& scene, std::vector<std::unique_ptr<System>>& sys
                 system->step(scene, session, frame_state.predictedDisplayTime, m_stage_space, offset_y_space);
             }
             std::for_each(systems.begin(), systems.end(), [&scene](auto& system) { system->step(scene); });
+            composition_layer_ui.pose = to_xr(scene.ui_primitive.position, scene.ui_primitive.rotation);
+            composition_layer_ui.size.height = scene.ui_primitive.scale;
+            composition_layer_ui.size.width = scene.ui_primitive.scale;
         }
 
         if (frame_state.shouldRender &&
@@ -217,8 +219,8 @@ void Session::draw_frame(Scene& scene, std::vector<std::unique_ptr<System>>& sys
 
             m_main_swapchain.swapchain.releaseSwapchainImage({});
             m_ui_swapchain.swapchain.releaseSwapchainImage({});
-            layers_pointers.push_back(reinterpret_cast<xr::CompositionLayerBaseHeader*>(&composition_layer_proj));
             layers_pointers.push_back(reinterpret_cast<xr::CompositionLayerBaseHeader*>(&composition_layer_ui));
+            layers_pointers.push_back(reinterpret_cast<xr::CompositionLayerBaseHeader*>(&composition_layer_proj));
             session.endFrame(xr::FrameEndInfo{
                 .displayTime = frame_state.predictedDisplayTime,
                 .environmentBlendMode = xr::EnvironmentBlendMode::Opaque,
