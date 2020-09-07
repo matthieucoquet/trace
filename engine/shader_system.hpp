@@ -25,6 +25,11 @@ private:
     std::filesystem::path m_base_directory;
     shaderc::CompileOptions m_group_compile_options;
 
-    void compile(Scene& scene, Shader& shader, shaderc_shader_kind shader_kind);
-    [[nodiscard]] std::vector<char> read_file(std::filesystem::path path) const;
+    // For multithread access
+    std::vector<Shader_file> m_shader_files_copy;
+
+    void compile(std::vector<Shader_file>& shader_files, Shader& shader, shaderc_shader_kind shader_kind);
+    [[nodiscard]] std::string read_file(std::filesystem::path path) const;
+    void compile_if_dirty(Shader& shader, std::vector<Shader*>& original_shaders, std::vector<Shader>& shader_copy, shaderc_shader_kind shader_kind);
+
 };

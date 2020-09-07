@@ -83,18 +83,21 @@ void Ui_system::shader_text(Shader_file& shader_file)
 {
     ImGuiInputTextFlags flags = ImGuiInputTextFlags_AllowTabInput | ImGuiInputTextFlags_CallbackResize;
     ImGui::Text(shader_file.name.c_str());
-    ImGui::InputTextMultiline(
-        shader_file.name.c_str(), shader_file.data.data(), shader_file.data.size(), 
-        ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 10), 
+    if (ImGui::InputTextMultiline(
+        shader_file.name.c_str(), shader_file.data.data(), shader_file.data.size() + 1, // +1 for null terminated char
+        ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 10),
         flags, [](ImGuiInputTextCallbackData* data)
         {
             if (data->EventFlag == ImGuiInputTextFlags_CallbackResize)
             {
                 auto* string = static_cast<std::vector<char>*>(data->UserData);
-                string->resize(data->BufSize);
+                string->resize(data->BufSize - 1);
                 data->Buf = string->data();
             }
             return 0;
-        }, (void*)&shader_file.data);
+        }, (void*)&shader_file.data))
+    {
+        shader_file.dirty = true;
+    }
 
 }

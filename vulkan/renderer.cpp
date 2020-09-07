@@ -263,6 +263,11 @@ void Renderer::create_per_frame_data(Context& context, Scene& scene, vk::Extent2
 void Renderer::update_per_frame_data(Scene& scene, uint32_t swapchain_index)
 {
     per_frame[swapchain_index].primitives.copy(scene.primitive_transform.data(), sizeof(glm::mat4) * scene.primitive_transform.size());
+    if (scene.pipeline_dirty) {
+        m_queue.waitIdle();
+        m_device.destroyPipeline(m_pipeline.pipeline);
+        m_pipeline.create_pipeline(scene);
+    }
 }
 
 void Renderer::create_descriptor_sets(vk::DescriptorPool descriptor_pool, uint32_t swapchain_size)

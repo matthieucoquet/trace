@@ -29,7 +29,7 @@ void main()
     vec3 reflection = reflect(gl_WorldRayDirectionEXT, normal);
     /*if (hit_value.x == 0.0)
     {
-        hit_value = vec3(0.01, 0.01, 0.01);
+        hit_value = vec4(0.01, 0.01, 0.01, 0.0);
         traceRayEXT(topLevelAS,  // acceleration structure
                     gl_RayFlagsOpaqueEXT,       // rayFlags
                     0xFF,        // cullMask
@@ -42,7 +42,7 @@ void main()
                     10.0,        // ray max range
                     0            // payload (location = 1)
                     );
-        }*/
+    }*/
 
     vec3 spec = hit_value.xyz * max(dot(normal, reflection), 0.0);
     float front = dot(position - scene_global.ui_position, scene_global.ui_normal) <= 0.0f ? 0.0f : 1.0f;

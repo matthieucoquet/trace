@@ -28,11 +28,12 @@ public:
     Raytracing_pipeline& operator=(const Raytracing_pipeline& other) = default;
     Raytracing_pipeline& operator=(Raytracing_pipeline&& other) = default;
     ~Raytracing_pipeline();
+
+    void create_pipeline(Scene& scene);
 private:
     vk::Device m_device;
 
-    void create_shader_binding_table(Context& context, uint32_t group_count);  // TODO should be here ?
-    void create_pipeline(Context& context, Scene& scene);
+    void create_shader_binding_table(Context& context, uint32_t group_count);
 };
 
 }

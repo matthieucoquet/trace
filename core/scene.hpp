@@ -26,6 +26,7 @@ public:
 
     Primitive ui_primitive;
 
+    bool pipeline_dirty = false;
     std::vector<Shader_file> shader_files;
     Shader raygen_side_shader;
     Shader raygen_center_shader;

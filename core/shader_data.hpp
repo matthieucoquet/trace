@@ -7,7 +7,7 @@ struct Shader_file
 {
     bool dirty = false;
     std::string name;
-    std::vector<char> data{};
+    std::string data{};  // important to use a null terminating member for imgui
 };
 
 struct Shader

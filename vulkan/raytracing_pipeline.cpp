@@ -47,7 +47,9 @@ Raytracing_pipeline::Raytracing_pipeline(Context& context, Scene& scene) :
         .pushConstantRangeCount = 1u,
         .pPushConstantRanges = &push_constants });
 
-    create_pipeline(context, scene);
+    create_pipeline(scene);
+
+    create_shader_binding_table(context, static_cast<uint32_t>(3 + scene.shader_groups.size()));
 }
 
 Raytracing_pipeline::~Raytracing_pipeline()
@@ -90,7 +92,7 @@ void Raytracing_pipeline::create_shader_binding_table(Context& context, uint32_t
         context.device, context.allocator, context.command_pool, context.graphics_queue);
 }
 
-void Raytracing_pipeline::create_pipeline(Context& context, Scene& scene)
+void Raytracing_pipeline::create_pipeline(Scene& scene)
 {
     std::vector shader_stages{
         vk::PipelineShaderStageCreateInfo{
@@ -158,8 +160,6 @@ void Raytracing_pipeline::create_pipeline(Context& context, Scene& scene)
             .pGroups = groups.data(),
             .maxRecursionDepth = 2,
             .layout = pipeline_layout }).value;
-
-    create_shader_binding_table(context, static_cast<uint32_t>(groups.size()));
 }
 
 }
