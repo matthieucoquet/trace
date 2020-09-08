@@ -20,6 +20,12 @@ public:
     void step(Scene& scene) override final;
     void cleanup(Scene& scene)  override final;
 private:
+    struct Recompile_info {
+        Shader* original;
+        Shader copy;
+        shaderc_shader_kind kind;
+    };
+
     vk::Device m_device;
     shaderc::Compiler m_compiler;
     std::filesystem::path m_base_directory;
@@ -27,9 +33,12 @@ private:
 
     // For multithread access
     std::vector<Shader_file> m_shader_files_copy;
+    std::vector<Recompile_info> m_recompile_info;
+    std::atomic_flag m_compiling;
+    bool m_shaders_dirty;
 
     void compile(std::vector<Shader_file>& shader_files, Shader& shader, shaderc_shader_kind shader_kind);
     [[nodiscard]] std::string read_file(std::filesystem::path path) const;
-    void compile_if_dirty(Shader& shader, std::vector<Shader*>& original_shaders, std::vector<Shader>& shader_copy, shaderc_shader_kind shader_kind);
+    void check_if_dirty(Shader& shader, shaderc_shader_kind shader_kind);
 
 };

@@ -8,6 +8,7 @@ struct Shader_file
     bool dirty = false;
     std::string name;
     std::string data{};  // important to use a null terminating member for imgui
+    size_t size{}; // null terminating character index
 };
 
 struct Shader

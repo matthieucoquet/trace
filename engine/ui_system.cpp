@@ -1,6 +1,7 @@
 #include "ui_system.hpp"
 #include "core/scene.hpp"
 #include <imgui.h>
+#include <fmt/core.h>
 
 Ui_system::Ui_system()
 {
@@ -98,6 +99,10 @@ void Ui_system::shader_text(Shader_file& shader_file)
         }, (void*)&shader_file.data))
     {
         shader_file.dirty = true;
+        shader_file.size = shader_file.data.find('\0');
+        if (shader_file.size == std::string::npos) {
+            shader_file.size = shader_file.data.size();
+        }
     }
 
 }
