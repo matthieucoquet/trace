@@ -16,12 +16,13 @@ layout(binding = 2, set = 0, scalar) buffer Primitives { Primitive p[]; } primit
 void main()
 {
     vec3 position = gl_WorldRayOriginEXT + gl_WorldRayDirectionEXT * gl_HitTEXT;
+    float front = dot(position - scene_global.ui_position, scene_global.ui_normal) <= 0.0f ? 0.0f : 1.0f;
     vec3 light_pos = vec3(10.0, 30.0, 4.0);
-    vec3 light_dir = normalize(light_pos - position);
     vec3 light_color = vec3(1.0, 1.0, 1.0);
   
     Primitive primitive = primitives.p[gl_InstanceID];
     vec3 normal_position = vec3(primitive.world_to_model * vec4(position, 1.0f));
+    vec3 light_dir = normalize(vec3(primitive.world_to_model * vec4(light_pos, 1.0f)) - normal_position);
     vec3 normal = normal(normal_position);
     vec3 diffuse = max(dot(normal, light_dir), 0.0) * light_color;
     vec3 ambient = 0.2 * light_color;
@@ -45,6 +46,5 @@ void main()
     }*/
 
     vec3 spec = hit_value.xyz * max(dot(normal, reflection), 0.0);
-    float front = dot(position - scene_global.ui_position, scene_global.ui_normal) <= 0.0f ? 0.0f : 1.0f;
     hit_value = vec4((spec + ambient + diffuse) * vec3(0.7, 0.4, 0.5), front);
 }

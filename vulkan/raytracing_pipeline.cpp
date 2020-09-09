@@ -81,7 +81,7 @@ void Raytracing_pipeline::create_shader_binding_table(Context& context, uint32_t
     memcpy(temp_buffer_aligned.data(), temp_buffer.data(), raytracing_properties.shaderGroupHandleSize);
     memcpy(temp_buffer_aligned.data() + offset_raygen_side_group, temp_buffer.data() + raytracing_properties.shaderGroupHandleSize, raytracing_properties.shaderGroupHandleSize);
     memcpy(temp_buffer_aligned.data() + offset_miss_group, temp_buffer.data() + 2 * raytracing_properties.shaderGroupHandleSize, raytracing_properties.shaderGroupHandleSize);
-    memcpy(temp_buffer_aligned.data() + offset_hit_group, temp_buffer.data() + 3 * raytracing_properties.shaderGroupHandleSize, 2 * raytracing_properties.shaderGroupHandleSize);
+    memcpy(temp_buffer_aligned.data() + offset_hit_group, temp_buffer.data() + 3 * raytracing_properties.shaderGroupHandleSize, 3 * raytracing_properties.shaderGroupHandleSize);
 
     shader_binding_table = Vma_buffer(
         vk::BufferCreateInfo{

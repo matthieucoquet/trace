@@ -8,12 +8,14 @@ Scene::Scene()
 {
     shader_groups.push_back(Shader_group{ .name = "sphere"});
     shader_groups.push_back(Shader_group{ .name = "cube" });
+    shader_groups.push_back(Shader_group{ .name = "hand" });
     size_t sphere_id = 0u;
     size_t cube_id = 1u;
+    size_t hand_id = 2u;
 
     for (unsigned int i = 0u; i < 2u; i++) {
         primitives.emplace_back(Primitive{ .position = glm::vec3(0.0f, 1.0f, 0.0f), .rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f), .scale = 0.1f });
-        primitive_group_ids.emplace_back(sphere_id);
+        primitive_group_ids.emplace_back(hand_id);
     }
 
     for (unsigned int i = 0u; i < 4u; i++) {

@@ -3,7 +3,7 @@
 #extension GL_EXT_scalar_block_layout : enable
 #extension GL_GOOGLE_include_directive : enable
 #include "common_primitives.glsl"
-#include "sphere.glsl"
+#include "hand.glsl"
 #include "common_raymarch.glsl"
 
 layout(binding = 0, set = 0) uniform accelerationStructureEXT topLevelAS;
@@ -46,5 +46,5 @@ void main()
     }*/
 
     vec3 spec = hit_value.xyz * max(dot(normal, reflection), 0.0);
-    hit_value = vec4((spec + ambient + diffuse) * vec3(0.5, 0.5, 0.1), front);
+    hit_value = vec4((spec + ambient + diffuse) * vec3(0.5, 0.5, 0.5), front);
 }

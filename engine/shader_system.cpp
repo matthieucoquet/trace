@@ -5,6 +5,7 @@
 #include <fstream>
 #include <iostream>
 #include <ranges>
+#include <fmt/core.h>
 #include <marl/scheduler.h>
 #include <marl/waitgroup.h>
 
@@ -73,19 +74,26 @@ Shader_system::Shader_system(vulkan::Context& context, Scene& scene) :
         return std::distance(scene.shader_files.cbegin(), file_it);
     };
     scene.raygen_center_shader.shader_file_id = find_file("raygen.rgen");
-    compile(scene.shader_files, scene.raygen_center_shader, shaderc_raygen_shader);
     scene.raygen_side_shader.shader_file_id = find_file("raygen_side.rgen");
-    compile(scene.shader_files, scene.raygen_side_shader, shaderc_raygen_shader);
     scene.miss_shader.shader_file_id = find_file("miss.rmiss");
-    compile(scene.shader_files, scene.miss_shader, shaderc_miss_shader);
-
     for (auto& shader_group : scene.shader_groups) {
         shader_group.intersection.shader_file_id = find_file(shader_group.name + ".rint");
-        compile(scene.shader_files, shader_group.intersection, shaderc_intersection_shader);
         shader_group.closest_hit.shader_file_id = find_file(shader_group.name + ".rchit");
-        compile(scene.shader_files, shader_group.closest_hit, shaderc_closesthit_shader);
     }
 
+    marl::WaitGroup compile_shaders(static_cast<unsigned int>(scene.shader_groups.size()));
+    for (auto& shader_group : scene.shader_groups) {
+        marl::schedule([this, compile_shaders, &scene, &shader_group = shader_group]
+        {
+            compile(scene.shader_files, shader_group.intersection, shaderc_intersection_shader);
+            compile(scene.shader_files, shader_group.closest_hit, shaderc_closesthit_shader);
+            compile_shaders.done();
+        });
+    }
+    compile(scene.shader_files, scene.raygen_center_shader, shaderc_raygen_shader);
+    compile(scene.shader_files, scene.raygen_side_shader, shaderc_raygen_shader);
+    compile(scene.shader_files, scene.miss_shader, shaderc_miss_shader);
+    compile_shaders.wait();
 }
 
 void Shader_system::step(Scene& scene)
@@ -146,6 +154,13 @@ void Shader_system::step(Scene& scene)
                 compile_shaders.wait();
                 m_compiling.clear(std::memory_order_release);
             });
+
+            for (auto& file : scene.shader_files)
+            {
+                if (file.dirty) {
+                    write_file(file);  // Do during destructor or multithread if too slow
+                }
+            }
         }
     }
 }
@@ -220,4 +235,26 @@ std::string Shader_system::read_file(std::filesystem::path path) const
     file.close();
 
     return buffer;
+}
+
+void Shader_system::write_file(Shader_file shader_file)
+{
+    auto path = m_base_directory / shader_file.name;
+    if (!std::filesystem::exists(path)) {
+        throw std::runtime_error("Shader path doesn't exist on filesystem.");
+    }
+    if (!std::filesystem::is_regular_file(path)) {
+        throw std::runtime_error("Shader path is not a regular file.");
+    }
+
+    std::ofstream file(path, std::ios::trunc | std::ios::binary);
+
+    if (!file.is_open()) {
+        throw std::runtime_error("failed to open file!");
+    }
+    file.write(shader_file.data.data(), shader_file.size);
+    //file.put('\r');
+    //file.put('\n');
+    fmt::print("write  {}\n", file.good());
+    file.close();
 }
