@@ -4,7 +4,7 @@
 #include <vector>
 #include <chrono>
 
-struct Primitive
+struct Object
 {
     glm::vec3 position;
     glm::quat rotation;
@@ -20,11 +20,11 @@ public:
 
     Scene_global scene_global = {};
 
-    std::vector<Primitive> primitives;
-    std::vector<glm::mat4> primitive_transform;
-    std::vector<size_t> primitive_group_ids;
+    std::vector<Object> objects;
+    std::vector<glm::mat4> objects_transform;
+    std::vector<size_t> objects_group_id;
 
-    Primitive ui_primitive;
+    Object ui_object;
 
     bool pipeline_dirty = false;
     std::vector<Shader_file> shader_files;
@@ -32,6 +32,8 @@ public:
     Shader raygen_center_shader;
     Shader miss_shader;
     std::vector<Shader_group> shader_groups;
+
+    bool mouse_control{ true }; // Mouse and controller can alternate for ui control
 
     Scene();
 

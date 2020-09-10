@@ -17,5 +17,5 @@ public:
 private:
     double m_time = 0.0;
 
-    void update_mouse_pos_and_buttons();
+    void update_mouse_pos_and_buttons(Scene& scene);
 };

@@ -2,7 +2,7 @@
 #extension GL_EXT_ray_tracing : enable
 #extension GL_EXT_scalar_block_layout : enable
 #extension GL_GOOGLE_include_directive : enable
-#include "common_primitives.glsl"
+#include "common_types.glsl"
 #include "sphere.glsl"
 #include "common_raymarch.glsl"
 
@@ -11,7 +11,7 @@ layout(binding = 0, set = 0) uniform accelerationStructureEXT topLevelAS;
 layout(location = 0) rayPayloadInEXT vec4 hit_value;
 hitAttributeEXT vec3 attributes;
 
-layout(binding = 2, set = 0, scalar) buffer Primitives { Primitive p[]; } primitives;
+layout(binding = 2, set = 0, scalar) buffer Objects { Object o[]; } objects;
 
 void main()
 {
@@ -20,10 +20,10 @@ void main()
     vec3 light_pos = vec3(10.0, 30.0, 4.0);
     vec3 light_color = vec3(1.0, 1.0, 1.0);
   
-    Primitive primitive = primitives.p[gl_InstanceID];
-    vec3 normal_position = vec3(primitive.world_to_model * vec4(position, 1.0f));
+    Object object = objects.o[gl_InstanceID];
+    vec3 normal_position = vec3(object.world_to_model * vec4(position, 1.0f));
     vec3 normal = normal(normal_position);
-    vec3 light_dir = normalize(vec3(primitive.world_to_model * vec4(light_pos, 1.0f)) - normal_position);
+    vec3 light_dir = normalize(vec3(object.world_to_model * vec4(light_pos, 1.0f)) - normal_position);
     vec3 diffuse = max(dot(normal, light_dir), 0.0) * light_color;
     vec3 ambient = 0.2 * light_color;
 

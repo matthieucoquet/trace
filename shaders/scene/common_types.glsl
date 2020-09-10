@@ -32,7 +32,7 @@ struct Ray
     vec3 direction;
 };
 
-struct Primitive
+struct Object
 {
     mat4 world_to_model;
 };

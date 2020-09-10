@@ -39,9 +39,9 @@ set(SOURCE_ENGINE
     engine/ui_system.cpp engine/ui_system.hpp)
 set(SOURCE_VR
     vr/glm_helpers.hpp
-    vr/input_system.hpp
-    vr/ui_input_system.cpp vr/ui_input_system.hpp
-    vr/main_input_system.cpp vr/main_input_system.hpp
+    vr/vr_input.hpp
+    vr/ui_vr_input.cpp vr/ui_vr_input.hpp
+    vr/scene_vr_input.cpp vr/scene_vr_input.hpp
     vr/instance.cpp vr/instance.hpp
     vr/session.cpp vr/session.hpp
     vr/vr_swapchain.cpp vr/vr_swapchain.hpp

@@ -28,7 +28,7 @@ private:
     xr::Instance m_instance;
 };
 
-class Input_system
+class Vr_input
 {
 public:
     enum class Interaction_profile {
@@ -36,12 +36,12 @@ public:
     };
 
 
-    Input_system() = default;
-    Input_system(const Input_system& other) = delete;
-    Input_system(Input_system&& other) = delete;
-    Input_system& operator=(const Input_system& other) = delete;
-    Input_system& operator=(Input_system&& other) = delete;
-    virtual ~Input_system() = default;
+    Vr_input() = default;
+    Vr_input(const Vr_input& other) = delete;
+    Vr_input(Vr_input&& other) = delete;
+    Vr_input& operator=(const Vr_input& other) = delete;
+    Vr_input& operator=(Vr_input&& other) = delete;
+    virtual ~Vr_input() = default;
 
     virtual void suggest_interaction_profile(xr::Instance instance, Suggested_binding& suggested_bindings) = 0;
 

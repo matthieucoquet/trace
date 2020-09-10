@@ -15,7 +15,7 @@ class Context;
 struct Per_frame
 {
     Tlas tlas;
-    Vma_buffer primitives;
+    Vma_buffer objects;
     Vma_image storage_image;
     vk::ImageView image_view;
 };

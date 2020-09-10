@@ -2,8 +2,8 @@
 #include "instance.hpp"
 #include "glm_helpers.hpp"
 #include "vulkan/context.hpp"
-#include "main_input_system.hpp"
-#include "ui_input_system.hpp"
+#include "scene_vr_input.hpp"
+#include "ui_vr_input.hpp"
 #include <marl/scheduler.h>
 #include <fmt/core.h>
 #include <vector>
@@ -81,8 +81,8 @@ Session::Session(xr::Session new_session, Instance& instance, vulkan::Context& c
             }
     };
 
-    m_input_systems.emplace_back(std::make_unique<Main_input_system>(instance.instance, session, m_action_sets));
-    m_input_systems.emplace_back(std::make_unique<Ui_input_system>(instance.instance, session, m_action_sets));
+    m_input_systems.emplace_back(std::make_unique<Scene_vr_input>(instance.instance, session, m_action_sets));
+    m_input_systems.emplace_back(std::make_unique<Ui_vr_input>(instance.instance, session, m_action_sets));
     {
         Suggested_binding suggested_binding(instance.instance);
         for (auto& system : m_input_systems) {
@@ -177,9 +177,9 @@ void Session::draw_frame(Scene& scene, std::vector<std::unique_ptr<System>>& sys
                 system->step(scene, session, frame_state.predictedDisplayTime, m_stage_space, offset_y_space);
             }
             std::for_each(systems.begin(), systems.end(), [&scene](auto& system) { system->step(scene); });
-            composition_layer_ui.pose = to_xr(scene.ui_primitive.position, scene.ui_primitive.rotation);
-            composition_layer_ui.size.height = scene.ui_primitive.scale;
-            composition_layer_ui.size.width = scene.ui_primitive.scale;
+            composition_layer_ui.pose = to_xr(scene.ui_object.position, scene.ui_object.rotation);
+            composition_layer_ui.size.height = scene.ui_object.scale;
+            composition_layer_ui.size.width = scene.ui_object.scale;
         }
 
         if (frame_state.shouldRender &&

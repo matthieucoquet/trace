@@ -148,7 +148,7 @@ Blas::Blas(Context& context) :
 Tlas::Tlas(vk::CommandBuffer command_buffer, Context& context, const Blas& blas, const Scene& scene) :
     Acceleration_structure(context)
 {
-    auto nb_instances = static_cast<uint32_t>(scene.primitives.size());
+    auto nb_instances = static_cast<uint32_t>(scene.objects.size());
     vk::AccelerationStructureCreateGeometryTypeInfoKHR create_geometry{
         .geometryType = vk::GeometryTypeKHR::eInstances,
         .maxPrimitiveCount = nb_instances,
@@ -161,9 +161,9 @@ Tlas::Tlas(vk::CommandBuffer command_buffer, Context& context, const Blas& blas,
     allocate_object_memory();
 
     std::vector<vk::AccelerationStructureInstanceKHR> instances{};
-    for (uint32_t i = 0u; i < scene.primitives.size(); i++)
+    for (uint32_t i = 0u; i < scene.objects.size(); i++)
     {
-        glm::mat4 inv = glm::inverse(scene.primitive_transform[i]);
+        glm::mat4 inv = glm::inverse(scene.objects_transform[i]);
         m_instances.push_back(vk::AccelerationStructureInstanceKHR{
             .transform = {
                 .matrix = std::array<std::array<float, 4>, 3>{
@@ -173,7 +173,7 @@ Tlas::Tlas(vk::CommandBuffer command_buffer, Context& context, const Blas& blas,
             } },
             .instanceCustomIndex = i,
             .mask = 0xFF,
-            .instanceShaderBindingTableRecordOffset = static_cast<uint32_t>(scene.primitive_group_ids[i]),
+            .instanceShaderBindingTableRecordOffset = static_cast<uint32_t>(scene.objects_group_id[i]),
             .accelerationStructureReference = blas.structure_address
         });
     }
@@ -193,9 +193,9 @@ Tlas::Tlas(vk::CommandBuffer command_buffer, Context& context, const Blas& blas,
 void Tlas::update(vk::CommandBuffer command_buffer, const Scene& scene, bool first_build)
 {
     // Update instances
-    for (uint32_t i = 0u; i < scene.primitives.size(); i++)
+    for (uint32_t i = 0u; i < scene.objects.size(); i++)
     {
-        glm::mat4 inv = glm::inverse(scene.primitive_transform[i]);
+        glm::mat4 inv = glm::inverse(scene.objects_transform[i]);
         m_instances[i].transform.matrix = std::array<std::array<float, 4>, 3>{
             std::array<float, 4>{ inv[0].x, inv[1].x, inv[2].x, inv[3].x },
                 std::array<float, 4>{ inv[0].y, inv[1].y, inv[2].y, inv[3].y },
@@ -216,7 +216,7 @@ void Tlas::update(vk::CommandBuffer command_buffer, const Scene& scene, bool fir
     };
     vk::AccelerationStructureGeometryKHR* pointer_acceleration_structure_geometry = &acceleration_structure_geometry;
     vk::AccelerationStructureBuildOffsetInfoKHR build_info_offset{
-        .primitiveCount = static_cast<uint32_t>(scene.primitives.size()),
+        .primitiveCount = static_cast<uint32_t>(scene.objects.size()),
         .primitiveOffset = 0,
         .firstVertex = 0,
         .transformOffset = 0 };

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "vr_common.hpp"
-#include "input_system.hpp"
+#include "vr_input.hpp"
 #include "vr_swapchain.hpp"
 #include "core/system.hpp"
 #include "core/scene.hpp"
@@ -52,7 +52,7 @@ private:
     std::array<xr::CompositionLayerProjectionView, 2> composition_layer_views;
     xr::CompositionLayerQuad composition_layer_ui{};
 
-    std::vector<std::unique_ptr<Input_system>> m_input_systems;
+    std::vector<std::unique_ptr<Vr_input>> m_input_systems;
     std::vector<xr::ActionSet> m_action_sets;
     std::vector<xr::ActiveActionSet> m_active_action_sets;
 

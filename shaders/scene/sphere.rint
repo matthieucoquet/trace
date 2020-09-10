@@ -2,19 +2,19 @@
 #extension GL_EXT_ray_tracing : enable
 #extension GL_EXT_scalar_block_layout : enable
 #extension GL_GOOGLE_include_directive : enable
-#include "common_primitives.glsl"
+#include "common_types.glsl"
 #include "sphere.glsl"
 #include "common_raymarch.glsl"
 
 hitAttributeEXT vec3 attributes;
 
-layout(binding = 2, set = 0, scalar) buffer Primitives { Primitive p[]; } primitives;
+layout(binding = 2, set = 0, scalar) buffer Objects { Object o[]; } objects;
 
 void main()
 {
-    Primitive primitive = primitives.p[gl_InstanceID];
-    Ray ray = Ray(vec3(primitive.world_to_model * vec4(gl_WorldRayOriginEXT, 1.0f)), 
-                  vec3(primitive.world_to_model * vec4(gl_WorldRayDirectionEXT, 0.0f)));
+    Object object = objects.o[gl_InstanceID];
+    Ray ray = Ray(vec3(object.world_to_model * vec4(gl_WorldRayOriginEXT, 1.0f)), 
+                  vec3(object.world_to_model * vec4(gl_WorldRayDirectionEXT, 0.0f)));
 
     float t = raymarch(ray);
     if (t > 0.0)

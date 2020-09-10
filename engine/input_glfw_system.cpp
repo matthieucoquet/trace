@@ -1,4 +1,5 @@
 #include "input_glfw_system.hpp"
+#include "core/scene.hpp"
 #include <imgui.h>
 #include "vulkan/vk_common.hpp"
 
@@ -137,7 +138,7 @@ Input_glfw_system::~Input_glfw_system()
     glfwSetCharCallback(window, prev_user_callback_char);
 }
 
-void Input_glfw_system::step(Scene& /*scene*/)
+void Input_glfw_system::step(Scene& scene)
 {
     ImGuiIO& io = ImGui::GetIO();
     IM_ASSERT(io.Fonts->IsBuilt() && "Font atlas not built! It is generally built by the renderer back-end. Missing call to renderer _NewFrame() function? e.g. ImGui_ImplOpenGL3_NewFrame().");
@@ -148,34 +149,38 @@ void Input_glfw_system::step(Scene& /*scene*/)
     io.DeltaTime = m_time > 0.0 ? (float)(current_time - m_time) : (float)(1.0f / 90.0f);
     m_time = current_time;
 
-    update_mouse_pos_and_buttons();
+    update_mouse_pos_and_buttons(scene);
 
     // Update game controllers (if enabled and available)
     //ImGui_ImplGlfw_UpdateGamepads();
 }
 
-void Input_glfw_system::update_mouse_pos_and_buttons()
+void Input_glfw_system::update_mouse_pos_and_buttons(Scene& scene)
 {
     // Update buttons
     ImGuiIO& io = ImGui::GetIO();
     for (int i = 0; i < IM_ARRAYSIZE(io.MouseDown); i++)
     {
         // If a mouse press event came, always pass it as "mouse held this frame", so we don't miss click-release events that are shorter than 1 frame.
-        io.MouseDown[i] = mouse_just_pressed[i] || glfwGetMouseButton(window, i) != 0;
+        bool pressed = mouse_just_pressed[i] || glfwGetMouseButton(window, i) != 0;
         mouse_just_pressed[i] = false;
+        if (pressed)
+            scene.mouse_control = true;
+        if (scene.mouse_control)
+            io.MouseDown[i] = pressed;
     }
 
-
-    // Update mouse position
-    double mouse_x, mouse_y;
-    glfwGetCursorPos(window, &mouse_x, &mouse_y);
-    float updated_mouse_x = std::clamp(static_cast<float>(mouse_x), 0.0f, io.DisplaySize.x);
-    float updated_mouse_y = std::clamp(static_cast<float>(mouse_y), 0.0f, io.DisplaySize.y);
-    if (updated_mouse_x != mouse_x || updated_mouse_y != mouse_y) {
-        glfwSetCursorPos(window, updated_mouse_x, updated_mouse_y);
+    if (scene.mouse_control)
+    {
+        double mouse_x, mouse_y;
+        glfwGetCursorPos(window, &mouse_x, &mouse_y);
+        float updated_mouse_x = std::clamp(static_cast<float>(mouse_x), 0.0f, io.DisplaySize.x);
+        float updated_mouse_y = std::clamp(static_cast<float>(mouse_y), 0.0f, io.DisplaySize.y);
+        if (updated_mouse_x != mouse_x || updated_mouse_y != mouse_y) {
+            glfwSetCursorPos(window, updated_mouse_x, updated_mouse_y);
+        }
+        io.MousePos = ImVec2(updated_mouse_x, updated_mouse_y);
     }
-
-    io.MousePos = ImVec2(updated_mouse_x, updated_mouse_y);
 }
 /*
 static void ImGui_ImplGlfw_UpdateGamepads()

@@ -244,15 +244,15 @@ void Renderer::create_per_frame_data(Context& context, Scene& scene, vk::Extent2
                     .layerCount = 1
                 }});
 
-        Vma_buffer prim_buffer = Vma_buffer(
+        Vma_buffer object_buffer = Vma_buffer(
             vk::BufferCreateInfo{
-                    .size = sizeof(glm::mat4) * scene.primitive_transform.size(),
-                    .usage = vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eRayTracingKHR },
+                .size = sizeof(glm::mat4) * scene.objects_transform.size(),
+                .usage = vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eRayTracingKHR },
             VMA_MEMORY_USAGE_CPU_TO_GPU,
             context.device, context.allocator);
         per_frame.push_back(Per_frame{
             .tlas = Tlas(command_buffer.command_buffer, context, m_blas, scene),
-            .primitives = std::move(prim_buffer),
+            .objects = std::move(object_buffer),
             .storage_image = std::move(image),
             .image_view = image_view
             });
@@ -262,7 +262,7 @@ void Renderer::create_per_frame_data(Context& context, Scene& scene, vk::Extent2
 
 void Renderer::update_per_frame_data(Scene& scene, uint32_t swapchain_index)
 {
-    per_frame[swapchain_index].primitives.copy(scene.primitive_transform.data(), sizeof(glm::mat4) * scene.primitive_transform.size());
+    per_frame[swapchain_index].objects.copy(scene.objects_transform.data(), sizeof(glm::mat4) * scene.objects_transform.size());
     if (scene.pipeline_dirty) {
         m_queue.waitIdle();
         m_device.destroyPipeline(m_pipeline.pipeline);
@@ -290,8 +290,8 @@ void Renderer::create_descriptor_sets(vk::DescriptorPool descriptor_pool, uint32
             .imageLayout = vk::ImageLayout::eGeneral
         };
 
-        vk::DescriptorBufferInfo primitives_info{
-            .buffer = per_frame[i].primitives.buffer,
+        vk::DescriptorBufferInfo objects_info{
+            .buffer = per_frame[i].objects.buffer,
             .offset = 0u,
             .range = VK_WHOLE_SIZE
         };
@@ -317,7 +317,7 @@ void Renderer::create_descriptor_sets(vk::DescriptorPool descriptor_pool, uint32
                 .dstArrayElement = 0,
                 .descriptorCount = 1,
                 .descriptorType = vk::DescriptorType::eStorageBuffer,
-                .pBufferInfo = &primitives_info},
+                .pBufferInfo = &objects_info},
             }, {});
     }
 }
