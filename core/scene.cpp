@@ -14,21 +14,27 @@ Scene::Scene()
     size_t hand_id = 2u;
 
     for (unsigned int i = 0u; i < 2u; i++) {
-        objects.emplace_back(Object{ .position = glm::vec3(0.0f, 1.0f, 0.0f), .rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f), .scale = 0.1f });
-        objects_group_id.emplace_back(hand_id);
+        objects.emplace_back(Object{ 
+            .name = i == 0 ? "left_hand" : "right_hand",
+            .position = glm::vec3(0.0f, 1.0f, 0.0f), .rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f), .scale = 0.1f,
+            .group_id = hand_id });
     }
 
     for (unsigned int i = 0u; i < 4u; i++) {
         for (unsigned int j = 0u; j < 4u; j++) {
-            objects.emplace_back(Object{ .position = glm::vec3(-1.5f + 1.0f * i, 1.5f, -1.5f + 1.0f * j), .rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f), .scale = 0.5f });
-            objects_group_id.emplace_back(sphere_id);
+            objects.emplace_back(Object{
+                .name = std::string("sphere_") + std::to_string(4 * i + j),
+                .position = glm::vec3(-1.5f + 1.0f * i, 1.5f, -1.5f + 1.0f * j), .rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f), .scale = 0.5f,
+                .group_id = sphere_id });
         }
     }
 
     for (unsigned int i = 0u; i < 4u; i++) {
         for (unsigned int j = 0u; j < 4u; j++) {
-            objects.emplace_back(Object{ .position = glm::vec3(-3.0f + 2.0f * i, 3.0f, -3.0f + 2.0f * j), .rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f), .scale = 1.0f });
-            objects_group_id.emplace_back(cube_id);
+            objects.emplace_back(Object{
+                .name = std::string("cube_") + std::to_string(4 * i + j),
+                .position = glm::vec3(-3.0f + 2.0f * i, 3.0f, -3.0f + 2.0f * j), .rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f), .scale = 1.0f,
+                .group_id = cube_id });
         }
     }
 

@@ -6,9 +6,11 @@
 
 struct Object
 {
+    std::string name;
     glm::vec3 position;
     glm::quat rotation;
     float scale;
+    size_t group_id;
 };
 
 class Scene
@@ -22,15 +24,15 @@ public:
 
     std::vector<Object> objects;
     std::vector<glm::mat4> objects_transform;
-    std::vector<size_t> objects_group_id;
 
     Object ui_object;
 
     bool pipeline_dirty = false;
     std::vector<Shader_file> shader_files;
-    Shader raygen_side_shader;
-    Shader raygen_center_shader;
+    Shader raygen_narrow_shader;
+    Shader raygen_wide_shader;
     Shader miss_shader;
+    Shader shadow_shader;
     std::vector<Shader_group> shader_groups;
 
     bool mouse_control{ true }; // Mouse and controller can alternate for ui control

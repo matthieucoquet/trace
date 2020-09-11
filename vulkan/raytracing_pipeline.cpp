@@ -49,7 +49,7 @@ Raytracing_pipeline::Raytracing_pipeline(Context& context, Scene& scene) :
 
     create_pipeline(scene);
 
-    create_shader_binding_table(context, static_cast<uint32_t>(3 + scene.shader_groups.size()));
+    create_shader_binding_table(context, static_cast<uint32_t>(4 + scene.shader_groups.size()));
 }
 
 Raytracing_pipeline::~Raytracing_pipeline()
@@ -68,10 +68,10 @@ void Raytracing_pipeline::create_shader_binding_table(Context& context, uint32_t
 
     offset_raygen_side_group = find_alignement(1u * raytracing_properties.shaderGroupHandleSize);
     offset_miss_group = find_alignement(offset_raygen_side_group + 1u * raytracing_properties.shaderGroupHandleSize);
-    offset_hit_group = find_alignement(offset_miss_group + 1u * raytracing_properties.shaderGroupHandleSize);
+    offset_hit_group = find_alignement(offset_miss_group + 2u * raytracing_properties.shaderGroupHandleSize);
 
     auto shader_binding_table_size = raytracing_properties.shaderGroupHandleSize * group_count;
-    auto shader_binding_table_size_aligned = static_cast<uint32_t>(offset_hit_group + raytracing_properties.shaderGroupHandleSize * (group_count - 2u));
+    auto shader_binding_table_size_aligned = static_cast<uint32_t>(offset_hit_group + raytracing_properties.shaderGroupHandleSize * (group_count - 4u));
 
     std::vector<uint8_t> temp_buffer(shader_binding_table_size);
     m_device.getRayTracingShaderGroupHandlesKHR(pipeline, 0u, group_count, shader_binding_table_size, temp_buffer.data());
@@ -80,8 +80,8 @@ void Raytracing_pipeline::create_shader_binding_table(Context& context, uint32_t
     std::vector<uint8_t> temp_buffer_aligned(shader_binding_table_size_aligned, 0);
     memcpy(temp_buffer_aligned.data(), temp_buffer.data(), raytracing_properties.shaderGroupHandleSize);
     memcpy(temp_buffer_aligned.data() + offset_raygen_side_group, temp_buffer.data() + raytracing_properties.shaderGroupHandleSize, raytracing_properties.shaderGroupHandleSize);
-    memcpy(temp_buffer_aligned.data() + offset_miss_group, temp_buffer.data() + 2 * raytracing_properties.shaderGroupHandleSize, raytracing_properties.shaderGroupHandleSize);
-    memcpy(temp_buffer_aligned.data() + offset_hit_group, temp_buffer.data() + 3 * raytracing_properties.shaderGroupHandleSize, 3 * raytracing_properties.shaderGroupHandleSize);
+    memcpy(temp_buffer_aligned.data() + offset_miss_group, temp_buffer.data() + 2 * raytracing_properties.shaderGroupHandleSize, 2 * raytracing_properties.shaderGroupHandleSize);
+    memcpy(temp_buffer_aligned.data() + offset_hit_group, temp_buffer.data() + 4 * raytracing_properties.shaderGroupHandleSize, 3 * raytracing_properties.shaderGroupHandleSize);
 
     shader_binding_table = Vma_buffer(
         vk::BufferCreateInfo{
@@ -97,15 +97,19 @@ void Raytracing_pipeline::create_pipeline(Scene& scene)
     std::vector shader_stages{
         vk::PipelineShaderStageCreateInfo{
             .stage = vk::ShaderStageFlagBits::eRaygenKHR,
-            .module = scene.raygen_center_shader.shader_module,
+            .module = scene.raygen_narrow_shader.shader_module,
             .pName = "main" },
         vk::PipelineShaderStageCreateInfo{
             .stage = vk::ShaderStageFlagBits::eRaygenKHR,
-            .module = scene.raygen_side_shader.shader_module,
+            .module = scene.raygen_wide_shader.shader_module,
             .pName = "main" },
         vk::PipelineShaderStageCreateInfo{
             .stage = vk::ShaderStageFlagBits::eMissKHR,
             .module = scene.miss_shader.shader_module,
+            .pName = "main" },
+        vk::PipelineShaderStageCreateInfo{
+            .stage = vk::ShaderStageFlagBits::eMissKHR,
+            .module = scene.shadow_shader.shader_module,
             .pName = "main" }
     };
     std::vector groups{
@@ -126,12 +130,18 @@ void Raytracing_pipeline::create_pipeline(Scene& scene)
             .generalShader = 2, // miss shader id
             .closestHitShader = VK_SHADER_UNUSED_KHR,
             .anyHitShader = VK_SHADER_UNUSED_KHR,
+            .intersectionShader = VK_SHADER_UNUSED_KHR},
+        vk::RayTracingShaderGroupCreateInfoKHR{
+            .type = vk::RayTracingShaderGroupTypeKHR::eGeneral,
+            .generalShader = 3, // miss shader id
+            .closestHitShader = VK_SHADER_UNUSED_KHR,
+            .anyHitShader = VK_SHADER_UNUSED_KHR,
             .intersectionShader = VK_SHADER_UNUSED_KHR}
     };
 
     shader_stages.reserve(shader_stages.size() + 2 * scene.shader_groups.size());
     groups.reserve(shader_stages.size() + scene.shader_groups.size());
-    uint32_t id = 3;
+    uint32_t id = static_cast<uint32_t>(shader_stages.size());
     for (const auto shader_group : scene.shader_groups) {
         shader_stages.push_back(vk::PipelineShaderStageCreateInfo{
             .stage = vk::ShaderStageFlagBits::eIntersectionKHR,
@@ -158,7 +168,7 @@ void Raytracing_pipeline::create_pipeline(Scene& scene)
             .pStages = shader_stages.data(),
             .groupCount = static_cast<uint32_t>(groups.size()),
             .pGroups = groups.data(),
-            .maxRecursionDepth = 2,
+            .maxRecursionDepth = 4,
             .layout = pipeline_layout }).value;
 }
 

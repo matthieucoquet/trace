@@ -1,5 +1,6 @@
 #pragma once
 #include "core/system.hpp"
+#include <limits>
 
 struct Shader;
 struct Shader_file;
@@ -15,8 +16,11 @@ public:
     ~Ui_system() override final = default;
     void step(Scene& scene) override final;
 private:
-    Shader* m_selected_shader = nullptr;
+    Shader* m_selected_shader{ nullptr };
+    size_t m_selected_object{ std::numeric_limits<size_t>::max() };
 
     void add_leaf(const char* label, Shader* shader);
     void shader_text(Shader_file& shader_file);
+
+    void record_selected(Scene& scene);
 };

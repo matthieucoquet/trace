@@ -9,6 +9,7 @@
 layout(binding = 0, set = 0) uniform accelerationStructureEXT topLevelAS;
 
 layout(location = 0) rayPayloadInEXT vec4 hit_value;
+layout(location = 1) rayPayloadInEXT bool shadowed;
 
 void main()
 {
@@ -27,26 +28,33 @@ void main()
         vec3 ambient = 0.2 * light_color;
 
         vec3 reflection = reflect(gl_WorldRayDirectionEXT, normal);
-        /*if (hit_value.x == 0.0)
+        shadowed = true;
+        if (dot(normal, light_dir) > 0)
         {
-            hit_value = vec3(0.01, 0.01, 0.01);
             traceRayEXT(topLevelAS,  // acceleration structure
-                        gl_RayFlagsOpaqueEXT,       // rayFlags
+                        gl_RayFlagsTerminateOnFirstHitEXT | gl_RayFlagsOpaqueEXT | gl_RayFlagsSkipClosestHitShaderEXT,
                         0xFF,        // cullMask
                         0,           // sbtRecordOffset
                         0,           // sbtRecordStride
-                        0,           // missIndex
+                        1,           // missIndex
                         position,    // ray origin
                         0.5,         // ray min range
-                        reflection,  // ray direction
+                        light_dir,  // ray direction
                         100.0,        // ray max range
-                        0            // payload (location = 1)
+                        1            // payload (location = 1)
                         );
-            }*/
-
-        vec3 spec = 1.12 * hit_value.xyz * max(dot(normal, reflection), 0.0);
+        }
+        
         float front = dot(position - scene_global.ui_position, scene_global.ui_normal) <= 0.0f ? 0.0f : 1.0f;
-        hit_value = vec4((spec + ambient + diffuse) * vec3(0.4, 0.4, 0.4), front);
+        vec3 color = ambient + diffuse;
+        if (shadowed) {
+            color = 0.5 * color;
+        }
+        else {
+            vec3 spec = 1.12 * hit_value.xyz * max(dot(normal, reflection), 0.0);
+            color = color + spec;
+        }
+        hit_value = vec4(color * vec3(0.4, 0.4, 0.4), front);
     }
     else
     {

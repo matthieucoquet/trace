@@ -73,9 +73,10 @@ Shader_system::Shader_system(vulkan::Context& context, Scene& scene) :
         assert(file_it != scene.shader_files.cend());
         return std::distance(scene.shader_files.cbegin(), file_it);
     };
-    scene.raygen_center_shader.shader_file_id = find_file("raygen.rgen");
-    scene.raygen_side_shader.shader_file_id = find_file("raygen_side.rgen");
+    scene.raygen_narrow_shader.shader_file_id = find_file("raygen_narrow.rgen");
+    scene.raygen_wide_shader.shader_file_id = find_file("raygen_wide.rgen");
     scene.miss_shader.shader_file_id = find_file("miss.rmiss");
+    scene.shadow_shader.shader_file_id = find_file("shadow.rmiss");
     for (auto& shader_group : scene.shader_groups) {
         shader_group.intersection.shader_file_id = find_file(shader_group.name + ".rint");
         shader_group.closest_hit.shader_file_id = find_file(shader_group.name + ".rchit");
@@ -90,9 +91,10 @@ Shader_system::Shader_system(vulkan::Context& context, Scene& scene) :
             compile_shaders.done();
         });
     }
-    compile(scene.shader_files, scene.raygen_center_shader, shaderc_raygen_shader);
-    compile(scene.shader_files, scene.raygen_side_shader, shaderc_raygen_shader);
+    compile(scene.shader_files, scene.raygen_narrow_shader, shaderc_raygen_shader);
+    compile(scene.shader_files, scene.raygen_wide_shader, shaderc_raygen_shader);
     compile(scene.shader_files, scene.miss_shader, shaderc_miss_shader);
+    compile(scene.shader_files, scene.shadow_shader, shaderc_miss_shader);
     compile_shaders.wait();
 }
 
@@ -135,9 +137,10 @@ void Shader_system::step(Scene& scene)
             marl::schedule([&scene, this]
             {
                 m_recompile_info.clear();
-                check_if_dirty(scene.raygen_center_shader, shaderc_raygen_shader);
-                check_if_dirty(scene.raygen_side_shader, shaderc_raygen_shader);
+                check_if_dirty(scene.raygen_narrow_shader, shaderc_raygen_shader);
+                check_if_dirty(scene.raygen_wide_shader, shaderc_raygen_shader);
                 check_if_dirty(scene.miss_shader, shaderc_miss_shader);
+                check_if_dirty(scene.shadow_shader, shaderc_miss_shader);
                 for (auto& shader_group : scene.shader_groups) {
                     check_if_dirty(shader_group.intersection, shaderc_intersection_shader);
                     check_if_dirty(shader_group.closest_hit, shaderc_closesthit_shader);
@@ -179,12 +182,14 @@ void Shader_system::check_if_dirty(Shader& shader, shaderc_shader_kind shader_ki
 
 void Shader_system::cleanup(Scene& scene)
 {
-    if (scene.raygen_center_shader.shader_module)
-        m_device.destroyShaderModule(scene.raygen_center_shader.shader_module);
-    if (scene.raygen_side_shader.shader_module)
-        m_device.destroyShaderModule(scene.raygen_side_shader.shader_module);
+    if (scene.raygen_narrow_shader.shader_module)
+        m_device.destroyShaderModule(scene.raygen_narrow_shader.shader_module);
+    if (scene.raygen_wide_shader.shader_module)
+        m_device.destroyShaderModule(scene.raygen_wide_shader.shader_module);
     if (scene.miss_shader.shader_module)
         m_device.destroyShaderModule(scene.miss_shader.shader_module);
+    if (scene.shadow_shader.shader_module)
+        m_device.destroyShaderModule(scene.shadow_shader.shader_module);
     for (auto& shader_group : scene.shader_groups) {
         if (shader_group.intersection.shader_module)
             m_device.destroyShaderModule(shader_group.intersection.shader_module);

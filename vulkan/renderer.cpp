@@ -56,13 +56,13 @@ void Renderer::start_recording(vk::CommandBuffer command_buffer, Scene& scene, v
         vk::PipelineStageFlagBits::eRayTracingShaderKHR,
         {}, {}, {}, {});
 
-    vk::StridedBufferRegionKHR raygen_shader_center_entry{
+    vk::StridedBufferRegionKHR raygen_shader_narrow_entry{
         .buffer = m_pipeline.shader_binding_table.buffer,
         .offset = 0u,
         .stride = m_pipeline.raytracing_properties.shaderGroupHandleSize,
         .size = m_pipeline.raytracing_properties.shaderGroupHandleSize,
     };
-    vk::StridedBufferRegionKHR raygen_shader_side_entry{
+    vk::StridedBufferRegionKHR raygen_shader_wide_entry{
         .buffer = m_pipeline.shader_binding_table.buffer,
         .offset = m_pipeline.offset_raygen_side_group,
         .stride = m_pipeline.raytracing_properties.shaderGroupHandleSize,
@@ -73,7 +73,7 @@ void Renderer::start_recording(vk::CommandBuffer command_buffer, Scene& scene, v
         .buffer = m_pipeline.shader_binding_table.buffer,
         .offset = m_pipeline.offset_miss_group,
         .stride = m_pipeline.raytracing_properties.shaderGroupHandleSize,
-        .size = m_pipeline.raytracing_properties.shaderGroupHandleSize
+        .size = m_pipeline.raytracing_properties.shaderGroupHandleSize * vk::DeviceSize(2u)
     };
 
     vk::StridedBufferRegionKHR hit_shader_entry{
@@ -100,7 +100,7 @@ void Renderer::start_recording(vk::CommandBuffer command_buffer, Scene& scene, v
 
 
     command_buffer.traceRaysKHR(
-        &raygen_shader_side_entry,
+        &raygen_shader_wide_entry,
         &miss_shader_entry,
         &hit_shader_entry,
         &callable_shader_entry,
@@ -114,7 +114,7 @@ void Renderer::start_recording(vk::CommandBuffer command_buffer, Scene& scene, v
         {}, {}, {}, {});
 
     command_buffer.traceRaysKHR(
-        &raygen_shader_center_entry,
+        &raygen_shader_narrow_entry,
         &miss_shader_entry,
         &hit_shader_entry,
         &callable_shader_entry,
