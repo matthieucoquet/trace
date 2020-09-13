@@ -12,14 +12,14 @@ class Context;
 class Imgui_render
 {
 public:
-    Imgui_render(Context& context, vk::Extent2D extent, uint32_t swapchain_size, const std::vector<vk::ImageView>& image_views);
+    Imgui_render(Context& context, vk::Extent2D extent, uint32_t command_pool_size, const std::vector<vk::ImageView>& image_views);
     Imgui_render(const Imgui_render& other) = delete;
     Imgui_render(Imgui_render&& other) = delete;
     Imgui_render& operator=(const Imgui_render& other) = delete;
     Imgui_render& operator=(Imgui_render&& other) = delete;
     ~Imgui_render();
 
-    void draw(ImDrawData* draw_data, vk::CommandBuffer command_buffer, size_t frame_id);
+    void draw(ImDrawData* draw_data, vk::CommandBuffer command_buffer, size_t command_pool_id, size_t frame_id);
 private:
     vk::Device m_device;
     VmaAllocator m_allocator;
@@ -45,10 +45,10 @@ private:
     std::vector<Vma_buffer> m_vertex_buffer;
 
     void create_render_pass(vk::Format swapchain_format);
-    void create_pipeline(Context& context, vk::Extent2D extent);
+    void create_pipeline(Context& context);
     void create_fonts_texture(Context& context);
 
-    void setup_render_state(ImDrawData* draw_data, vk::CommandBuffer command_buffer, size_t frame_id, int fb_width, int fb_height);
+    void setup_render_state(ImDrawData* draw_data, vk::CommandBuffer command_buffer, size_t command_pool_id, int fb_width, int fb_height);
     [[nodiscard]] vk::ShaderModule compile_glsl_file(const char* filename, shaderc_shader_kind shader_kind) const;
 };
 

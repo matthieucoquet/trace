@@ -25,13 +25,7 @@ public:
     ~Engine();
 
     void run();
-
-    bool reload_shaders = false;
 private:
-    using Clock = std::chrono::steady_clock;
-    using Time_point = std::chrono::time_point<std::chrono::steady_clock>;
-    using Duration = std::chrono::duration<float, std::milli>;
-
     marl::Scheduler m_scheduler{ marl::Scheduler::Config::allCores() };
     vr::Instance m_vr_instance;
     Window m_window;
@@ -40,9 +34,5 @@ private:
     std::optional<vr::Session> m_session;  // When set, session is a valid session
 
     std::vector<std::unique_ptr<System>> m_systems;
-
-    Time_point m_previous_clock;
-
-    void reset_renderer();
 };
 

@@ -32,7 +32,6 @@ vec4 shoot_ray(vec3 direction, Eye eye)
 
     hit_value = vec4(0.0, 0.2, 0.0, 0.0);
     traceRayEXT(topLevelAS, gl_RayFlagsOpaqueEXT, 0xFF, 0, 0, 0, eye.pose.position, tmin, direction.xyz, tmax, 0);
-    //traceRayEXT(topLevelAS, 0, 0xFF, 0, 0, 0, eye.pose.position, tmin, direction.xyz, tmax, 0);
     vec4 result = hit_value;
     return result;
 }

@@ -35,14 +35,17 @@ void Ui_system::step(Scene& scene)
     {
         add_leaf("Raygen narrow", &scene.raygen_narrow_shader);
         add_leaf("Raygen wide", &scene.raygen_wide_shader);
-        add_leaf("Miss", &scene.miss_shader);
+        add_leaf("Primary miss", &scene.primary_miss_shader);
+        add_leaf("Shadow miss", &scene.shadow_miss_shader);
+        add_leaf("Shadow intersection", &scene.shadow_intersection_shader);
 
         for (auto& shader_group : scene.shader_groups)
         {
             if (ImGui::TreeNode(shader_group.name.c_str()))
             {
-                add_leaf("Intersection", &shader_group.intersection);
-                add_leaf("Closest hit", &shader_group.closest_hit);
+                add_leaf("Primary intersection", &shader_group.primary_intersection);
+                add_leaf("Primary closest hit", &shader_group.primary_closest_hit);
+                add_leaf("Shadow any hit", &shader_group.shadow_any_hit);
                 ImGui::TreePop();
             }
         }

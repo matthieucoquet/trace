@@ -4,12 +4,12 @@
 #extension GL_GOOGLE_include_directive : enable
 #include "common_types.glsl"
 #include "miss.glsl"
-#include "common_raymarch.glsl"
+#include "raymarch.glsl"
 
 layout(binding = 0, set = 0) uniform accelerationStructureEXT topLevelAS;
 
 layout(location = 0) rayPayloadInEXT vec4 hit_value;
-layout(location = 1) rayPayloadInEXT bool shadowed;
+layout(location = 1) rayPayloadEXT float shadow_payload;
 
 void main()
 {
@@ -28,13 +28,14 @@ void main()
         vec3 ambient = 0.2 * light_color;
 
         vec3 reflection = reflect(gl_WorldRayDirectionEXT, normal);
-        shadowed = true;
+        shadow_payload = 0.0;
         if (dot(normal, light_dir) > 0)
         {
+            shadow_payload = 1.0;
             traceRayEXT(topLevelAS,  // acceleration structure
-                        gl_RayFlagsTerminateOnFirstHitEXT | gl_RayFlagsOpaqueEXT | gl_RayFlagsSkipClosestHitShaderEXT,
+                        gl_RayFlagsSkipClosestHitShaderEXT,
                         0xFF,        // cullMask
-                        0,           // sbtRecordOffset
+                        3,           // sbtRecordOffset
                         0,           // sbtRecordStride
                         1,           // missIndex
                         position,    // ray origin
@@ -46,14 +47,9 @@ void main()
         }
         
         float front = dot(position - scene_global.ui_position, scene_global.ui_normal) <= 0.0f ? 0.0f : 1.0f;
-        vec3 color = ambient + diffuse;
-        if (shadowed) {
-            color = 0.5 * color;
-        }
-        else {
-            vec3 spec = 1.12 * hit_value.xyz * max(dot(normal, reflection), 0.0);
-            color = color + spec;
-        }
+        vec3 color = (0.7 + 0.7 * shadow_payload) * (ambient + diffuse);
+        vec3 spec = vec3(max(dot(normal, reflection), 0.0));
+        color = color + shadow_payload * spec;
         hit_value = vec4(color * vec3(0.4, 0.4, 0.4), front);
     }
     else

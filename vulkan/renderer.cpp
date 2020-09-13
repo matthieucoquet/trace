@@ -24,7 +24,7 @@ Renderer::~Renderer()
     }
 }
 
-void Renderer::start_recording(vk::CommandBuffer command_buffer, Scene& scene, vk::Image swapchain_image, uint32_t swapchain_id, vk::Extent2D extent)
+void Renderer::start_recording(vk::CommandBuffer command_buffer, Scene& scene, vk::Image swapchain_image, size_t command_pool_id, vk::Extent2D extent)
 {
     command_buffer.begin({ .flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit });
 
@@ -50,7 +50,7 @@ void Renderer::start_recording(vk::CommandBuffer command_buffer, Scene& scene, v
             }
         });
 
-    per_frame[swapchain_id].tlas.update(command_buffer, scene, false);
+    per_frame[command_pool_id].tlas.update(command_buffer, scene, false);
     command_buffer.pipelineBarrier(
         vk::PipelineStageFlagBits::eAccelerationStructureBuildKHR,
         vk::PipelineStageFlagBits::eRayTracingShaderKHR,
@@ -73,24 +73,25 @@ void Renderer::start_recording(vk::CommandBuffer command_buffer, Scene& scene, v
         .buffer = m_pipeline.shader_binding_table.buffer,
         .offset = m_pipeline.offset_miss_group,
         .stride = m_pipeline.raytracing_properties.shaderGroupHandleSize,
-        .size = m_pipeline.raytracing_properties.shaderGroupHandleSize * vk::DeviceSize(2u)
+        .size = m_pipeline.raytracing_properties.shaderGroupHandleSize * vk::DeviceSize(m_pipeline.nb_group_miss)
     };
 
     vk::StridedBufferRegionKHR hit_shader_entry{
         .buffer = m_pipeline.shader_binding_table.buffer,
         .offset = m_pipeline.offset_hit_group,
         .stride = m_pipeline.raytracing_properties.shaderGroupHandleSize,
-        .size = m_pipeline.raytracing_properties.shaderGroupHandleSize * vk::DeviceSize(2u)
+        .size = m_pipeline.raytracing_properties.shaderGroupHandleSize * vk::DeviceSize(m_pipeline.nb_group_primary)
     };
 
     vk::StridedBufferRegionKHR callable_shader_entry{};
 
     command_buffer.bindPipeline(vk::PipelineBindPoint::eRayTracingKHR, m_pipeline.pipeline);
-    command_buffer.bindDescriptorSets(vk::PipelineBindPoint::eRayTracingKHR, m_pipeline.pipeline_layout, 0, m_descriptor_sets[swapchain_id], {});
+    command_buffer.bindDescriptorSets(vk::PipelineBindPoint::eRayTracingKHR, m_pipeline.pipeline_layout, 0, m_descriptor_sets[command_pool_id], {});
 
     command_buffer.pushConstants(
         m_pipeline.pipeline_layout,
-        vk::ShaderStageFlagBits::eRaygenKHR | vk::ShaderStageFlagBits::eIntersectionKHR | vk::ShaderStageFlagBits::eClosestHitKHR | vk::ShaderStageFlagBits::eMissKHR, 0,
+        vk::ShaderStageFlagBits::eRaygenKHR | vk::ShaderStageFlagBits::eIntersectionKHR | 
+        vk::ShaderStageFlagBits::eAnyHitKHR | vk::ShaderStageFlagBits::eClosestHitKHR | vk::ShaderStageFlagBits::eMissKHR, 0,
         sizeof(Scene_global), &scene.scene_global);
 
     constexpr unsigned int foveated_rate = 8u;
@@ -134,8 +135,8 @@ void Renderer::start_recording(vk::CommandBuffer command_buffer, Scene& scene, v
             .newLayout = vk::ImageLayout::eTransferSrcOptimal,
             .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
             .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-            .image = per_frame[swapchain_id].storage_image.image,
-            .subresourceRange = /*vk::ImageSubresourceRange*/ {
+            .image = per_frame[command_pool_id].storage_image.image,
+            .subresourceRange = {
                 .aspectMask = vk::ImageAspectFlagBits::eColor,
                 .baseMipLevel = 0,
                 .levelCount = 1u,
@@ -145,10 +146,10 @@ void Renderer::start_recording(vk::CommandBuffer command_buffer, Scene& scene, v
         });
 
     command_buffer.copyImage(
-        per_frame[swapchain_id].storage_image.image, vk::ImageLayout::eTransferSrcOptimal,
+        per_frame[command_pool_id].storage_image.image, vk::ImageLayout::eTransferSrcOptimal,
         swapchain_image, vk::ImageLayout::eTransferDstOptimal,
         vk::ImageCopy{
-            .srcSubresource = /*vk::ImageSubresourceLayers*/{
+            .srcSubresource = {
                 .aspectMask = vk::ImageAspectFlagBits::eColor,
                 .mipLevel = 0u,
                 .baseArrayLayer = 0u,
@@ -167,7 +168,7 @@ void Renderer::start_recording(vk::CommandBuffer command_buffer, Scene& scene, v
     );
 }
 
-void Renderer::end_recording(vk::CommandBuffer command_buffer, uint32_t swapchain_id)
+void Renderer::end_recording(vk::CommandBuffer command_buffer, size_t command_pool_id)
 {
     //  Img to storage
     command_buffer.pipelineBarrier(
@@ -181,7 +182,7 @@ void Renderer::end_recording(vk::CommandBuffer command_buffer, uint32_t swapchai
             .newLayout = vk::ImageLayout::eGeneral,
             .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
             .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-            .image = per_frame[swapchain_id].storage_image.image,
+            .image = per_frame[command_pool_id].storage_image.image,
             .subresourceRange = {
                 .aspectMask = vk::ImageAspectFlagBits::eColor,
                 .baseMipLevel = 0,
@@ -192,11 +193,11 @@ void Renderer::end_recording(vk::CommandBuffer command_buffer, uint32_t swapchai
         });
 }
 
-void Renderer::create_per_frame_data(Context& context, Scene& scene, vk::Extent2D extent, vk::Format format, uint32_t swapchain_size)
+void Renderer::create_per_frame_data(Context& context, Scene& scene, vk::Extent2D extent, vk::Format format, size_t command_pool_size)
 {
-    per_frame.reserve(swapchain_size);
+    per_frame.reserve(command_pool_size);
     One_time_command_buffer command_buffer(m_device, context.command_pool, context.graphics_queue);
-    for (uint32_t i = 0u; i < swapchain_size; i++) {
+    for (size_t i = 0u; i < command_pool_size; i++) {
         // Images
         auto image = Vma_image(
             vk::ImageCreateInfo{
@@ -260,9 +261,9 @@ void Renderer::create_per_frame_data(Context& context, Scene& scene, vk::Extent2
     command_buffer.submit_and_wait_idle();
 }
 
-void Renderer::update_per_frame_data(Scene& scene, uint32_t swapchain_index)
+void Renderer::update_per_frame_data(Scene& scene, size_t command_pool_id)
 {
-    per_frame[swapchain_index].objects.copy(scene.objects_transform.data(), sizeof(glm::mat4) * scene.objects_transform.size());
+    per_frame[command_pool_id].objects.copy(scene.objects_transform.data(), sizeof(glm::mat4) * scene.objects_transform.size());
     if (scene.pipeline_dirty) {
         m_queue.waitIdle();
         m_device.destroyPipeline(m_pipeline.pipeline);
@@ -270,15 +271,15 @@ void Renderer::update_per_frame_data(Scene& scene, uint32_t swapchain_index)
     }
 }
 
-void Renderer::create_descriptor_sets(vk::DescriptorPool descriptor_pool, uint32_t swapchain_size)
+void Renderer::create_descriptor_sets(vk::DescriptorPool descriptor_pool, size_t command_pool_size)
 {
-    std::vector<vk::DescriptorSetLayout> layouts(swapchain_size, m_pipeline.descriptor_set_layout);
+    std::vector<vk::DescriptorSetLayout> layouts(command_pool_size, m_pipeline.descriptor_set_layout);
     m_descriptor_sets = m_device.allocateDescriptorSets(vk::DescriptorSetAllocateInfo{
         .descriptorPool = descriptor_pool,
         .descriptorSetCount = static_cast<uint32_t>(layouts.size()),
         .pSetLayouts = layouts.data()});
 
-    for (uint32_t i = 0; i < swapchain_size; i++)
+    for (size_t i = 0; i < command_pool_size; i++)
     {
         vk::WriteDescriptorSetAccelerationStructureKHR descriptor_acceleration_structure_info{
             .accelerationStructureCount = 1u,

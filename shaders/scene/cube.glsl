@@ -6,7 +6,8 @@ float sd_box(in vec3 position, in vec3 half_sides)
 
 float map(in vec3 position)
 {
-    float d = sd_box(position, vec3(0.3)) - 0.1;
-    d -= 0.05 * pow(abs(position.y + sin(scene_global.time * 5)), 2.0);
+    float coeff = sin(2 * (position.y  + scene_global.time));
+    float soft = 0.1 + 0.02 * coeff * coeff;
+    float d = sd_box(position, vec3(0.3)) - soft;
     return d;
 }

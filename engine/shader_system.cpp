@@ -12,7 +12,8 @@
 class Includer : public shaderc::CompileOptions::IncluderInterface
 {
 public:
-    Includer(Shader* shader, std::vector<Shader_file>* shader_files) : m_shader(shader), m_shader_files(shader_files)
+    Includer(Shader* shader, std::vector<Shader_file>* shader_files, const std::string& group_name) : 
+        m_shader(shader), m_shader_files(shader_files), m_group_name(group_name)
     {}
 
     shaderc_include_result* GetInclude(
@@ -21,6 +22,10 @@ public:
         const char* /*requesting_source*/,
         size_t /*include_depth*/) override final
     {
+        if (!m_group_name.empty() && strcmp(requested_source, "map_function") == 0) {
+            requested_source = m_group_name.c_str();
+        }
+
         auto file_it = std::find_if(m_shader_files->cbegin(), m_shader_files->cend(), [requested_source] (const Shader_file& shader_file) {
             return shader_file.name == requested_source;
         });
@@ -41,6 +46,7 @@ private:
     shaderc_include_result data_holder;
     Shader* m_shader;
     std::vector<Shader_file>* m_shader_files;
+    std::string m_group_name{};
 };
 
 Shader_system::Shader_system(vulkan::Context& context, Scene& scene) :
@@ -75,26 +81,30 @@ Shader_system::Shader_system(vulkan::Context& context, Scene& scene) :
     };
     scene.raygen_narrow_shader.shader_file_id = find_file("raygen_narrow.rgen");
     scene.raygen_wide_shader.shader_file_id = find_file("raygen_wide.rgen");
-    scene.miss_shader.shader_file_id = find_file("miss.rmiss");
-    scene.shadow_shader.shader_file_id = find_file("shadow.rmiss");
+    scene.primary_miss_shader.shader_file_id = find_file("primary.rmiss");
+    scene.shadow_miss_shader.shader_file_id = find_file("shadow.rmiss");
+    scene.shadow_intersection_shader.shader_file_id = find_file("shadow.rint");
     for (auto& shader_group : scene.shader_groups) {
-        shader_group.intersection.shader_file_id = find_file(shader_group.name + ".rint");
-        shader_group.closest_hit.shader_file_id = find_file(shader_group.name + ".rchit");
+        shader_group.primary_intersection.shader_file_id = find_file("primary.rint");
+        shader_group.primary_closest_hit.shader_file_id = find_file("primary.rchit");
+        shader_group.shadow_any_hit.shader_file_id = find_file("shadow.rahit");
     }
 
     marl::WaitGroup compile_shaders(static_cast<unsigned int>(scene.shader_groups.size()));
     for (auto& shader_group : scene.shader_groups) {
         marl::schedule([this, compile_shaders, &scene, &shader_group = shader_group]
         {
-            compile(scene.shader_files, shader_group.intersection, shaderc_intersection_shader);
-            compile(scene.shader_files, shader_group.closest_hit, shaderc_closesthit_shader);
+            compile(scene.shader_files, shader_group.primary_intersection, shaderc_intersection_shader, shader_group.name);
+            compile(scene.shader_files, shader_group.primary_closest_hit, shaderc_closesthit_shader, shader_group.name);
+            compile(scene.shader_files, shader_group.shadow_any_hit, shaderc_anyhit_shader, shader_group.name);
             compile_shaders.done();
         });
     }
     compile(scene.shader_files, scene.raygen_narrow_shader, shaderc_raygen_shader);
     compile(scene.shader_files, scene.raygen_wide_shader, shaderc_raygen_shader);
-    compile(scene.shader_files, scene.miss_shader, shaderc_miss_shader);
-    compile(scene.shader_files, scene.shadow_shader, shaderc_miss_shader);
+    compile(scene.shader_files, scene.primary_miss_shader, shaderc_miss_shader);
+    compile(scene.shader_files, scene.shadow_miss_shader, shaderc_miss_shader);
+    compile(scene.shader_files, scene.shadow_intersection_shader, shaderc_intersection_shader);
     compile_shaders.wait();
 }
 
@@ -122,10 +132,7 @@ void Shader_system::step(Scene& scene)
         for (auto& file : scene.shader_files)
         {
             if (file.dirty) {
-                m_shader_files_copy[id].data = file.data;
-                m_shader_files_copy[id].size = file.size;
-                m_shader_files_copy[id].dirty = true;
-                file.dirty = false;
+                m_shader_files_copy[id] = file;
                 m_shaders_dirty = true;
             }
             id++;
@@ -139,18 +146,20 @@ void Shader_system::step(Scene& scene)
                 m_recompile_info.clear();
                 check_if_dirty(scene.raygen_narrow_shader, shaderc_raygen_shader);
                 check_if_dirty(scene.raygen_wide_shader, shaderc_raygen_shader);
-                check_if_dirty(scene.miss_shader, shaderc_miss_shader);
-                check_if_dirty(scene.shadow_shader, shaderc_miss_shader);
+                check_if_dirty(scene.primary_miss_shader, shaderc_miss_shader);
+                check_if_dirty(scene.shadow_miss_shader, shaderc_miss_shader);
+                check_if_dirty(scene.shadow_intersection_shader, shaderc_intersection_shader);
                 for (auto& shader_group : scene.shader_groups) {
-                    check_if_dirty(shader_group.intersection, shaderc_intersection_shader);
-                    check_if_dirty(shader_group.closest_hit, shaderc_closesthit_shader);
+                    check_if_dirty(shader_group.primary_intersection, shaderc_intersection_shader, shader_group.name);
+                    check_if_dirty(shader_group.primary_closest_hit, shaderc_closesthit_shader, shader_group.name);
+                    check_if_dirty(shader_group.shadow_any_hit, shaderc_anyhit_shader, shader_group.name);
                 }
 
                 marl::WaitGroup compile_shaders(static_cast<unsigned int>(m_recompile_info.size()));
                 for (auto& shader_info : m_recompile_info) {
                     marl::schedule([this, compile_shaders, &shader_info = shader_info]
                     {
-                        compile(m_shader_files_copy, shader_info.copy, shader_info.kind);
+                        compile(m_shader_files_copy, shader_info.copy, shader_info.kind, shader_info.name);
                         compile_shaders.done();
                     });
                 }
@@ -162,20 +171,22 @@ void Shader_system::step(Scene& scene)
             {
                 if (file.dirty) {
                     write_file(file);  // Do during destructor or multithread if too slow
+                    file.dirty = false;
                 }
             }
         }
     }
 }
 
-void Shader_system::check_if_dirty(Shader& shader, shaderc_shader_kind shader_kind)
+void Shader_system::check_if_dirty(Shader& shader, shaderc_shader_kind shader_kind, const std::string& group_name)
 {
     if (m_shader_files_copy[shader.shader_file_id].dirty ||
         std::ranges::any_of(shader.included_files_id, [this](size_t id) { return m_shader_files_copy[id].dirty; })) {
         m_recompile_info.emplace_back(Recompile_info{
             .original = &shader,
             .copy = shader,
-            .kind = shader_kind
+            .kind = shader_kind,
+            .name = group_name
         });
     }
 }
@@ -186,28 +197,34 @@ void Shader_system::cleanup(Scene& scene)
         m_device.destroyShaderModule(scene.raygen_narrow_shader.shader_module);
     if (scene.raygen_wide_shader.shader_module)
         m_device.destroyShaderModule(scene.raygen_wide_shader.shader_module);
-    if (scene.miss_shader.shader_module)
-        m_device.destroyShaderModule(scene.miss_shader.shader_module);
-    if (scene.shadow_shader.shader_module)
-        m_device.destroyShaderModule(scene.shadow_shader.shader_module);
+    if (scene.primary_miss_shader.shader_module)
+        m_device.destroyShaderModule(scene.primary_miss_shader.shader_module);
+    if (scene.shadow_miss_shader.shader_module)
+        m_device.destroyShaderModule(scene.shadow_miss_shader.shader_module);
+    if (scene.shadow_intersection_shader.shader_module)
+        m_device.destroyShaderModule(scene.shadow_intersection_shader.shader_module);
     for (auto& shader_group : scene.shader_groups) {
-        if (shader_group.intersection.shader_module)
-            m_device.destroyShaderModule(shader_group.intersection.shader_module);
-        if (shader_group.closest_hit.shader_module)
-            m_device.destroyShaderModule(shader_group.closest_hit.shader_module);
+        if (shader_group.primary_intersection.shader_module)
+            m_device.destroyShaderModule(shader_group.primary_intersection.shader_module);
+        if (shader_group.primary_closest_hit.shader_module)
+            m_device.destroyShaderModule(shader_group.primary_closest_hit.shader_module);
+        if (shader_group.shadow_any_hit.shader_module)
+            m_device.destroyShaderModule(shader_group.shadow_any_hit.shader_module);
     }
 }
 
-void Shader_system::compile(std::vector<Shader_file>& shader_files, Shader& shader, shaderc_shader_kind shader_kind)
+void Shader_system::compile(std::vector<Shader_file>& shader_files, Shader& shader, shaderc_shader_kind shader_kind, const std::string& group_name)
 {
     auto& shader_file = shader_files[shader.shader_file_id];
     shader.included_files_id.clear();
     auto group_compile_options = m_group_compile_options;
-    group_compile_options.SetIncluder(std::make_unique<Includer>(&shader, &shader_files));
+
+    group_compile_options.SetIncluder(std::make_unique<Includer>(&shader, &shader_files, group_name + ".glsl"));
     auto compile_result = m_compiler.CompileGlslToSpv(shader_file.data.data(), shader_file.size, shader_kind, shader_file.name.c_str(), group_compile_options);
     if (compile_result.GetCompilationStatus() != shaderc_compilation_status_success) {
         shader.error = compile_result.GetErrorMessage();
         shader.shader_module = vk::ShaderModule{};
+        fmt::print("GLSL compilation error: {}\n", shader.error);
     }
     else {
         shader.error = "";
@@ -258,8 +275,5 @@ void Shader_system::write_file(Shader_file shader_file)
         throw std::runtime_error("failed to open file!");
     }
     file.write(shader_file.data.data(), shader_file.size);
-    //file.put('\r');
-    //file.put('\n');
-    fmt::print("write  {}\n", file.good());
     file.close();
 }

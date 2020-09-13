@@ -16,7 +16,7 @@ public:
     vk::SurfaceKHR surface;
     vk::Device device;
     vk::PhysicalDevice physical_device;
-    vk::CommandPool command_pool;  // Is it optimal to have one global pool here ?
+    vk::CommandPool command_pool;
     uint32_t queue_family = 0u;
     vk::Queue graphics_queue;
     VmaAllocator allocator;

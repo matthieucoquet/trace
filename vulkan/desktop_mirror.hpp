@@ -19,8 +19,8 @@ public:
 
     void create_synchronization(size_t size);
 
-    void copy(vk::CommandBuffer& command_buffer, vk::Image vr_image, size_t current_id, vk::Extent2D extent);
-    void present(vk::CommandBuffer& command_buffer, vk::Fence fence, size_t current_id);
+    void copy(vk::CommandBuffer& command_buffer, vk::Image vr_image, size_t command_pool_id, vk::Extent2D extent);
+    void present(vk::CommandBuffer& command_buffer, vk::Fence fence, size_t command_pool_id);
 private:
     vk::Device m_device;
     vk::Queue m_queue;

@@ -113,8 +113,7 @@ Blas::Blas(Context& context) :
         .geometryType = vk::GeometryTypeKHR::eAabbs,
         .geometry = vk::AccelerationStructureGeometryDataKHR(vk::AccelerationStructureGeometryAabbsDataKHR{
             .data = vk::DeviceOrHostAddressConstKHR(aabb_buffer_address),
-            .stride = sizeof(vk::AabbPositionsKHR) }),
-        .flags = vk::GeometryFlagBitsKHR::eOpaque  // if set, don't invoque any hit in hit group   
+            .stride = sizeof(vk::AabbPositionsKHR) })
     };
     vk::AccelerationStructureGeometryKHR* pointer_acceleration_structure_geometry = &acceleration_structure_geometry;
     auto build_info_offset = vk::AccelerationStructureBuildOffsetInfoKHR {
@@ -211,8 +210,7 @@ void Tlas::update(vk::CommandBuffer command_buffer, const Scene& scene, bool fir
         .geometryType = vk::GeometryTypeKHR::eInstances,
         .geometry = vk::AccelerationStructureGeometryDataKHR(vk::AccelerationStructureGeometryInstancesDataKHR{
             .arrayOfPointers = false,
-            .data = vk::DeviceOrHostAddressConstKHR(instance_buffer_address) }),
-        .flags = vk::GeometryFlagBitsKHR::eOpaque
+            .data = vk::DeviceOrHostAddressConstKHR(instance_buffer_address) })
     };
     vk::AccelerationStructureGeometryKHR* pointer_acceleration_structure_geometry = &acceleration_structure_geometry;
     vk::AccelerationStructureBuildOffsetInfoKHR build_info_offset{

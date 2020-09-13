@@ -24,6 +24,7 @@ private:
         Shader* original;
         Shader copy;
         shaderc_shader_kind kind;
+        std::string name;  // TODO stringview
     };
 
     vk::Device m_device;
@@ -37,9 +38,9 @@ private:
     std::atomic_flag m_compiling;
     bool m_shaders_dirty;
 
-    void compile(std::vector<Shader_file>& shader_files, Shader& shader, shaderc_shader_kind shader_kind);
+    void compile(std::vector<Shader_file>& shader_files, Shader& shader, shaderc_shader_kind shader_kind, const std::string& group_name = {});
     [[nodiscard]] std::string read_file(std::filesystem::path path) const;
     void write_file(Shader_file shader_file);
-    void check_if_dirty(Shader& shader, shaderc_shader_kind shader_kind);
+    void check_if_dirty(Shader& shader, shaderc_shader_kind shader_kind, const std::string& group_name = {});
 
 };

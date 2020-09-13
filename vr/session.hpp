@@ -44,7 +44,7 @@ private:
 
     vulkan::Renderer m_renderer;
     vulkan::Desktop_mirror m_mirror;
-    vulkan::Reusable_command_buffers m_command_buffers;
+    vulkan::Reusable_command_pools m_command_pools;
     vulkan::Imgui_render m_imgui_render;
 
     xr::CompositionLayerProjection composition_layer_front{};

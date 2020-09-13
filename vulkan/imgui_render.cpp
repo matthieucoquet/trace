@@ -8,7 +8,7 @@
 namespace vulkan
 {
 
-Imgui_render::Imgui_render(Context& context, vk::Extent2D extent, uint32_t swapchain_size, const std::vector<vk::ImageView>& image_views):
+Imgui_render::Imgui_render(Context& context, vk::Extent2D extent, uint32_t command_pool_size, const std::vector<vk::ImageView>& image_views):
     m_device(context.device),
     m_allocator(context.allocator),
     m_extent(extent)
@@ -20,14 +20,14 @@ Imgui_render::Imgui_render(Context& context, vk::Extent2D extent, uint32_t swapc
     io.DisplayFramebufferScale = ImVec2(1.0f, 1.0f);
 
     create_render_pass(vk::Format::eR8G8B8A8Unorm);
-    create_pipeline(context, extent);
+    create_pipeline(context);
     create_fonts_texture(context);
-    m_size_index_buffer.resize(swapchain_size, 0u);
-    m_index_buffer.resize(swapchain_size);
-    m_size_vertex_buffer.resize(swapchain_size, 0u);
-    m_vertex_buffer.resize(swapchain_size);
+    m_size_index_buffer.resize(command_pool_size, 0u);
+    m_index_buffer.resize(command_pool_size);
+    m_size_vertex_buffer.resize(command_pool_size, 0u);
+    m_vertex_buffer.resize(command_pool_size);
 
-    m_framebuffers.reserve(swapchain_size);
+    m_framebuffers.reserve(image_views.size());
     for (vk::ImageView image_view : image_views)
     {
         m_framebuffers.push_back(m_device.createFramebuffer(vk::FramebufferCreateInfo{
@@ -91,7 +91,7 @@ void Imgui_render::create_render_pass(vk::Format swapchain_format)
         .pDependencies = &dependency });
 }
 
-void Imgui_render::create_pipeline(Context& context, vk::Extent2D /*extent*/)
+void Imgui_render::create_pipeline(Context& context)
 {
     vk::ShaderModule vertex_module = compile_glsl_file("imgui_vert_shader.glsl", shaderc_vertex_shader);
     vk::ShaderModule fragment_module = compile_glsl_file("imgui_frag_shader.glsl", shaderc_fragment_shader);
@@ -104,8 +104,8 @@ void Imgui_render::create_pipeline(Context& context, vk::Extent2D /*extent*/)
         .addressModeV = vk::SamplerAddressMode::eRepeat,
         .addressModeW = vk::SamplerAddressMode::eRepeat,
         .maxAnisotropy = 1.0f,
-        .minLod = -1000.0f,
-        .maxLod = 1000.0f
+        .minLod = 0.0f,
+        .maxLod = 1.0f,
         });
 
     constexpr uint32_t binding = 0u;
@@ -237,7 +237,7 @@ void Imgui_render::create_pipeline(Context& context, vk::Extent2D /*extent*/)
     m_device.destroyShaderModule(fragment_module);
 }
 
-void Imgui_render::draw(ImDrawData* draw_data, vk::CommandBuffer command_buffer, size_t frame_id)
+void Imgui_render::draw(ImDrawData* draw_data, vk::CommandBuffer command_buffer, size_t command_pool_id, size_t frame_id)
 {
     auto clear_value = vk::ClearValue().setColor(std::array<float,4>{ 0.03f, 0.03f, 0.03f, 1.0f });
     command_buffer.beginRenderPass(
@@ -259,10 +259,10 @@ void Imgui_render::draw(ImDrawData* draw_data, vk::CommandBuffer command_buffer,
     if (draw_data->TotalVtxCount > 0)
     {
         size_t vertex_size = draw_data->TotalVtxCount * sizeof(ImDrawVert);
-        if (m_size_vertex_buffer[frame_id] < vertex_size)
+        if (m_size_vertex_buffer[command_pool_id] < vertex_size)
         {
-            m_size_vertex_buffer[frame_id] = static_cast<uint32_t>(vertex_size);
-            m_vertex_buffer[frame_id] = Vma_buffer(vk::BufferCreateInfo{
+            m_size_vertex_buffer[command_pool_id] = static_cast<uint32_t>(vertex_size);
+            m_vertex_buffer[command_pool_id] = Vma_buffer(vk::BufferCreateInfo{
                     .size = vertex_size,
                     .usage = vk::BufferUsageFlagBits::eVertexBuffer,
                     .sharingMode = vk::SharingMode::eExclusive },
@@ -270,10 +270,10 @@ void Imgui_render::draw(ImDrawData* draw_data, vk::CommandBuffer command_buffer,
                 m_device, m_allocator);
         }
         size_t index_size = draw_data->TotalIdxCount * sizeof(ImDrawIdx);
-        if (m_size_index_buffer[frame_id] < index_size)
+        if (m_size_index_buffer[command_pool_id] < index_size)
         {
-            m_size_index_buffer[frame_id] = static_cast<uint32_t>(index_size);
-            m_index_buffer[frame_id] = Vma_buffer(vk::BufferCreateInfo{
+            m_size_index_buffer[command_pool_id] = static_cast<uint32_t>(index_size);
+            m_index_buffer[command_pool_id] = Vma_buffer(vk::BufferCreateInfo{
                     .size = index_size,
                     .usage = vk::BufferUsageFlagBits::eIndexBuffer,
                     .sharingMode = vk::SharingMode::eExclusive },
@@ -281,8 +281,8 @@ void Imgui_render::draw(ImDrawData* draw_data, vk::CommandBuffer command_buffer,
                 m_device, m_allocator);
         }
 
-        ImDrawIdx* index_mapped = static_cast<ImDrawIdx*>(m_index_buffer[frame_id].map());
-        ImDrawVert* vertex_mapped = static_cast<ImDrawVert*>(m_vertex_buffer[frame_id].map());
+        ImDrawIdx* index_mapped = static_cast<ImDrawIdx*>(m_index_buffer[command_pool_id].map());
+        ImDrawVert* vertex_mapped = static_cast<ImDrawVert*>(m_vertex_buffer[command_pool_id].map());
         for (int n = 0; n < draw_data->CmdListsCount; n++)
         {
             const ImDrawList* cmd_list = draw_data->CmdLists[n];
@@ -291,11 +291,11 @@ void Imgui_render::draw(ImDrawData* draw_data, vk::CommandBuffer command_buffer,
             vertex_mapped += cmd_list->VtxBuffer.Size;
             index_mapped += cmd_list->IdxBuffer.Size;
         }
-        m_index_buffer[frame_id].unmap();
-        m_vertex_buffer[frame_id].unmap();
+        m_index_buffer[command_pool_id].unmap();
+        m_vertex_buffer[command_pool_id].unmap();
     }
 
-    setup_render_state(draw_data, command_buffer, frame_id, fb_width, fb_height);
+    setup_render_state(draw_data, command_buffer, command_pool_id, fb_width, fb_height);
 
     // Will project scissor/clipping rectangles into framebuffer space
     ImVec2 clip_off = draw_data->DisplayPos;         // (0,0) unless using multi-viewports
@@ -316,7 +316,7 @@ void Imgui_render::draw(ImDrawData* draw_data, vk::CommandBuffer command_buffer,
                 // User callback, registered via ImDrawList::AddCallback()
                 // (ImDrawCallback_ResetRenderState is a special callback value used by the user to request the renderer to reset render state.)
                 if (pcmd->UserCallback == ImDrawCallback_ResetRenderState)
-                    setup_render_state(draw_data, command_buffer, frame_id, fb_width, fb_height);
+                    setup_render_state(draw_data, command_buffer, command_pool_id, fb_width, fb_height);
                 else
                     pcmd->UserCallback(cmd_list, pcmd);
             }
@@ -404,7 +404,7 @@ void Imgui_render::create_fonts_texture(Context& context)
     io.Fonts->TexID = (ImTextureID)(intptr_t)VkImage(m_font_image.image);
 }
 
-void Imgui_render::setup_render_state(ImDrawData* draw_data, vk::CommandBuffer command_buffer, size_t frame_id, int fb_width, int fb_height)
+void Imgui_render::setup_render_state(ImDrawData* draw_data, vk::CommandBuffer command_buffer, size_t command_pool_id, int fb_width, int fb_height)
 {
     command_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, m_pipeline);
     command_buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_pipeline_layout, 0, m_descriptor_sets, {});
@@ -412,8 +412,8 @@ void Imgui_render::setup_render_state(ImDrawData* draw_data, vk::CommandBuffer c
     // Bind Vertex And Index Buffer:
     if (draw_data->TotalVtxCount > 0)
     {
-        command_buffer.bindVertexBuffers(0u, m_vertex_buffer[frame_id].buffer, uint64_t(0u));
-        command_buffer.bindIndexBuffer(m_index_buffer[frame_id].buffer, 0u, sizeof(ImDrawIdx) == 2 ? vk::IndexType::eUint16 : vk::IndexType::eUint32);
+        command_buffer.bindVertexBuffers(0u, m_vertex_buffer[command_pool_id].buffer, uint64_t(0u));
+        command_buffer.bindIndexBuffer(m_index_buffer[command_pool_id].buffer, 0u, sizeof(ImDrawIdx) == 2 ? vk::IndexType::eUint16 : vk::IndexType::eUint32);
     }
 
     command_buffer.setViewport(0, vk::Viewport{

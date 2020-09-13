@@ -22,9 +22,9 @@ Desktop_mirror::~Desktop_mirror()
     }
 }
 
-void Desktop_mirror::copy(vk::CommandBuffer& command_buffer, vk::Image vr_image, size_t current_id, vk::Extent2D extent)
+void Desktop_mirror::copy(vk::CommandBuffer& command_buffer, vk::Image vr_image, size_t command_pool_id, vk::Extent2D extent)
 {
-    auto acquire_result = m_device.acquireNextImageKHR(m_swapchain.swapchain, 0, m_semaphore_available[current_id], {});
+    auto acquire_result = m_device.acquireNextImageKHR(m_swapchain.swapchain, 0, m_semaphore_available[command_pool_id], {});
     if (acquire_result.result == vk::Result::eErrorOutOfDateKHR) {
         fmt::print("Out of date acquire.\n");
         assert(false);
@@ -60,7 +60,7 @@ void Desktop_mirror::copy(vk::CommandBuffer& command_buffer, vk::Image vr_image,
         m_swapchain.images[m_image_id],
         vk::ImageLayout::eTransferDstOptimal,
         vk::ImageBlit{
-            .srcSubresource = /*vk::ImageSubresourceLayers*/{
+            .srcSubresource = {
                 .aspectMask = vk::ImageAspectFlagBits::eColor,
                 .mipLevel = 0u,
                 .baseArrayLayer = 0u,
@@ -70,7 +70,7 @@ void Desktop_mirror::copy(vk::CommandBuffer& command_buffer, vk::Image vr_image,
                 vk::Offset3D{ 0, 0, 0 }, 
                 vk::Offset3D{ static_cast<int32_t>(extent.width), static_cast<int32_t>(extent.height), 1 }
             },
-            .dstSubresource = /*vk::ImageSubresourceLayers*/{
+            .dstSubresource = {
                 .aspectMask = vk::ImageAspectFlagBits::eColor,
                 .mipLevel = 0u,
                 .baseArrayLayer = 0u,
@@ -106,23 +106,23 @@ void Desktop_mirror::copy(vk::CommandBuffer& command_buffer, vk::Image vr_image,
         });
 }
 
-void Desktop_mirror::present(vk::CommandBuffer& command_buffer, vk::Fence fence, size_t current_id)
+void Desktop_mirror::present(vk::CommandBuffer& command_buffer, vk::Fence fence, size_t command_pool_id)
 {
     vk::PipelineStageFlags wait_stages = vk::PipelineStageFlagBits::eTransfer;
     m_queue.submit(
         vk::SubmitInfo{
             .waitSemaphoreCount = 1,
-            .pWaitSemaphores = &m_semaphore_available[current_id],
+            .pWaitSemaphores = &m_semaphore_available[command_pool_id],
             .pWaitDstStageMask = &wait_stages,
             .commandBufferCount = 1,
             .pCommandBuffers = &command_buffer,
             .signalSemaphoreCount = 1,
-            .pSignalSemaphores = &m_semaphore_finished[current_id] },
+            .pSignalSemaphores = &m_semaphore_finished[command_pool_id] },
         fence);
 
     auto present_result = m_queue.presentKHR(vk::PresentInfoKHR{
         .waitSemaphoreCount = 1,
-        .pWaitSemaphores = &m_semaphore_finished[current_id],
+        .pWaitSemaphores = &m_semaphore_finished[command_pool_id],
         .swapchainCount = 1,
         .pSwapchains = &m_swapchain.swapchain,
         .pImageIndices = &m_image_id });

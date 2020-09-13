@@ -31,8 +31,9 @@ public:
     std::vector<Shader_file> shader_files;
     Shader raygen_narrow_shader;
     Shader raygen_wide_shader;
-    Shader miss_shader;
-    Shader shadow_shader;
+    Shader primary_miss_shader;
+    Shader shadow_miss_shader;
+    Shader shadow_intersection_shader;
     std::vector<Shader_group> shader_groups;
 
     bool mouse_control{ true }; // Mouse and controller can alternate for ui control

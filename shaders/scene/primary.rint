@@ -3,10 +3,10 @@
 #extension GL_EXT_scalar_block_layout : enable
 #extension GL_GOOGLE_include_directive : enable
 #include "common_types.glsl"
-#include "cube.glsl"
-#include "common_raymarch.glsl"
+#include "map_function"
+#include "raymarch.glsl"
 
-hitAttributeEXT vec3 attributes;
+// hitAttributeEXT vec3 attributes;
 
 layout(binding = 2, set = 0, scalar) buffer Objects { Object o[]; } objects;
 

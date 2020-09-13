@@ -61,26 +61,26 @@ void Context::init_instance(Window& window, vr::Instance& vr_instance)
         }
     }
 
-    auto debug_create_info = vk::DebugUtilsMessengerCreateInfoEXT{
-        .messageSeverity = /*vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose |*/ vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning | vk::DebugUtilsMessageSeverityFlagBitsEXT::eError,
+    /*vk::DebugUtilsMessengerCreateInfoEXT debug_create_info {
+        .messageSeverity = /*vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose |* / vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning | vk::DebugUtilsMessageSeverityFlagBitsEXT::eError,
         .messageType = vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral | vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance | vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation,
         .pfnUserCallback = &debug_callback 
     };
-    std::array validation_features{ vk::ValidationFeatureEnableEXT::eBestPractices/*, vk::ValidationFeatureEnableEXT::eGpuAssistedReserveBindingSlot*/ };
-    auto validation_features_ext = vk::ValidationFeaturesEXT{
+    std::array validation_features{ vk::ValidationFeatureEnableEXT::eBestPractices/*, vk::ValidationFeatureEnableEXT::eGpuAssistedReserveBindingSlot* / };
+    vk::ValidationFeaturesEXT validation_features_ext {
         .pNext = static_cast<vk::DebugUtilsMessengerCreateInfoEXT*>(&debug_create_info),
         .enabledValidationFeatureCount = static_cast<uint32_t>(validation_features.size()),
         .pEnabledValidationFeatures = validation_features.data()
-    };
+    };*/
 
-    auto app_info = vk::ApplicationInfo{
+    vk::ApplicationInfo app_info {
         .pApplicationName = "trace",
         .apiVersion = VK_API_VERSION_1_2
     };
 
     instance = vk::createInstance(vk::InstanceCreateInfo{
         //.pNext = &debug_create_info,
-        .pNext = &validation_features_ext,
+        //.pNext = &validation_features_ext,
         .pApplicationInfo = &app_info,
         .enabledLayerCount = static_cast<uint32_t>(required_instance_layers.size()),
         .ppEnabledLayerNames = required_instance_layers.data(),
@@ -88,7 +88,7 @@ void Context::init_instance(Window& window, vr::Instance& vr_instance)
         .ppEnabledExtensionNames = required_extensions.data()
     });
     VULKAN_HPP_DEFAULT_DISPATCHER.init(instance);
-    m_debug_messenger = instance.createDebugUtilsMessengerEXT(debug_create_info);
+    //m_debug_messenger = instance.createDebugUtilsMessengerEXT(debug_create_info);
 }
 
 void Context::init_device(vr::Instance& vr_instance)
@@ -100,7 +100,7 @@ void Context::init_device(vr::Instance& vr_instance)
         VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
         VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME,
         // The following is required to debug device lost
-        VK_NV_DEVICE_DIAGNOSTIC_CHECKPOINTS_EXTENSION_NAME
+        // VK_NV_DEVICE_DIAGNOSTIC_CHECKPOINTS_EXTENSION_NAME
     };
 
     std::vector<vk::PhysicalDevice> potential_physical_devices;
@@ -142,7 +142,8 @@ void Context::init_device(vr::Instance& vr_instance)
             potential_physical_device.getFeatures2(&features);
             if (!raytracing_features.rayTracing)
                 continue;
-            if (!vulkan_12_features.bufferDeviceAddress || !vulkan_12_features.uniformBufferStandardLayout || !vulkan_12_features.scalarBlockLayout)
+            if (!vulkan_12_features.bufferDeviceAddress || !vulkan_12_features.uniformBufferStandardLayout || !vulkan_12_features.scalarBlockLayout ||
+                !vulkan_12_features.uniformAndStorageBuffer8BitAccess)
                 continue;
         }
 
@@ -175,26 +176,26 @@ void Context::init_device(vr::Instance& vr_instance)
         // Create device now that we found a suitable gpu 
         physical_device = potential_physical_device;
         float queue_priority = 1.0f;
-        auto queue_create_info = vk::DeviceQueueCreateInfo{
+        vk::DeviceQueueCreateInfo queue_create_info {
             .queueFamilyIndex = queue_family,
             .queueCount = 1u,
             .pQueuePriorities = &queue_priority
         };
 
-        auto vulkan_12_features = vk::PhysicalDeviceVulkan12Features{
+        vk::PhysicalDeviceVulkan12Features vulkan_12_features {
+            .uniformAndStorageBuffer8BitAccess = true,
             .scalarBlockLayout = true,
             .uniformBufferStandardLayout = true,
             .bufferDeviceAddress = true
         };
-        auto raytracing_features = vk::PhysicalDeviceRayTracingFeaturesKHR{
+        vk::PhysicalDeviceRayTracingFeaturesKHR raytracing_features {
             .pNext = &vulkan_12_features,
             .rayTracing = true
         };
-        auto device_features = vk::PhysicalDeviceFeatures2{
+        vk::PhysicalDeviceFeatures2 device_features {
             .pNext = &raytracing_features,
             .features = {
-                .samplerAnisotropy = true,
-                .shaderStorageImageMultisample = true
+                .shaderStorageImageMultisample = true,
             }
         };
         device = physical_device.createDevice(vk::DeviceCreateInfo{
@@ -207,10 +208,7 @@ void Context::init_device(vr::Instance& vr_instance)
         VULKAN_HPP_DEFAULT_DISPATCHER.init(device);
 
         graphics_queue = device.getQueue(queue_family, 0u);
-        command_pool = device.createCommandPool(vk::CommandPoolCreateInfo{
-            .flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
-            .queueFamilyIndex = queue_family
-        });
+        command_pool = device.createCommandPool(vk::CommandPoolCreateInfo{ .queueFamilyIndex = queue_family });
         return;
     }
     throw std::runtime_error("Failed to find a suitable GPU.");

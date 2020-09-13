@@ -9,6 +9,5 @@ float map(in vec3 position)
     vec3 c = vec3(2.0, 0.0, 2.0);
     vec3 q = position - c * clamp(round(position / c), -3, 3);
     float d = sd_box(q, vec3(0.9, 0.0, 0.9)) - 0.1;
-    //d = min(d, dot(position + vec3(0.0, 0.0, 20.0), vec3(0.0, 0.0, 1.0)));
     return d;
 }

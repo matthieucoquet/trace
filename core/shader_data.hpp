@@ -19,9 +19,10 @@ struct Shader
     std::string error;
 };
 
-struct Shader_group
+struct  Shader_group
 {
     std::string name;
-    Shader intersection;
-    Shader closest_hit;
+    Shader primary_intersection;
+    Shader primary_closest_hit;
+    Shader shadow_any_hit;
 };

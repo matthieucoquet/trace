@@ -10,7 +10,7 @@ Window::Window(float recommended_ratio)
     glfwInit();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-    window = glfwCreateWindow(static_cast<int>(recommended_ratio * initial_height), initial_height, "Vulkan Renderer", nullptr, nullptr);
+    window = glfwCreateWindow(static_cast<int>(recommended_ratio * initial_height), initial_height, "Mirror window", nullptr, nullptr);
 }
 
 Window::~Window()

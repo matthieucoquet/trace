@@ -39,68 +39,60 @@ protected:
     vk::Queue m_queue;
 };
 
-class Reusable_command_buffers
+class Reusable_command_pools
 {
 public:
     size_t size;
-    std::vector<vk::CommandBuffer> command_buffers;
+    std::vector<vk::CommandPool> command_pools;
     std::vector<vk::Fence> fences;
+    vk::Device device;
 
-    Reusable_command_buffers(vk::Device device, vk::CommandPool command_pool, vk::Queue queue, size_t buffer_size) :
+    Reusable_command_pools(vk::Device device, uint32_t queue_family, size_t buffer_size) :
         size(buffer_size),
-        m_device(device),
-        m_command_pool(command_pool),
-        m_queue(queue)
+        device(device)
     {
-        command_buffers = device.allocateCommandBuffers(vk::CommandBufferAllocateInfo{
-            .commandPool = command_pool,
-            .level = vk::CommandBufferLevel::ePrimary,
-            .commandBufferCount = static_cast<uint32_t>(size) });
         fences.reserve(size);
+        command_pools.reserve(size);
         for(size_t i = 0; i < size; i++)
         {
-            fences.push_back(m_device.createFence(vk::FenceCreateInfo{ .flags = vk::FenceCreateFlagBits::eSignaled }));
+            command_pools.push_back(device.createCommandPool(vk::CommandPoolCreateInfo{ .queueFamilyIndex = queue_family }));
+            fences.push_back(device.createFence(vk::FenceCreateInfo{ .flags = vk::FenceCreateFlagBits::eSignaled }));
         }
     }
 
-    ~Reusable_command_buffers()
+    ~Reusable_command_pools()
     {
         for (size_t i = 0; i < size; i++)
         {
-            m_device.destroyFence(fences[i]);
+            device.destroyCommandPool(command_pools[i]);
+            device.destroyFence(fences[i]);
         }
-        m_device.freeCommandBuffers(m_command_pool, command_buffers);
     }
 
-    size_t find_available()
+    size_t find_next()
     {
         bool first = false;
         while (true)
         {
             for (size_t i = 0; i < size; i++)
             {
-                if (m_device.getFenceStatus(fences[i]) == vk::Result::eSuccess) {
-                    m_device.resetFences(fences[i]);
-                    command_buffers[i].reset({});
+                if (device.getFenceStatus(fences[i]) == vk::Result::eSuccess) {
+                    device.resetFences(fences[i]);
+                    device.resetCommandPool(command_pools[i], vk::CommandPoolResetFlagBits::eReleaseResources);
                     return i;
                 }
             }
             if (first) {
                 first = false;
-                fmt::print("Warning: no command buffer available, waiting until one get available.\n");
+                fmt::print("Warning: no command pool available, waiting until one get available.\n");
             }
         }
     }
 
     void wait_until_done()
     {
-        m_device.waitForFences(fences, true, std::numeric_limits<uint64_t>::max());
+        device.waitForFences(fences, true, std::numeric_limits<uint64_t>::max());
     }
-
-private:
-    vk::Device m_device;
-    vk::CommandPool m_command_pool;
-    vk::Queue m_queue;
 };
 
 }

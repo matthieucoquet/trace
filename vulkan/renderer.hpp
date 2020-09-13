@@ -32,13 +32,13 @@ public:
     Renderer& operator=(Renderer&& other) = default;
     ~Renderer();
 
-    void update_per_frame_data(Scene& scene, uint32_t swapchain_index);
-    void start_recording(vk::CommandBuffer command_buffer, Scene& scene, vk::Image swapchain_image, uint32_t swapchain_id, vk::Extent2D extent);
-    void end_recording(vk::CommandBuffer command_buffer, uint32_t swapchain_id);
+    void update_per_frame_data(Scene& scene, size_t command_pool_id);
+    void start_recording(vk::CommandBuffer command_buffer, Scene& scene, vk::Image swapchain_image, size_t command_pool_id, vk::Extent2D extent);
+    void end_recording(vk::CommandBuffer command_buffer, size_t command_pool_id);
 
-    void create_per_frame_data(Context& context, Scene& scene, vk::Extent2D extent, vk::Format format, uint32_t swapchain_size);
+    void create_per_frame_data(Context& context, Scene& scene, vk::Extent2D extent, vk::Format format, size_t command_pool_size);
     // OpenXR doesn't expose Storage bit so we have to first render to another image and copy
-    void create_descriptor_sets(vk::DescriptorPool descriptor_pool, uint32_t swapchain_size);
+    void create_descriptor_sets(vk::DescriptorPool descriptor_pool, size_t command_pool_size);
 private:
     vk::Device m_device;
     vk::Queue m_queue;
