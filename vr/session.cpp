@@ -13,9 +13,6 @@ namespace vr
 constexpr bool verbose = false;
 constexpr size_t size_command_buffers = 4u;
 
-constexpr bool standing = true;
-constexpr float offset_y_space = standing ? 0.0f : 1.7f;
-
 Session::Session(xr::Session new_session, Instance& instance, vulkan::Context& context, Scene& scene) :
     session(new_session),
     m_ray_swapchain(instance, session, context),
@@ -33,7 +30,7 @@ Session::Session(xr::Session new_session, Instance& instance, vulkan::Context& c
         }
     }
     m_stage_space = session.createReferenceSpace(xr::ReferenceSpaceCreateInfo{
-        .referenceSpaceType = standing ? xr::ReferenceSpaceType::Stage : xr::ReferenceSpaceType::Local });
+        .referenceSpaceType = Scene::standing ? xr::ReferenceSpaceType::Stage : xr::ReferenceSpaceType::Local });
 
     uint32_t size_swapchain = m_ray_swapchain.size();
     auto extent = m_ray_swapchain.vk_view_extent();
@@ -171,10 +168,11 @@ void Session::draw_frame(Scene& scene, std::vector<std::unique_ptr<System>>& sys
                .activeActionSets = m_active_action_sets.data()
             });
             for (auto& system : m_input_systems) {
-                system->step(scene, session, frame_state.predictedDisplayTime, m_stage_space, offset_y_space);
+                system->step(scene, session, frame_state.predictedDisplayTime, m_stage_space, Scene::vr_offset_y);
             }
             std::for_each(systems.begin(), systems.end(), [&scene](auto& system) { system->step(scene); });
             composition_layer_ui.pose = to_xr(scene.ui_object.position, scene.ui_object.rotation);
+            composition_layer_ui.pose.position.y -= Scene::vr_offset_y;
             composition_layer_ui.size.height = scene.ui_object.scale;
             composition_layer_ui.size.width = scene.ui_object.scale;
         }
@@ -194,7 +192,7 @@ void Session::draw_frame(Scene& scene, std::vector<std::unique_ptr<System>>& sys
                     );
             for (size_t eye_id = 0u; eye_id < 2u; eye_id++)
             {
-                views[eye_id].pose.position.y += offset_y_space;
+                views[eye_id].pose.position.y += Scene::vr_offset_y;
                 scene.scene_global.eyes[eye_id].pose = views[eye_id].pose;
                 scene.scene_global.eyes[eye_id].fov = views[eye_id].fov;
                 composition_layer_views[eye_id].pose = views[eye_id].pose;
@@ -207,7 +205,9 @@ void Session::draw_frame(Scene& scene, std::vector<std::unique_ptr<System>>& sys
                 .level = vk::CommandBufferLevel::ePrimary,
                 .commandBufferCount = 1 });
             auto& command_buffer = command_buffers.back();
+
             uint32_t swapchain_index = m_ray_swapchain.swapchain.acquireSwapchainImage({});
+
             m_ray_swapchain.swapchain.waitSwapchainImage({ .timeout = xr::Duration::infinite() });
 
             m_renderer.update_per_frame_data(scene, command_pool_id);

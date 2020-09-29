@@ -17,7 +17,7 @@ class Scene
 {
 public:
     // Should probably be a runtime setting in the future
-    static constexpr bool standing = true;
+    static constexpr bool standing = false;
     static constexpr float vr_offset_y = standing ? 0.0f : 1.7f;
 
     Scene_global scene_global = {};

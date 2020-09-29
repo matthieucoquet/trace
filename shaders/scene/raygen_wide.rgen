@@ -1,5 +1,6 @@
 #version 460
 #extension GL_EXT_ray_tracing : enable
+#extension GL_EXT_nonuniform_qualifier : enable
 #extension GL_EXT_scalar_block_layout : enable
 #extension GL_GOOGLE_include_directive : enable
 #include "common_types.glsl"
@@ -11,7 +12,7 @@ layout(location = 0) rayPayloadEXT vec4 hit_value;
 
 #define LOW_SIZE 8
 
-vec3 get_direction(vec2 center, Eye eye, bool is_right)
+vec3 get_direction(in vec2 center, in Eye eye, in bool is_right)
 {
     vec2 pixel_uv = center / (LOW_SIZE * vec2(gl_LaunchSizeEXT.xy));
     pixel_uv.x = pixel_uv.x * 2;
@@ -21,7 +22,7 @@ vec3 get_direction(vec2 center, Eye eye, bool is_right)
         -1.0);
 }
 
-vec4 shoot_ray(vec3 direction, Eye eye)
+vec4 shoot_ray(in vec3 direction, in Eye eye)
 {
     direction = direction + 2.0 * cross(eye.pose.rotation.xyz, cross(eye.pose.rotation.xyz, direction) + eye.pose.rotation.w * direction);
     direction = normalize(direction);
@@ -61,7 +62,7 @@ void main()
     for (int i = 0; i < LOW_SIZE; i++){
         for (int j = 0; j < LOW_SIZE; j++){
             ivec2 offset = ivec2(i , j);
-            imageStore(image, ivec2(LOW_SIZE * gl_LaunchIDEXT.xy + offset), color);
+            imageStore(image, nonuniformEXT(ivec2(LOW_SIZE * gl_LaunchIDEXT.xy + offset)), color);
         }
     }
 }

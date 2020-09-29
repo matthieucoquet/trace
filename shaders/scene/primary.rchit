@@ -1,5 +1,6 @@
 #version 460
 #extension GL_EXT_ray_tracing : enable
+#extension GL_EXT_nonuniform_qualifier : enable
 #extension GL_EXT_scalar_block_layout : enable
 #extension GL_GOOGLE_include_directive : enable
 #include "common_types.glsl"
@@ -20,7 +21,7 @@ void main()
     vec3 light_pos = vec3(10.0, 30.0, 4.0);
     vec3 light_color = vec3(1.0, 1.0, 1.0);
   
-    Object object = objects.o[gl_InstanceID];
+    Object object = objects.o[nonuniformEXT(gl_InstanceID)];
     vec3 model_position = vec3(object.world_to_model * vec4(position, 1.0f));
     vec3 normal = normal(model_position);
     vec3 light_dir = normalize(vec3(object.world_to_model * vec4(light_pos, 1.0f)) - model_position);

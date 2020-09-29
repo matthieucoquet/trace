@@ -1,7 +1,6 @@
 #include "raytracing_pipeline.hpp"
 #include "context.hpp"
 #include "core/scene.hpp"
-
 #include <fstream>
 
 namespace vulkan
@@ -136,7 +135,7 @@ void Raytracing_pipeline::create_pipeline(Scene& scene)
             .closestHitShader = VK_SHADER_UNUSED_KHR,
             .anyHitShader = VK_SHADER_UNUSED_KHR,
             .intersectionShader = VK_SHADER_UNUSED_KHR },
-        // Raygens 2 -> 3
+        // Miss 2 -> 3
         vk::RayTracingShaderGroupCreateInfoKHR{
             .type = vk::RayTracingShaderGroupTypeKHR::eGeneral,
             .generalShader = 2, // miss shader id
@@ -153,10 +152,10 @@ void Raytracing_pipeline::create_pipeline(Scene& scene)
     nb_group_miss = 2u;
     nb_group_primary = scene.shader_groups.size();
 
-    shader_stages.reserve(shader_stages.size() + 2 * scene.shader_groups.size());
-    groups.reserve(shader_stages.size() + nb_group_primary);
+    shader_stages.reserve(shader_stages.size() + 3 * scene.shader_groups.size());
+    groups.reserve(shader_stages.size() + 2 * nb_group_primary);
     uint32_t id = static_cast<uint32_t>(shader_stages.size());
-    // Primary 4 -> 3 + m_nb_group_primary
+    // 4 -> 3 + 2 * m_nb_group_primary
     for (const auto shader_group : scene.shader_groups) {
         shader_stages.push_back(vk::PipelineShaderStageCreateInfo{
             .stage = vk::ShaderStageFlagBits::eIntersectionKHR,
@@ -166,27 +165,29 @@ void Raytracing_pipeline::create_pipeline(Scene& scene)
             .stage = vk::ShaderStageFlagBits::eClosestHitKHR,
             .module = shader_group.primary_closest_hit.shader_module,
             .pName = "main" });
-        groups.push_back(vk::RayTracingShaderGroupCreateInfoKHR{
+        shader_stages.push_back(vk::PipelineShaderStageCreateInfo{
+            .stage = vk::ShaderStageFlagBits::eAnyHitKHR,
+            .module = shader_group.shadow_any_hit.shader_module,
+            .pName = "main" });
+
+        // should be outside loop
+        shader_stages.push_back(vk::PipelineShaderStageCreateInfo{
+            .stage = vk::ShaderStageFlagBits::eIntersectionKHR,
+            .module = scene.shadow_intersection_shader.shader_module,
+            .pName = "main" });
+        groups.push_back(vk::RayTracingShaderGroupCreateInfoKHR{  // Primary
             .type = vk::RayTracingShaderGroupTypeKHR::eProceduralHitGroup,
             .generalShader = VK_SHADER_UNUSED_KHR,
             .closestHitShader = id + 1,
             .anyHitShader = VK_SHADER_UNUSED_KHR,
             .intersectionShader = id });
-        id += 2;
-    }
-    // Shadow 4 + m_nb_group_primary -> 3 + 2 * m_nb_group_primary
-    for (const auto shader_group : scene.shader_groups) {
-        shader_stages.push_back(vk::PipelineShaderStageCreateInfo{
-            .stage = vk::ShaderStageFlagBits::eAnyHitKHR,
-            .module = shader_group.shadow_any_hit.shader_module,
-            .pName = "main" });
-        groups.push_back(vk::RayTracingShaderGroupCreateInfoKHR{
+        groups.push_back(vk::RayTracingShaderGroupCreateInfoKHR{  // Shadow
             .type = vk::RayTracingShaderGroupTypeKHR::eProceduralHitGroup,
             .generalShader = VK_SHADER_UNUSED_KHR,
             .closestHitShader = VK_SHADER_UNUSED_KHR,
-            .anyHitShader = id,
-            .intersectionShader = 4 });
-        id++;
+            .anyHitShader = id + 2,
+            .intersectionShader = id + 3 });
+        id += 4;
     }
 
     pipeline = m_device.createRayTracingPipelineKHR(

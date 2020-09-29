@@ -1,6 +1,7 @@
 #pragma once
 #include "vk_common.hpp"
-#include <iostream>
+#include <fmt/core.h>
+
 
 VkBool32 debug_callback(
     VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
@@ -8,35 +9,35 @@ VkBool32 debug_callback(
     VkDebugUtilsMessengerCallbackDataEXT const* callback_data,
     void* /*pUserData*/)
 {
-    std::cerr << vk::to_string(static_cast<vk::DebugUtilsMessageSeverityFlagBitsEXT>(message_severity)) << ": " << vk::to_string(static_cast<vk::DebugUtilsMessageTypeFlagsEXT>(message_type)) << std::endl;
-    std::cerr << "\t" << "message:" << callback_data->pMessage << std::endl;
-    if (0 < callback_data->queueLabelCount)
+    fmt::print("{} - {}:",
+        vk::to_string(static_cast<vk::DebugUtilsMessageTypeFlagsEXT>(message_type)),
+        vk::to_string(static_cast<vk::DebugUtilsMessageSeverityFlagBitsEXT>(message_severity)));
+    fmt::print("({} - {}) {}\n", callback_data->pMessageIdName, callback_data->messageIdNumber, callback_data->pMessage);
+    if (callback_data->queueLabelCount > 0)
     {
-        std::cerr << "\t" << "Queue Labels:" << std::endl;
+        fmt::print("{} \n", "Queue Labels:");
         for (uint8_t i = 0; i < callback_data->queueLabelCount; i++)
         {
-            std::cerr << "\t\t" << "labelName: " << callback_data->pQueueLabels[i].pLabelName << std::endl;
+            fmt::print("\t{} \n", callback_data->pQueueLabels[i].pLabelName);
         }
     }
-    if (0 < callback_data->cmdBufLabelCount)
+    if (callback_data->cmdBufLabelCount > 0)
     {
-        std::cerr << "\t" << "CommandBuffer Labels:" << std::endl;
+        fmt::print("{} \n", "CommandBuffer Labels:");
         for (uint8_t i = 0; i < callback_data->cmdBufLabelCount; i++)
         {
-            std::cerr << "\t\t" << "labelName: " << callback_data->pCmdBufLabels[i].pLabelName << std::endl;
+            fmt::print("\t{} \n", callback_data->pCmdBufLabels[i].pLabelName);
         }
     }
-    if (0 < callback_data->objectCount)
+    if (callback_data->objectCount > 0)
     {
-        std::cerr << "\t" << "Objects:\n";
+        fmt::print("{} \n", "Objects info:");
         for (uint8_t i = 0; i < callback_data->objectCount; i++)
         {
-            std::cerr << "\t\t\t" << "objectType: " << vk::to_string(static_cast<vk::ObjectType>(callback_data->pObjects[i].objectType)) << std::endl;
-            std::cerr << "\t\t\t" << "objectHandle: " << callback_data->pObjects[i].objectHandle << std::endl;
-            if (callback_data->pObjects[i].pObjectName)
-            {
-                std::cerr << "\t\t\t" << "objectName: " << callback_data->pObjects[i].pObjectName << std::endl;
-            }
+            fmt::print("\t({} - {}) {} \n",
+                vk::to_string(static_cast<vk::ObjectType>(callback_data->pObjects[i].objectType)),
+                callback_data->pObjects[i].objectHandle,
+                callback_data->pObjects[i].pObjectName ? callback_data->pObjects[i].pObjectName : "");
         }
     }
     return false;

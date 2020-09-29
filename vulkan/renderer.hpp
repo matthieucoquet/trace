@@ -42,7 +42,6 @@ public:
 private:
     vk::Device m_device;
     vk::Queue m_queue;
-    vk::CommandPool m_command_pool;
     Raytracing_pipeline m_pipeline;
     Blas m_blas;
 

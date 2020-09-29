@@ -61,17 +61,20 @@ void Context::init_instance(Window& window, vr::Instance& vr_instance)
         }
     }
 
-    /*vk::DebugUtilsMessengerCreateInfoEXT debug_create_info {
-        .messageSeverity = /*vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose |* / vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning | vk::DebugUtilsMessageSeverityFlagBitsEXT::eError,
+    vk::DebugUtilsMessengerCreateInfoEXT debug_create_info {
+        .messageSeverity = /*vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose |*/ vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning |
+            /*vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo |*/ vk::DebugUtilsMessageSeverityFlagBitsEXT::eError,
         .messageType = vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral | vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance | vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation,
         .pfnUserCallback = &debug_callback 
     };
-    std::array validation_features{ vk::ValidationFeatureEnableEXT::eBestPractices/*, vk::ValidationFeatureEnableEXT::eGpuAssistedReserveBindingSlot* / };
+    std::array validation_features{ vk::ValidationFeatureEnableEXT::eBestPractices };
+        //vk::ValidationFeatureEnableEXT::eGpuAssisted,
+        //vk::ValidationFeatureEnableEXT::eGpuAssistedReserveBindingSlot };
     vk::ValidationFeaturesEXT validation_features_ext {
         .pNext = static_cast<vk::DebugUtilsMessengerCreateInfoEXT*>(&debug_create_info),
         .enabledValidationFeatureCount = static_cast<uint32_t>(validation_features.size()),
         .pEnabledValidationFeatures = validation_features.data()
-    };*/
+    };
 
     vk::ApplicationInfo app_info {
         .pApplicationName = "trace",
@@ -79,7 +82,7 @@ void Context::init_instance(Window& window, vr::Instance& vr_instance)
     };
 
     instance = vk::createInstance(vk::InstanceCreateInfo{
-        //.pNext = &debug_create_info,
+        .pNext = &debug_create_info,
         //.pNext = &validation_features_ext,
         .pApplicationInfo = &app_info,
         .enabledLayerCount = static_cast<uint32_t>(required_instance_layers.size()),
@@ -88,7 +91,7 @@ void Context::init_instance(Window& window, vr::Instance& vr_instance)
         .ppEnabledExtensionNames = required_extensions.data()
     });
     VULKAN_HPP_DEFAULT_DISPATCHER.init(instance);
-    //m_debug_messenger = instance.createDebugUtilsMessengerEXT(debug_create_info);
+    m_debug_messenger = instance.createDebugUtilsMessengerEXT(debug_create_info);
 }
 
 void Context::init_device(vr::Instance& vr_instance)

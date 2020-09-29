@@ -1,5 +1,6 @@
 #version 460
 #extension GL_EXT_ray_tracing : enable
+#extension GL_EXT_nonuniform_qualifier : enable
 #extension GL_EXT_scalar_block_layout : enable
 #extension GL_GOOGLE_include_directive : enable
 #include "common_types.glsl"
@@ -12,7 +13,7 @@ layout(binding = 2, set = 0, scalar) buffer Objects { Object o[]; } objects;
 
 void main()
 {
-    Object object = objects.o[gl_InstanceID];
+    Object object = objects.o[nonuniformEXT(gl_InstanceID)];
     Ray ray = Ray(vec3(object.world_to_model * vec4(gl_WorldRayOriginEXT, 1.0f)), 
                   vec3(object.world_to_model * vec4(gl_WorldRayDirectionEXT, 0.0f)));
 

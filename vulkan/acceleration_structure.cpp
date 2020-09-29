@@ -53,7 +53,7 @@ Vma_buffer Acceleration_structure::allocate_scratch_buffer() const
     return Vma_buffer(
         vk::BufferCreateInfo{
             .size = memory_requirement.memoryRequirements.size,
-            .usage = vk::BufferUsageFlagBits::eShaderDeviceAddress | vk::BufferUsageFlagBits::eRayTracingKHR,
+            .usage = vk::BufferUsageFlagBits::eShaderDeviceAddress | vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eRayTracingKHR,
             .sharingMode = vk::SharingMode::eExclusive },
         VMA_MEMORY_USAGE_GPU_ONLY, m_device, m_allocator);
 }
@@ -105,7 +105,7 @@ Blas::Blas(Context& context) :
     m_aabbs_buffer = vulkan::Vma_buffer(
         vk::BufferCreateInfo{
             .size = sizeof(vk::AabbPositionsKHR),
-            .usage = vk::BufferUsageFlagBits::eShaderDeviceAddress | vk::BufferUsageFlagBits::eRayTracingKHR },
+            .usage = vk::BufferUsageFlagBits::eShaderDeviceAddress | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eRayTracingKHR },
         &aabb,
         context.device, context.allocator, context.command_pool, context.graphics_queue);
     vk::DeviceAddress aabb_buffer_address = m_device.getBufferAddress(vk::BufferDeviceAddressInfo{ .buffer = m_aabbs_buffer.buffer });
@@ -172,7 +172,7 @@ Tlas::Tlas(vk::CommandBuffer command_buffer, Context& context, const Blas& blas,
             } },
             .instanceCustomIndex = i,
             .mask = 0xFF,
-            .instanceShaderBindingTableRecordOffset = static_cast<uint32_t>(scene.objects[i].group_id),
+            .instanceShaderBindingTableRecordOffset = 2 * static_cast<uint32_t>(scene.objects[i].group_id), // 2 for primary + shadow
             .accelerationStructureReference = blas.structure_address
         });
     }
@@ -180,7 +180,7 @@ Tlas::Tlas(vk::CommandBuffer command_buffer, Context& context, const Blas& blas,
     m_instance_buffer = Vma_buffer(
         vk::BufferCreateInfo{
             .size = sizeof(vk::AccelerationStructureInstanceKHR) * nb_instances,
-            .usage = vk::BufferUsageFlagBits::eShaderDeviceAddress | vk::BufferUsageFlagBits::eRayTracingKHR
+            .usage = vk::BufferUsageFlagBits::eShaderDeviceAddress | vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eRayTracingKHR
         },
         VMA_MEMORY_USAGE_CPU_TO_GPU, context.device, context.allocator);
 

@@ -43,7 +43,7 @@ Scene::Scene()
         objects_transform.emplace_back(glm::inverse(model_to_world));
     }
 
-    ui_object = Object{ .position = glm::vec3(0.f, 1.5f - vr_offset_y, -0.5f), .rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f), .scale = 0.4f };
+    ui_object = Object{ .position = glm::vec3(0.f, 1.5f, -0.5f), .rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f), .scale = 0.4f };
     scene_global.ui_position = ui_object.position;
     scene_global.ui_normal = glm::rotate(ui_object.rotation, glm::vec3(0.0f, 0.0f, 1.0f));
 }

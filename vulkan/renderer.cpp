@@ -10,12 +10,9 @@ namespace vulkan
 Renderer::Renderer(Context& context, Scene& scene) :
     m_device(context.device),
     m_queue(context.graphics_queue),
-    m_command_pool(context.command_pool),
     m_pipeline(context, scene),
     m_blas(context)
-{
-
-}
+{}
 
 Renderer::~Renderer()
 {
@@ -80,7 +77,7 @@ void Renderer::start_recording(vk::CommandBuffer command_buffer, Scene& scene, v
         .buffer = m_pipeline.shader_binding_table.buffer,
         .offset = m_pipeline.offset_hit_group,
         .stride = m_pipeline.raytracing_properties.shaderGroupHandleSize,
-        .size = m_pipeline.raytracing_properties.shaderGroupHandleSize * vk::DeviceSize(m_pipeline.nb_group_primary)
+        .size = m_pipeline.raytracing_properties.shaderGroupHandleSize * vk::DeviceSize(2 * m_pipeline.nb_group_primary)
     };
 
     vk::StridedBufferRegionKHR callable_shader_entry{};

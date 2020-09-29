@@ -35,13 +35,13 @@ void main()
             traceRayEXT(topLevelAS,  // acceleration structure
                         gl_RayFlagsSkipClosestHitShaderEXT,
                         0xFF,        // cullMask
-                        3,           // sbtRecordOffset
+                        1,           // sbtRecordOffset
                         0,           // sbtRecordStride
                         1,           // missIndex
                         position,    // ray origin
                         0.5,         // ray min range
-                        light_dir,  // ray direction
-                        100.0,        // ray max range
+                        light_dir,   // ray direction
+                        100.0,       // ray max range
                         1            // payload (location = 1)
                         );
         }

@@ -11,7 +11,7 @@ layout(binding = 2, set = 0, scalar) buffer Objects { Object o[]; } objects;
 
 layout(location = 1) rayPayloadInEXT float shadow_payload;
 
-float soft_shadow(in Ray ray, float factor)
+float soft_shadow(in Ray ray, in float factor)
 {
     float res = 1.0;
     float len = length(ray.direction);
@@ -31,7 +31,7 @@ float soft_shadow(in Ray ray, float factor)
 
 void main()
 {
-    Object object = objects.o[gl_InstanceID];
+    Object object = objects.o[nonuniformEXT(gl_InstanceID)];
     Ray ray = Ray(vec3(object.world_to_model * vec4(gl_WorldRayOriginEXT, 1.0f)), 
                   vec3(object.world_to_model * vec4(gl_WorldRayDirectionEXT, 0.0f)));
 

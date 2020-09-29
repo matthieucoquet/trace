@@ -117,7 +117,8 @@ void Desktop_mirror::present(vk::CommandBuffer& command_buffer, vk::Fence fence,
             .commandBufferCount = 1,
             .pCommandBuffers = &command_buffer,
             .signalSemaphoreCount = 1,
-            .pSignalSemaphores = &m_semaphore_finished[command_pool_id] },
+            .pSignalSemaphores = &m_semaphore_finished[command_pool_id]
+        },
         fence);
 
     auto present_result = m_queue.presentKHR(vk::PresentInfoKHR{
