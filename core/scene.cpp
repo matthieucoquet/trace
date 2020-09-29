@@ -16,7 +16,7 @@ Scene::Scene()
     for (unsigned int i = 0u; i < 2u; i++) {
         objects.emplace_back(Object{ 
             .name = i == 0 ? "left_hand" : "right_hand",
-            .position = glm::vec3(0.0f, 1.0f, 0.0f), .rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f), .scale = 0.1f,
+            .position = glm::vec3(0.0f, 1.0f, 0.0f), .rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f), .scale = 0.12f,
             .group_id = hand_id });
     }
 
