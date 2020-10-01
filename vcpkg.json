@@ -1,0 +1,11 @@
+{
+    "name": "trace",
+    "version-string": "0.0.0",
+    "dependencies": [
+        "glfw3",
+        "glm",
+        "imgui",
+        "fmt",
+        "marl"
+    ]
+}
