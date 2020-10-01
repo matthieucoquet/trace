@@ -12,7 +12,15 @@ Renderer::Renderer(Context& context, Scene& scene) :
     m_queue(context.graphics_queue),
     m_pipeline(context, scene),
     m_blas(context)
-{}
+{
+    material_buffer = Vma_buffer(
+        vk::BufferCreateInfo{
+            .size = sizeof(Material) * scene.materials.size(),
+            .usage = vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eRayTracingKHR
+        },
+        scene.materials.data(),
+        context.device, context.allocator, context.command_pool, context.graphics_queue);
+}
 
 Renderer::~Renderer()
 {
@@ -265,6 +273,7 @@ void Renderer::update_per_frame_data(Scene& scene, size_t command_pool_id)
         m_queue.waitIdle();
         m_device.destroyPipeline(m_pipeline.pipeline);
         m_pipeline.create_pipeline(scene);
+        scene.pipeline_dirty = false;
     }
 }
 
@@ -275,6 +284,12 @@ void Renderer::create_descriptor_sets(vk::DescriptorPool descriptor_pool, size_t
         .descriptorPool = descriptor_pool,
         .descriptorSetCount = static_cast<uint32_t>(layouts.size()),
         .pSetLayouts = layouts.data()});
+
+    vk::DescriptorBufferInfo material_info{
+        .buffer = material_buffer.buffer,
+        .offset = 0u,
+        .range = VK_WHOLE_SIZE
+    };
 
     for (size_t i = 0; i < command_pool_size; i++)
     {
@@ -316,6 +331,13 @@ void Renderer::create_descriptor_sets(vk::DescriptorPool descriptor_pool, size_t
                 .descriptorCount = 1,
                 .descriptorType = vk::DescriptorType::eStorageBuffer,
                 .pBufferInfo = &objects_info},
+            vk::WriteDescriptorSet{
+                .dstSet = m_descriptor_sets[i],
+                .dstBinding = 3,
+                .dstArrayElement = 0,
+                .descriptorCount = 1,
+                .descriptorType = vk::DescriptorType::eStorageBuffer,
+                .pBufferInfo = &material_info},
             }, {});
     }
 }

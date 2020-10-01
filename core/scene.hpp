@@ -27,6 +27,8 @@ public:
 
     Object ui_object;
 
+    std::vector<Material> materials;
+
     bool pipeline_dirty = false;
     std::vector<Shader_file> shader_files;
     Shader raygen_narrow_shader;

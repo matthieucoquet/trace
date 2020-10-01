@@ -36,3 +36,19 @@ struct Object
 {
     mat4 world_to_model;
 };
+
+struct Material
+{
+    vec3 color;
+};
+
+#define BLACK_ID 0
+#define WHITE_ID 1
+#define RED_ID 2
+#define BLUE_ID 3
+
+struct Hit
+{
+    float dist;
+    int material_id;
+};

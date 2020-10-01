@@ -36,7 +36,7 @@ private:
     std::vector<Shader_file> m_shader_files_copy;
     std::vector<Recompile_info> m_recompile_info;
     std::atomic_flag m_compiling;
-    bool m_shaders_dirty;
+    bool m_shaders_dirty = false;
 
     void compile(std::vector<Shader_file>& shader_files, Shader& shader, shaderc_shader_kind shader_kind, const std::string& group_name = {});
     [[nodiscard]] std::string read_file(std::filesystem::path path) const;

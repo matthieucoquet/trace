@@ -24,6 +24,7 @@ class Renderer
 {
 public:
     std::vector<Per_frame> per_frame;
+    Vma_buffer material_buffer;
 
     Renderer(Context& context, Scene& scene);
     Renderer(const Renderer& other) = delete;

@@ -25,11 +25,16 @@ Raytracing_pipeline::Raytracing_pipeline(Context& context, Scene& scene) :
             .descriptorType = vk::DescriptorType::eStorageImage,
             .descriptorCount = 1u,
             .stageFlags = vk::ShaderStageFlagBits::eRaygenKHR },
-        vk::DescriptorSetLayoutBinding{
+        vk::DescriptorSetLayoutBinding{  // Objects transform
             .binding = 2u,
             .descriptorType = vk::DescriptorType::eStorageBuffer,
             .descriptorCount = 1u,
-            .stageFlags = vk::ShaderStageFlagBits::eIntersectionKHR | vk::ShaderStageFlagBits::eAnyHitKHR | vk::ShaderStageFlagBits::eClosestHitKHR }
+            .stageFlags = vk::ShaderStageFlagBits::eIntersectionKHR | vk::ShaderStageFlagBits::eAnyHitKHR | vk::ShaderStageFlagBits::eClosestHitKHR },
+        vk::DescriptorSetLayoutBinding{  // Materials
+            .binding = 3u,
+            .descriptorType = vk::DescriptorType::eStorageBuffer,
+            .descriptorCount = 1u,
+            .stageFlags = vk::ShaderStageFlagBits::eClosestHitKHR | vk::ShaderStageFlagBits::eMissKHR }
     };
     descriptor_set_layout = m_device.createDescriptorSetLayout(vk::DescriptorSetLayoutCreateInfo{
         .bindingCount = static_cast<uint32_t>(array_bindings.size()),

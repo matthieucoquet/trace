@@ -7,7 +7,7 @@
 #include "map_function"
 #include "raymarch.glsl"
 
-// hitAttributeEXT vec3 attributes;
+hitAttributeEXT int attributes;
 
 layout(binding = 2, set = 0, scalar) buffer Objects { Object o[]; } objects;
 
@@ -17,10 +17,11 @@ void main()
     Ray ray = Ray(vec3(object.world_to_model * vec4(gl_WorldRayOriginEXT, 1.0f)), 
                   vec3(object.world_to_model * vec4(gl_WorldRayDirectionEXT, 0.0f)));
 
-    float t = raymarch(ray);
-    if (t > 0.0)
+    Hit hit = raymarch(ray);
+    if (hit.dist > 0.0)
     {
+        attributes = hit.material_id;
         uint hit_kind = 0;
-        reportIntersectionEXT(t, hit_kind);
+        reportIntersectionEXT(hit.dist, hit_kind);
     }
 }

@@ -46,6 +46,11 @@ Scene::Scene()
     ui_object = Object{ .position = glm::vec3(0.f, 1.5f, -0.5f), .rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f), .scale = 0.4f };
     scene_global.ui_position = ui_object.position;
     scene_global.ui_normal = glm::rotate(ui_object.rotation, glm::vec3(0.0f, 0.0f, 1.0f));
+
+    materials.push_back(Material{ .color = glm::vec3(0.05f) });
+    materials.push_back(Material{ .color = glm::vec3(0.8f) });
+    materials.push_back(Material{ .color = glm::vec3(0.95f, 0.05f, 0.15f) });
+    materials.push_back(Material{ .color = glm::vec3(0.1f, 0.15f, 0.85f) });
 }
 
 void Scene::step()

@@ -19,3 +19,8 @@ struct Scene_global
     glm::vec3 ui_normal;
     float time = {};
 };
+
+struct Material
+{
+    glm::vec3 color;
+};

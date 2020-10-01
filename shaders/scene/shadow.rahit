@@ -18,7 +18,7 @@ float soft_shadow(in Ray ray, in float factor)
     float t = gl_RayTminEXT;
     for (int i = 0; i < 128 && t < gl_RayTmaxEXT; i++)
     {
-        float distance = map(ray.origin + t * ray.direction);
+        float distance = map(ray.origin + t * ray.direction).dist;
         if(distance < 0.001) {
             return 0.0;
         }

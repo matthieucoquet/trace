@@ -268,7 +268,7 @@ void Context::init_descriptor_pool()
             .descriptorCount = max_swapchain_size },
         vk::DescriptorPoolSize {
             .type = vk::DescriptorType::eStorageBuffer,
-            .descriptorCount = max_swapchain_size },
+            .descriptorCount = 1 + max_swapchain_size },
         vk::DescriptorPoolSize {
             .type = vk::DescriptorType::eUniformBuffer,
             .descriptorCount = max_swapchain_size },

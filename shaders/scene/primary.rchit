@@ -9,10 +9,12 @@
 
 layout(binding = 0, set = 0) uniform accelerationStructureEXT topLevelAS;
 
+hitAttributeEXT int attributes;
 layout(location = 0) rayPayloadInEXT vec4 hit_value;
 layout(location = 1) rayPayloadEXT float shadow_payload;
 
 layout(binding = 2, set = 0, scalar) buffer Objects { Object o[]; } objects;
+layout(binding = 3, set = 0, scalar) buffer Materials { Material m[]; } materials;
 
 void main()
 {
@@ -54,5 +56,6 @@ void main()
     vec3 color = (0.7 + 0.7 * shadow_payload) * (ambient + diffuse);
     color = color + shadow_payload * spec;
 
-    hit_value = vec4(color * vec3(0.5, 0.3, 0.1), front);
+    Material material = materials.m[nonuniformEXT(attributes)];
+    hit_value = vec4(color * material.color, front);
 }
