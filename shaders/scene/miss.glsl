@@ -1,3 +1,5 @@
+#define ADVANCE_RATIO 1.0
+
 float sd_box(in vec3 position, in vec3 half_sides)
 {
   vec3 q = abs(position) - half_sides;

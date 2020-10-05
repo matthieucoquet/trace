@@ -37,12 +37,12 @@ void main()
             shadow_payload = 1.0;
             traceRayEXT(topLevelAS,  // acceleration structure
                         gl_RayFlagsSkipClosestHitShaderEXT,
-                        0xFF,        // cullMask
+                        0xF0,        // cullMask
                         1,           // sbtRecordOffset
                         0,           // sbtRecordStride
                         1,           // missIndex
                         position,    // ray origin
-                        0.5,         // ray min range
+                        0.1,         // ray min range
                         light_dir,   // ray direction
                         100.0,       // ray max range
                         1            // payload (location = 1)

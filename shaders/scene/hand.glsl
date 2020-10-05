@@ -1,3 +1,5 @@
+#define ADVANCE_RATIO 1.0
+
 float capsule(vec3 position, float height, float radius)
 {
     position.z -= clamp(position.z, 0.0, height);

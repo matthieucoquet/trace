@@ -5,10 +5,10 @@ Hit raymarch(in Ray ray)
     for (int i = 0; i < 128 && t < gl_RayTmaxEXT; i++)
     {
         Hit hit = map(ray.origin + t * ray.direction);
-        if(hit.dist < 0.001) {
+        if(hit.dist < 0.0001) {
             return Hit(t, hit.material_id);
         }
-        t += hit.dist / len;
+        t += ADVANCE_RATIO * hit.dist / len;
     }
     return Hit(-1.0, 0);
 }
