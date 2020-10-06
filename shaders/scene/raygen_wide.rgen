@@ -10,7 +10,7 @@ layout(binding = 1, set = 0, rgba8) uniform image2D image;
 
 layout(location = 0) rayPayloadEXT vec4 hit_value;
 
-#define LOW_SIZE 8
+#define LOW_SIZE 4
 
 vec3 get_direction(in vec2 center, in Eye eye, in bool is_right)
 {

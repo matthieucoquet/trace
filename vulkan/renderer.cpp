@@ -99,7 +99,7 @@ void Renderer::start_recording(vk::CommandBuffer command_buffer, Scene& scene, v
         vk::ShaderStageFlagBits::eAnyHitKHR | vk::ShaderStageFlagBits::eClosestHitKHR | vk::ShaderStageFlagBits::eMissKHR, 0,
         sizeof(Scene_global), &scene.scene_global);
 
-    constexpr unsigned int foveated_rate = 8u;
+    constexpr unsigned int foveated_rate = 4u;
     extent.width *= 2;
     assert(extent.width % foveated_rate == 0);
     assert(extent.height % 4 == 0);

@@ -15,9 +15,6 @@ Ui_system::Ui_system()
 
 void Ui_system::step(Scene& scene)
 {
-    if (!m_selected_shader && m_selected_object == std::numeric_limits<size_t>::max()) {
-        m_selected_shader = &scene.raygen_narrow_shader;
-    }
     // imgui input should be done before this call
     ImGui::NewFrame();
 
@@ -33,28 +30,26 @@ void Ui_system::step(Scene& scene)
 
     if (ImGui::TreeNodeEx("Shaders", ImGuiTreeNodeFlags_DefaultOpen))
     {
-        add_leaf("Raygen narrow", &scene.raygen_narrow_shader);
-        add_leaf("Raygen wide", &scene.raygen_wide_shader);
-        add_leaf("Primary miss", &scene.primary_miss_shader);
-        add_leaf("Shadow miss", &scene.shadow_miss_shader);
-        add_leaf("Shadow intersection", &scene.shadow_intersection_shader);
-
-        for (auto& shader_group : scene.shader_groups)
+        int id = 0;
+        for (auto& shader_file : scene.shader_files)
         {
-            if (ImGui::TreeNode(shader_group.name.c_str()))
-            {
-                add_leaf("Primary intersection", &shader_group.primary_intersection);
-                add_leaf("Primary closest hit", &shader_group.primary_closest_hit);
-                add_leaf("Shadow any hit", &shader_group.shadow_any_hit);
-                ImGui::TreePop();
+            ImGuiTreeNodeFlags leaf_flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+            if (m_selected_shader == id) {
+                leaf_flags |= ImGuiTreeNodeFlags_Selected;
             }
+            ImGui::TreeNodeEx(shader_file.name.c_str(), leaf_flags);
+            if (ImGui::IsItemClicked()) {
+                m_selected_shader = id;
+                m_selected_object = std::numeric_limits<int>::max();
+            }
+            id++;
         }
         ImGui::TreePop();
     }
     ImGui::Separator();
     if (ImGui::TreeNodeEx("Scene", ImGuiTreeNodeFlags_DefaultOpen))
     {
-        for (size_t id = 0u; id < scene.objects.size(); id++)
+        for (int id = 0; id < std::ssize(scene.objects); id++)
         {
             ImGuiTreeNodeFlags leaf_flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
             if (m_selected_object == id) {
@@ -62,7 +57,7 @@ void Ui_system::step(Scene& scene)
             }
             ImGui::TreeNodeEx(scene.objects[id].name.c_str(), leaf_flags);
             if (ImGui::IsItemClicked()) {
-                m_selected_shader = nullptr;
+                m_selected_shader = std::numeric_limits<int>::max();
                 m_selected_object = id;
             }
         }
@@ -76,26 +71,13 @@ void Ui_system::step(Scene& scene)
     ImGui::Render();
 }
 
-void Ui_system::add_leaf(const char* label, Shader* shader)
-{
-    ImGuiTreeNodeFlags leaf_flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
-    if (m_selected_shader == shader) {
-        leaf_flags |= ImGuiTreeNodeFlags_Selected;
-    }
-    ImGui::TreeNodeEx(label, leaf_flags);
-    if (ImGui::IsItemClicked()) {
-        m_selected_shader = shader;
-        m_selected_object = std::numeric_limits<size_t>::max();
-    }
-}
-
 void Ui_system::shader_text(Shader_file& shader_file)
 {
     ImGuiInputTextFlags flags = ImGuiInputTextFlags_AllowTabInput | ImGuiInputTextFlags_CallbackResize;
     ImGui::Text(shader_file.name.c_str());
     if (ImGui::InputTextMultiline(
         shader_file.name.c_str(), shader_file.data.data(), shader_file.data.size() + 1, // +1 for null terminated char
-        ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 14),
+        ImVec2(-FLT_MIN, -FLT_MIN),
         flags, [](ImGuiInputTextCallbackData* data)
         {
             if (data->EventFlag == ImGuiInputTextFlags_CallbackResize)
@@ -119,19 +101,46 @@ void Ui_system::record_selected(Scene& scene)
     ImGuiStyle& style = ImGui::GetStyle();
     ImGui::BeginChild("##shader_window", ImVec2(ImGui::GetWindowWidth() * 0.7f - 2 * style.WindowPadding.x - style.ItemSpacing.x, 0), true, ImGuiWindowFlags_None);
 
-    if (m_selected_shader)
+    if (m_selected_shader != std::numeric_limits<int>::max())
     {
-        for (auto child_id : m_selected_shader->included_files_id)
+        if (ImGui::BeginTabBar("tabs", ImGuiTabBarFlags_None))
         {
-            shader_text(scene.shader_files[child_id]);
+            if (ImGui::BeginTabItem("Shader"))
+            {
+                shader_text(scene.shader_files[m_selected_shader]);
+                ImGui::EndTabItem();
+            }
+
+
+
+            if (ImGui::BeginTabItem("Error"))
+            {
+                auto print_error = [](const Shader& shader) {
+                    if (!shader.error.empty()) {
+                        ImGui::TextWrapped(shader.error.c_str());
+                    }
+                };
+                print_error(scene.raygen_narrow_shader);
+                print_error(scene.raygen_wide_shader);
+                print_error(scene.primary_miss_shader);
+                print_error(scene.shadow_miss_shader);
+                print_error(scene.shadow_intersection_shader);
+                for (const auto& shader_group : scene.shader_groups) {
+                    print_error(shader_group.primary_intersection);
+                    print_error(shader_group.primary_closest_hit);
+                    print_error(shader_group.shadow_any_hit);
+                }
+                ImGui::EndTabItem();
+            }
+            ImGui::EndTabBar();
         }
-        shader_text(scene.shader_files[m_selected_shader->shader_file_id]);
-        if (!m_selected_shader->error.empty()) {
+
+        /*if (!m_selected_shader->error.empty()) {
             ImGui::Text("Compilation error");
             ImGui::TextWrapped(m_selected_shader->error.c_str());
-        }
+        }*/
     }
-    else if (m_selected_object != std::numeric_limits<size_t>::max())
+    else if (m_selected_object != std::numeric_limits<int>::max())
     {
         Object& object = scene.objects[m_selected_object];
         bool dirty = ImGui::InputFloat3("Position", glm::value_ptr(object.position));
