@@ -1,3 +1,4 @@
+//#define DEBUG_SDF
 #define ADVANCE_RATIO 0.9
 
 float sd_sphere(in vec3 position, in float radius)

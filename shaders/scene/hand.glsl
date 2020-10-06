@@ -33,7 +33,7 @@ Hit map(in vec3 position)
 
     hold = max(hold, position.y);
 
-    int material_id = hold - 0.01 < ring ? BLACK_ID : RED_ID;
+    uint material_id = hold - 0.01 < ring ? BLACK_ID : RED_ID;
     float d = op_union(hold, ring, 0.08);
     return Hit(d, material_id);
 }

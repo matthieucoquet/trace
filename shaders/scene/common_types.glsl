@@ -50,5 +50,5 @@ struct Material
 struct Hit
 {
     float dist;
-    int material_id;
+    uint material_id;
 };
