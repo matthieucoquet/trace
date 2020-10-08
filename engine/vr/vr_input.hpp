@@ -1,7 +1,7 @@
 #pragma once
 #include "vr_common.hpp"
 
-class Scene;
+struct Scene;
 
 namespace vr
 {

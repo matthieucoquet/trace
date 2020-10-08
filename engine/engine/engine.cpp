@@ -10,17 +10,17 @@
 #include <algorithm>
 #include <imgui.h>
 
-Engine::Engine() :
+Engine::Engine(Scene scene, std::string_view scene_shader_path) :
+    m_scene(std::move(scene)),
     m_window(m_vr_instance.mirror_recommended_ratio()),
-    m_context(m_window, m_vr_instance),
-    m_scene()
+    m_context(m_window, m_vr_instance)
 {
     m_scheduler.bind();
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
 
     m_systems.push_back(std::make_unique<Input_glfw_system>(m_window.window));
-    m_systems.push_back(std::make_unique<Shader_system>(m_context, m_scene));
+    m_systems.push_back(std::make_unique<Shader_system>(m_context, m_scene, scene_shader_path));
     m_systems.push_back(std::make_unique<Ui_system>());
 
     xr::GraphicsBindingVulkanKHR graphic_binding {
@@ -37,12 +37,10 @@ Engine::Engine() :
             }),
             m_vr_instance, m_context, m_scene
     );
-
 }
 
 Engine::~Engine()
 {
-    //auto checkpoints_data = m_context.graphics_queue.getCheckpointDataNV();
     m_context.device.waitIdle();
     std::ranges::for_each(m_systems, [this](auto& system) { system->cleanup(m_scene); });
     ImGui::DestroyContext();
@@ -54,7 +52,8 @@ void Engine::run()
     while (m_window.step())
     {
         m_session->step(m_vr_instance.instance, m_scene, m_systems);
-        m_scene.step();
+        Duration time_since_start = Clock::now() - m_start_clock;
+        m_scene.scene_global.time = time_since_start.count();
     }
 }
 

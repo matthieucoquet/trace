@@ -1,4 +1,4 @@
-#include "engine.hpp"
+#include "demo.hpp"
 
 #include <iostream>
 #include <stdexcept>
@@ -6,9 +6,9 @@
 #include <cstdlib>
 
 int main() {
-    Engine engine{};
+    demo::Demo demo{};
     try {
-        engine.run();
+        demo.run();
     }
     catch (const std::exception& e) {
         std::cerr << e.what() << std::endl;

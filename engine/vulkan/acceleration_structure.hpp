@@ -2,7 +2,7 @@
 #include "vk_common.hpp"
 #include "vma_buffer.hpp"
 
-class Scene; 
+struct Scene; 
 
 namespace vulkan
 {

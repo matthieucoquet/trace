@@ -16,6 +16,7 @@ public:
     ~Ui_system() override final = default;
     void step(Scene& scene) override final;
 private:
+    bool m_selected_engine{ true };
     int m_selected_shader{ 0 };
     int m_selected_object{ std::numeric_limits<int>::max() };
 

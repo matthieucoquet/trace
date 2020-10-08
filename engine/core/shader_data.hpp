@@ -8,14 +8,15 @@ struct Shader_file
     bool dirty = false;
     std::string name;
     std::string data{};  // important to use a null terminating member for imgui
-    size_t size{}; // null terminating character index
+    int size{}; // null terminating character index
 };
 
 struct Shader
 {
-    size_t shader_file_id;
-    vk::ShaderModule shader_module;
-    std::vector<size_t> included_files_id;
+    int file_id;
+    vk::ShaderModule module;
+    std::vector<int> engine_included_id;
+    std::vector<int> scene_included_id;
     std::string error;
 };
 

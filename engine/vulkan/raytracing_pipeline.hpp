@@ -3,7 +3,7 @@
 #include "vma_buffer.hpp"
 #include <filesystem>
 
-class Scene;
+struct Scene;
 
 namespace vulkan
 {

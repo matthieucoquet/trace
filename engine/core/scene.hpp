@@ -13,9 +13,8 @@ struct Object
     size_t group_id;
 };
 
-class Scene
+struct Scene
 {
-public:
     // Should probably be a runtime setting in the future
     static constexpr bool standing = false;
     static constexpr float vr_offset_y = standing ? 0.0f : 1.7f;
@@ -30,7 +29,8 @@ public:
     std::vector<Material> materials;
 
     bool pipeline_dirty = false;
-    std::vector<Shader_file> shader_files;
+    std::vector<Shader_file> engine_shader_files;
+    std::vector<Shader_file> scene_shader_files;
     Shader raygen_narrow_shader;
     Shader raygen_wide_shader;
     Shader primary_miss_shader;
@@ -39,14 +39,4 @@ public:
     std::vector<Shader_group> shader_groups;
 
     bool mouse_control{ true }; // Mouse and controller can alternate for ui control
-
-    Scene();
-
-    void step();
-private:
-    using Clock = std::chrono::steady_clock;
-    using Time_point = std::chrono::time_point<std::chrono::steady_clock>;
-    using Duration = std::chrono::duration<float>;
-
-    Time_point m_start_clock = Clock::now();
 };

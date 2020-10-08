@@ -28,10 +28,10 @@ void Ui_system::step(Scene& scene)
 
     ImGui::BeginChild("##scene_window", ImVec2(ImGui::GetWindowWidth() * 0.3f, 0.0f), true, ImGuiWindowFlags_None);
 
-    if (ImGui::TreeNodeEx("Shaders", ImGuiTreeNodeFlags_DefaultOpen))
+    if (ImGui::TreeNodeEx("Engine shaders", ImGuiTreeNodeFlags_DefaultOpen))
     {
         int id = 0;
-        for (auto& shader_file : scene.shader_files)
+        for (auto& shader_file : scene.engine_shader_files)
         {
             ImGuiTreeNodeFlags leaf_flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
             if (m_selected_shader == id) {
@@ -39,6 +39,26 @@ void Ui_system::step(Scene& scene)
             }
             ImGui::TreeNodeEx(shader_file.name.c_str(), leaf_flags);
             if (ImGui::IsItemClicked()) {
+                m_selected_engine = true;
+                m_selected_shader = id;
+                m_selected_object = std::numeric_limits<int>::max();
+            }
+            id++;
+        }
+        ImGui::TreePop();
+    }
+    if (ImGui::TreeNodeEx("Scene shaders", ImGuiTreeNodeFlags_DefaultOpen))
+    {
+        int id = 0;
+        for (auto& shader_file : scene.scene_shader_files)
+        {
+            ImGuiTreeNodeFlags leaf_flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+            if (m_selected_shader == id) {
+                leaf_flags |= ImGuiTreeNodeFlags_Selected;
+            }
+            ImGui::TreeNodeEx(shader_file.name.c_str(), leaf_flags);
+            if (ImGui::IsItemClicked()) {
+                m_selected_engine = false;
                 m_selected_shader = id;
                 m_selected_object = std::numeric_limits<int>::max();
             }
@@ -91,7 +111,7 @@ void Ui_system::shader_text(Shader_file& shader_file)
     {
         shader_file.dirty = true;
         char* ptr_to_end = strchr(shader_file.data.data(), '\0');
-        shader_file.size = ptr_to_end - shader_file.data.data();
+        shader_file.size = static_cast<int>(ptr_to_end - shader_file.data.data());
     }
 
 }
@@ -107,11 +127,14 @@ void Ui_system::record_selected(Scene& scene)
         {
             if (ImGui::BeginTabItem("Shader"))
             {
-                shader_text(scene.shader_files[m_selected_shader]);
+                if (m_selected_engine) {
+                    shader_text(scene.engine_shader_files[m_selected_shader]);
+                }
+                else {
+                    shader_text(scene.scene_shader_files[m_selected_shader]);
+                }
                 ImGui::EndTabItem();
             }
-
-
 
             if (ImGui::BeginTabItem("Error"))
             {
@@ -134,11 +157,6 @@ void Ui_system::record_selected(Scene& scene)
             }
             ImGui::EndTabBar();
         }
-
-        /*if (!m_selected_shader->error.empty()) {
-            ImGui::Text("Compilation error");
-            ImGui::TextWrapped(m_selected_shader->error.c_str());
-        }*/
     }
     else if (m_selected_object != std::numeric_limits<int>::max())
     {

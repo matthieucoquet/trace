@@ -4,7 +4,7 @@
 #extension GL_EXT_scalar_block_layout : enable
 #extension GL_GOOGLE_include_directive : enable
 #include "common_types.glsl"
-#include "miss.glsl"
+#include "map_function"
 #include "raymarch.glsl"
 
 layout(binding = 0, set = 0) uniform accelerationStructureEXT topLevelAS;

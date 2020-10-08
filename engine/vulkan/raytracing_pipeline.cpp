@@ -107,23 +107,23 @@ void Raytracing_pipeline::create_pipeline(Scene& scene)
     std::vector shader_stages{
         vk::PipelineShaderStageCreateInfo{
             .stage = vk::ShaderStageFlagBits::eRaygenKHR,
-            .module = scene.raygen_narrow_shader.shader_module,
+            .module = scene.raygen_narrow_shader.module,
             .pName = "main" },
         vk::PipelineShaderStageCreateInfo{
             .stage = vk::ShaderStageFlagBits::eRaygenKHR,
-            .module = scene.raygen_wide_shader.shader_module,
+            .module = scene.raygen_wide_shader.module,
             .pName = "main" },
         vk::PipelineShaderStageCreateInfo{
             .stage = vk::ShaderStageFlagBits::eMissKHR,
-            .module = scene.primary_miss_shader.shader_module,
+            .module = scene.primary_miss_shader.module,
             .pName = "main" },
         vk::PipelineShaderStageCreateInfo{
             .stage = vk::ShaderStageFlagBits::eMissKHR,
-            .module = scene.shadow_miss_shader.shader_module,
+            .module = scene.shadow_miss_shader.module,
             .pName = "main" },
         vk::PipelineShaderStageCreateInfo{
             .stage = vk::ShaderStageFlagBits::eIntersectionKHR,
-            .module = scene.shadow_intersection_shader.shader_module,
+            .module = scene.shadow_intersection_shader.module,
             .pName = "main" }
     };
     std::vector groups{
@@ -164,21 +164,21 @@ void Raytracing_pipeline::create_pipeline(Scene& scene)
     for (const auto shader_group : scene.shader_groups) {
         shader_stages.push_back(vk::PipelineShaderStageCreateInfo{
             .stage = vk::ShaderStageFlagBits::eIntersectionKHR,
-            .module = shader_group.primary_intersection.shader_module,
+            .module = shader_group.primary_intersection.module,
             .pName = "main" });
         shader_stages.push_back(vk::PipelineShaderStageCreateInfo{
             .stage = vk::ShaderStageFlagBits::eClosestHitKHR,
-            .module = shader_group.primary_closest_hit.shader_module,
+            .module = shader_group.primary_closest_hit.module,
             .pName = "main" });
         shader_stages.push_back(vk::PipelineShaderStageCreateInfo{
             .stage = vk::ShaderStageFlagBits::eAnyHitKHR,
-            .module = shader_group.shadow_any_hit.shader_module,
+            .module = shader_group.shadow_any_hit.module,
             .pName = "main" });
 
         // should be outside loop
         shader_stages.push_back(vk::PipelineShaderStageCreateInfo{
             .stage = vk::ShaderStageFlagBits::eIntersectionKHR,
-            .module = scene.shadow_intersection_shader.shader_module,
+            .module = scene.shadow_intersection_shader.module,
             .pName = "main" });
         groups.push_back(vk::RayTracingShaderGroupCreateInfoKHR{  // Primary
             .type = vk::RayTracingShaderGroupTypeKHR::eProceduralHitGroup,
