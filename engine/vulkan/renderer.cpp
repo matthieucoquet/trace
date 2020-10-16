@@ -9,17 +9,22 @@ namespace vulkan
 
 Renderer::Renderer(Context& context, Scene& scene) :
     m_device(context.device),
+    m_allocator(context.allocator),
     m_queue(context.graphics_queue),
-    m_pipeline(context, scene),
+    m_noise_texture(context, "textures/lut_noise.png"),
+    m_pipeline(context, scene, m_noise_texture.sampler),
     m_blas(context)
 {
-    material_buffer = Vma_buffer(
+    One_time_command_buffer command_buffer(context.device, context.command_pool, context.graphics_queue);
+    Buffer_from_staged buffer_and_staged(
+        context.device, context.allocator, command_buffer.command_buffer,
         vk::BufferCreateInfo{
             .size = sizeof(Material) * scene.materials.size(),
             .usage = vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eRayTracingKHR
         },
-        scene.materials.data(),
-        context.device, context.allocator, context.command_pool, context.graphics_queue);
+        scene.materials.data());
+    material_buffer = std::move(buffer_and_staged.result);
+    command_buffer.submit_and_wait_idle();
 }
 
 Renderer::~Renderer()
@@ -32,6 +37,28 @@ Renderer::~Renderer()
 void Renderer::start_recording(vk::CommandBuffer command_buffer, Scene& scene, vk::Image swapchain_image, size_t command_pool_id, vk::Extent2D extent)
 {
     command_buffer.begin({ .flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit });
+    if (scene.pipeline_dirty) {
+        m_queue.waitIdle();
+        m_device.destroyPipeline(m_pipeline.pipeline);
+        m_pipeline.create_pipeline(scene);
+        auto temp_buffer_aligned = m_pipeline.create_shader_binding_table();
+        Buffer_from_staged buffer_and_staged(
+            m_device, m_allocator, command_buffer,
+            vk::BufferCreateInfo{
+                .size = temp_buffer_aligned.size(),
+                .usage = vk::BufferUsageFlagBits::eRayTracingKHR
+            },
+            temp_buffer_aligned.data());
+        m_pipeline.shader_binding_table = std::move(buffer_and_staged.result);
+        staging = std::move(buffer_and_staged.staging);
+        scene.pipeline_dirty = false;
+
+        // TODO buffer pipeline
+        command_buffer.pipelineBarrier(
+            vk::PipelineStageFlagBits::eTransfer,
+            vk::PipelineStageFlagBits::eRayTracingShaderKHR,
+            {}, {}, {}, {});
+    }
 
     //  Swapchain to dst
     command_buffer.pipelineBarrier(
@@ -205,6 +232,7 @@ void Renderer::create_per_frame_data(Context& context, Scene& scene, vk::Extent2
     for (size_t i = 0u; i < command_pool_size; i++) {
         // Images
         auto image = Vma_image(
+            m_device, context.allocator,
             vk::ImageCreateInfo{
                 .imageType = vk::ImageType::e2D,
                 .format = format,
@@ -217,8 +245,7 @@ void Renderer::create_per_frame_data(Context& context, Scene& scene, vk::Extent2
                 .sharingMode = vk::SharingMode::eExclusive,
                 .initialLayout = vk::ImageLayout::eUndefined
             },
-            VMA_MEMORY_USAGE_GPU_ONLY,
-            m_device, context.allocator);
+            VMA_MEMORY_USAGE_GPU_ONLY);
         auto image_view = m_device.createImageView(
             vk::ImageViewCreateInfo{
                .image = image.image,
@@ -251,11 +278,11 @@ void Renderer::create_per_frame_data(Context& context, Scene& scene, vk::Extent2
                 }});
 
         Vma_buffer object_buffer = Vma_buffer(
+            context.device, context.allocator,
             vk::BufferCreateInfo{
                 .size = sizeof(glm::mat4) * scene.objects_transform.size(),
                 .usage = vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eRayTracingKHR },
-            VMA_MEMORY_USAGE_CPU_TO_GPU,
-            context.device, context.allocator);
+            VMA_MEMORY_USAGE_CPU_TO_GPU);
         per_frame.push_back(Per_frame{
             .tlas = Tlas(command_buffer.command_buffer, context, m_blas, scene),
             .objects = std::move(object_buffer),
@@ -269,12 +296,6 @@ void Renderer::create_per_frame_data(Context& context, Scene& scene, vk::Extent2
 void Renderer::update_per_frame_data(Scene& scene, size_t command_pool_id)
 {
     per_frame[command_pool_id].objects.copy(scene.objects_transform.data(), sizeof(glm::mat4) * scene.objects_transform.size());
-    if (scene.pipeline_dirty) {
-        m_queue.waitIdle();
-        m_device.destroyPipeline(m_pipeline.pipeline);
-        m_pipeline.create_pipeline(scene);
-        scene.pipeline_dirty = false;
-    }
 }
 
 void Renderer::create_descriptor_sets(vk::DescriptorPool descriptor_pool, size_t command_pool_size)
@@ -308,6 +329,10 @@ void Renderer::create_descriptor_sets(vk::DescriptorPool descriptor_pool, size_t
             .offset = 0u,
             .range = VK_WHOLE_SIZE
         };
+        vk::DescriptorImageInfo noise_info{
+            .sampler = m_noise_texture.sampler,
+            .imageView = m_noise_texture.image_view,
+            .imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal };
 
         m_device.updateDescriptorSets(std::array{
             vk::WriteDescriptorSet{
@@ -325,15 +350,22 @@ void Renderer::create_descriptor_sets(vk::DescriptorPool descriptor_pool, size_t
                 .descriptorType = vk::DescriptorType::eStorageImage,
                 .pImageInfo = &image_info},
             vk::WriteDescriptorSet{
-                .dstSet = m_descriptor_sets[i],
+                .dstSet = m_descriptor_sets[0],
                 .dstBinding = 2,
+                .dstArrayElement = 0,
+                .descriptorCount = 1,
+                .descriptorType = vk::DescriptorType::eCombinedImageSampler,
+                .pImageInfo = &noise_info},
+            vk::WriteDescriptorSet{
+                .dstSet = m_descriptor_sets[i],
+                .dstBinding = 3,
                 .dstArrayElement = 0,
                 .descriptorCount = 1,
                 .descriptorType = vk::DescriptorType::eStorageBuffer,
                 .pBufferInfo = &objects_info},
             vk::WriteDescriptorSet{
                 .dstSet = m_descriptor_sets[i],
-                .dstBinding = 3,
+                .dstBinding = 4,
                 .dstArrayElement = 0,
                 .descriptorCount = 1,
                 .descriptorType = vk::DescriptorType::eStorageBuffer,

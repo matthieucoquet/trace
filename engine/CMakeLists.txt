@@ -46,6 +46,7 @@ set(SOURCE_VULKAN
     vulkan/imgui_render.cpp vulkan/imgui_render.hpp
     vulkan/raytracing_pipeline.cpp vulkan/raytracing_pipeline.hpp
     vulkan/renderer.cpp vulkan/renderer.hpp
+    vulkan/texture.cpp vulkan/texture.hpp
     vulkan/vma_buffer.cpp vulkan/vma_buffer.hpp
     vulkan/vma_image.cpp vulkan/vma_image.hpp
     vulkan/vk_common.hpp)

@@ -51,11 +51,12 @@ Vma_buffer Acceleration_structure::allocate_scratch_buffer() const
         .accelerationStructure = acceleration_structure });
 
     return Vma_buffer(
+        m_device, m_allocator,
         vk::BufferCreateInfo{
             .size = memory_requirement.memoryRequirements.size,
             .usage = vk::BufferUsageFlagBits::eShaderDeviceAddress | vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eRayTracingKHR,
             .sharingMode = vk::SharingMode::eExclusive },
-        VMA_MEMORY_USAGE_GPU_ONLY, m_device, m_allocator);
+        VMA_MEMORY_USAGE_GPU_ONLY);
 }
 
 void Acceleration_structure::allocate_object_memory()
@@ -102,12 +103,15 @@ Blas::Blas(Context& context) :
 
 
     vk::AabbPositionsKHR aabb{ -0.5f, -0.5f, -0.5f, 0.5f, 0.5f, 0.5f };
-    m_aabbs_buffer = vulkan::Vma_buffer(
+    One_time_command_buffer command_buffer(context.device, context.command_pool, context.graphics_queue);
+    Buffer_from_staged buffer_and_stage(
+        context.device, context.allocator, command_buffer.command_buffer,
         vk::BufferCreateInfo{
             .size = sizeof(vk::AabbPositionsKHR),
             .usage = vk::BufferUsageFlagBits::eShaderDeviceAddress | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eRayTracingKHR },
-        &aabb,
-        context.device, context.allocator, context.command_pool, context.graphics_queue);
+        &aabb);
+    m_aabbs_buffer = std::move(buffer_and_stage.result);
+
     vk::DeviceAddress aabb_buffer_address = m_device.getBufferAddress(vk::BufferDeviceAddressInfo{ .buffer = m_aabbs_buffer.buffer });
     vk::AccelerationStructureGeometryKHR acceleration_structure_geometry {
         .geometryType = vk::GeometryTypeKHR::eAabbs,
@@ -125,7 +129,10 @@ Blas::Blas(Context& context) :
     auto scratch_buffer = allocate_scratch_buffer();
     vk::DeviceAddress scratch_address = m_device.getBufferAddress(vk::BufferDeviceAddressInfo{ .buffer = scratch_buffer.buffer });
 
-    One_time_command_buffer command_buffer(m_device, context.command_pool, context.graphics_queue);
+    command_buffer.command_buffer.pipelineBarrier(
+        vk::PipelineStageFlagBits::eTransfer,
+        vk::PipelineStageFlagBits::eAccelerationStructureBuildKHR,
+        {}, {}, {}, {});
     command_buffer.command_buffer.buildAccelerationStructureKHR(
         vk::AccelerationStructureBuildGeometryInfoKHR{
             .type = vk::AccelerationStructureTypeKHR::eBottomLevel,
@@ -178,11 +185,12 @@ Tlas::Tlas(vk::CommandBuffer command_buffer, Context& context, const Blas& blas,
     }
 
     m_instance_buffer = Vma_buffer(
+        context.device, context.allocator,
         vk::BufferCreateInfo{
             .size = sizeof(vk::AccelerationStructureInstanceKHR) * nb_instances,
             .usage = vk::BufferUsageFlagBits::eShaderDeviceAddress | vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eRayTracingKHR
         },
-        VMA_MEMORY_USAGE_CPU_TO_GPU, context.device, context.allocator);
+        VMA_MEMORY_USAGE_CPU_TO_GPU);
 
     m_scratch_buffer = allocate_scratch_buffer();
 

@@ -7,7 +7,7 @@
 #include "map_function"
 #include "raymarch.glsl"
 
-layout(binding = 2, set = 0, scalar) buffer Objects { Object o[]; } objects;
+layout(binding = 3, set = 0, scalar) buffer Objects { Object o[]; } objects;
 
 layout(location = 1) rayPayloadInEXT float shadow_payload;
 

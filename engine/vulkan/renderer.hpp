@@ -5,6 +5,7 @@
 #include "acceleration_structure.hpp"
 #include "vma_buffer.hpp"
 #include "vma_image.hpp"
+#include "texture.hpp"
 #include "core/scene.hpp"
 
 namespace vulkan
@@ -42,9 +43,13 @@ public:
     void create_descriptor_sets(vk::DescriptorPool descriptor_pool, size_t command_pool_size);
 private:
     vk::Device m_device;
+    VmaAllocator m_allocator;
     vk::Queue m_queue;
+    Texture m_noise_texture;
     Raytracing_pipeline m_pipeline;
     Blas m_blas;
+
+    Vma_buffer staging;
 
     std::vector<vk::DescriptorSet> m_descriptor_sets;
 };

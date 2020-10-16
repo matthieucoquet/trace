@@ -44,6 +44,7 @@ class Reusable_command_pools
 public:
     size_t size;
     std::vector<vk::CommandPool> command_pools;
+    std::vector<vk::CommandBuffer> command_buffers;
     std::vector<vk::Fence> fences;
     vk::Device device;
 
@@ -53,10 +54,15 @@ public:
     {
         fences.reserve(size);
         command_pools.reserve(size);
+        command_buffers.reserve(size);
         for(size_t i = 0; i < size; i++)
         {
             command_pools.push_back(device.createCommandPool(vk::CommandPoolCreateInfo{ .queueFamilyIndex = queue_family }));
             fences.push_back(device.createFence(vk::FenceCreateInfo{ .flags = vk::FenceCreateFlagBits::eSignaled }));
+            command_buffers.push_back(device.allocateCommandBuffers(vk::CommandBufferAllocateInfo{
+                .commandPool = command_pools.back(),
+                .level = vk::CommandBufferLevel::ePrimary,
+                .commandBufferCount = 1 }).front()); // Only need one per pool right now
         }
     }
 
@@ -64,6 +70,7 @@ public:
     {
         for (size_t i = 0; i < size; i++)
         {
+            device.freeCommandBuffers(command_pools[i], command_buffers[i]);
             device.destroyCommandPool(command_pools[i]);
             device.destroyFence(fences[i]);
         }
@@ -78,7 +85,7 @@ public:
             {
                 if (device.getFenceStatus(fences[i]) == vk::Result::eSuccess) {
                     device.resetFences(fences[i]);
-                    device.resetCommandPool(command_pools[i], vk::CommandPoolResetFlagBits::eReleaseResources);
+                    device.resetCommandPool(command_pools[i], {});
                     return i;
                 }
             }
@@ -91,7 +98,7 @@ public:
 
     void wait_until_done()
     {
-        device.waitForFences(fences, true, std::numeric_limits<uint64_t>::max());
+        [[maybe_unused]] auto result = device.waitForFences(fences, true, std::numeric_limits<uint64_t>::max());
     }
 };
 

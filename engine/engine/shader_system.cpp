@@ -26,13 +26,13 @@ public:
         const char* /*requesting_source*/,
         size_t /*include_depth*/) override final
     {
-        std::vector<Shader_file>::const_iterator file_it;
         if (!m_group_name.empty() && strcmp(requested_source, "map_function") == 0) {
             requested_source = m_group_name.c_str();
-            file_it = std::find_if(m_scene_files.cbegin(), m_scene_files.cend(), [requested_source](const Shader_file& shader_file) {
-                return shader_file.name == requested_source;
-            });
-            assert(file_it != m_scene_files.cend());
+        }
+        std::vector<Shader_file>::const_iterator file_it = std::find_if(m_scene_files.cbegin(), m_scene_files.cend(), [requested_source](const Shader_file& shader_file) {
+            return shader_file.name == requested_source;
+        });
+        if (file_it != m_scene_files.cend()) {
             m_shader.scene_included_id.push_back(static_cast<int>(std::distance(m_scene_files.cbegin(), file_it)));
         }
         else {
@@ -66,7 +66,8 @@ Shader_system::Shader_system(vulkan::Context& context, Scene& scene, std::string
     m_engine_directory(SHADER_SOURCE),
     m_scene_directory(scene_shader_path)
 {
-    m_group_compile_options.SetOptimizationLevel(shaderc_optimization_level_performance);
+    //m_group_compile_options.SetOptimizationLevel(shaderc_optimization_level_performance);
+    m_group_compile_options.SetOptimizationLevel(shaderc_optimization_level_zero);
     m_group_compile_options.SetWarningsAsErrors();
     m_group_compile_options.SetTargetEnvironment(shaderc_target_env_vulkan, shaderc_env_version_vulkan_1_2);
     m_group_compile_options.SetTargetSpirv(shaderc_spirv_version_1_5);
@@ -130,7 +131,7 @@ Shader_system::Shader_system(vulkan::Context& context, Scene& scene, std::string
     }
     compile(scene.engine_shader_files, scene.scene_shader_files, scene.raygen_narrow_shader, shaderc_raygen_shader);
     compile(scene.engine_shader_files, scene.scene_shader_files, scene.raygen_wide_shader, shaderc_raygen_shader);
-    compile(scene.engine_shader_files, scene.scene_shader_files, scene.primary_miss_shader, shaderc_miss_shader, "miss");
+    compile(scene.engine_shader_files, scene.scene_shader_files, scene.primary_miss_shader, shaderc_miss_shader);
     compile(scene.engine_shader_files, scene.scene_shader_files, scene.shadow_miss_shader, shaderc_miss_shader);
     compile(scene.engine_shader_files, scene.scene_shader_files, scene.shadow_intersection_shader, shaderc_intersection_shader);
     compile_shaders.wait();
@@ -165,6 +166,7 @@ void Shader_system::step(Scene& scene)
             }
             id++;
         }
+        id = 0u;
         for (auto& file : scene.scene_shader_files)
         {
             if (file.dirty) {
@@ -182,7 +184,7 @@ void Shader_system::step(Scene& scene)
                 m_recompile_info.clear();
                 check_if_dirty(scene.raygen_narrow_shader, shaderc_raygen_shader);
                 check_if_dirty(scene.raygen_wide_shader, shaderc_raygen_shader);
-                check_if_dirty(scene.primary_miss_shader, shaderc_miss_shader, "miss");
+                check_if_dirty(scene.primary_miss_shader, shaderc_miss_shader);
                 check_if_dirty(scene.shadow_miss_shader, shaderc_miss_shader);
                 check_if_dirty(scene.shadow_intersection_shader, shaderc_intersection_shader);
                 for (auto& shader_group : scene.shader_groups) {
@@ -206,14 +208,14 @@ void Shader_system::step(Scene& scene)
             for (auto& file : scene.engine_shader_files)
             {
                 if (file.dirty) {
-                    write_file(file);  // Do during destructor or multithread if too slow
+                    write_file(file, true);  // Do during destructor or multithread if too slow
                     file.dirty = false;
                 }
             }
             for (auto& file : scene.scene_shader_files)
             {
                 if (file.dirty) {
-                    write_file(file);
+                    write_file(file, false);
                     file.dirty = false;
                 }
             }
@@ -309,9 +311,9 @@ std::string Shader_system::read_file(std::filesystem::path path) const
     return buffer;
 }
 
-void Shader_system::write_file(Shader_file shader_file)
+void Shader_system::write_file(Shader_file shader_file, bool engine_shader)
 {
-/*    auto path = m_base_directory / shader_file.name;
+    auto path = (engine_shader ? m_engine_directory : m_scene_directory) / shader_file.name;
     if (!std::filesystem::exists(path)) {
         throw std::runtime_error("Shader path doesn't exist on filesystem.");
     }
@@ -325,5 +327,5 @@ void Shader_system::write_file(Shader_file shader_file)
         throw std::runtime_error("failed to open file!");
     }
     file.write(shader_file.data.data(), shader_file.size);
-    file.close();*/
+    file.close();
 }

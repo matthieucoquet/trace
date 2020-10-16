@@ -1,6 +1,5 @@
 #include "vma_image.hpp"
 #include "vma_buffer.hpp"
-#include "command_buffer.hpp"
 #include <utility>
 
 namespace vulkan
@@ -35,28 +34,32 @@ Vma_image::~Vma_image()
     }
 }
 
-Vma_image::Vma_image(vk::ImageCreateInfo image_info, VmaMemoryUsage memory_usage, vk::Device device, VmaAllocator allocator) :
+Vma_image::Vma_image(vk::Device device, VmaAllocator allocator, vk::ImageCreateInfo image_info, VmaMemoryUsage memory_usage) :
     m_device(device), m_allocator(allocator)
 {
-    allocate(allocator, memory_usage, image_info);
+    const VkImageCreateInfo& c_image_info = image_info;
+    VmaAllocationCreateInfo allocation_info{ .usage = memory_usage };
+
+    VkImage c_image;
+    [[maybe_unused]] VkResult result = vmaCreateImage(allocator, &c_image_info, &allocation_info, &c_image, &m_allocation, nullptr);
+    assert(result == VK_SUCCESS);
+    image = c_image;
 }
 
-Vma_image::Vma_image(vk::ImageCreateInfo image_info, const void* data, size_t size,
-    vk::Device device, VmaAllocator allocator, vk::CommandPool command_pool, vk::Queue queue) :
-    m_device(device), m_allocator(allocator)
+Image_from_staged::Image_from_staged(vk::Device device, VmaAllocator allocator, vk::CommandBuffer command_buffer, vk::ImageCreateInfo image_info, const void* data, size_t size)
 {
-    Vma_buffer staged_buffer(
-        vk::BufferCreateInfo {
+    staging = Vma_buffer(
+        device, allocator,
+        vk::BufferCreateInfo{
             .size = size,
             .usage = vk::BufferUsageFlagBits::eTransferSrc },
-        VMA_MEMORY_USAGE_CPU_ONLY,
-        device, allocator);
-    staged_buffer.copy(data, size);
+        VMA_MEMORY_USAGE_CPU_ONLY);
+    staging.copy(data, size);
 
-    allocate(allocator, VMA_MEMORY_USAGE_GPU_ONLY, image_info);
+    image_info.usage |= vk::ImageUsageFlagBits::eTransferDst;
+    result = Vma_image(device, allocator, image_info, VMA_MEMORY_USAGE_GPU_ONLY);
 
-    One_time_command_buffer command_buffer(device, command_pool, queue);
-    command_buffer.command_buffer.pipelineBarrier(
+    command_buffer.pipelineBarrier(
         vk::PipelineStageFlagBits::eTopOfPipe,
         vk::PipelineStageFlagBits::eTransfer,
         {}, {}, {},
@@ -67,7 +70,7 @@ Vma_image::Vma_image(vk::ImageCreateInfo image_info, const void* data, size_t si
             .newLayout = vk::ImageLayout::eTransferDstOptimal,
             .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
             .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-            .image = image,
+            .image = result.image,
             .subresourceRange = {
                 .aspectMask = vk::ImageAspectFlagBits::eColor,
                 .baseMipLevel = 0,
@@ -75,13 +78,13 @@ Vma_image::Vma_image(vk::ImageCreateInfo image_info, const void* data, size_t si
                 .baseArrayLayer = 0,
                 .layerCount = 1 }
         });
-    command_buffer.command_buffer.copyBufferToImage(staged_buffer.buffer, image, vk::ImageLayout::eTransferDstOptimal, 
+    command_buffer.copyBufferToImage(staging.buffer, result.image, vk::ImageLayout::eTransferDstOptimal,
         vk::BufferImageCopy{
             .imageSubresource = {
                 .aspectMask = vk::ImageAspectFlagBits::eColor,
                 .layerCount = 1 },
             .imageExtent = image_info.extent });
-    command_buffer.command_buffer.pipelineBarrier(
+    command_buffer.pipelineBarrier(
         vk::PipelineStageFlagBits::eTransfer,
         vk::PipelineStageFlagBits::eBottomOfPipe,
         {}, {}, {},
@@ -92,26 +95,14 @@ Vma_image::Vma_image(vk::ImageCreateInfo image_info, const void* data, size_t si
             .newLayout = vk::ImageLayout::eShaderReadOnlyOptimal,
             .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
             .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-            .image = image,
+            .image = result.image,
             .subresourceRange = {
                 .aspectMask = vk::ImageAspectFlagBits::eColor,
                 .baseMipLevel = 0,
                 .levelCount = 1u,
                 .baseArrayLayer = 0,
-                .layerCount = 1 } 
+                .layerCount = 1 }
         });
-    command_buffer.submit_and_wait_idle();
-}
-
-void Vma_image::allocate(VmaAllocator allocator, VmaMemoryUsage memory_usage, vk::ImageCreateInfo image_info)
-{
-    const VkImageCreateInfo& c_image_info = image_info;
-    VmaAllocationCreateInfo allocation_info{ .usage = memory_usage };
-
-    VkImage c_image;
-    [[maybe_unused]] VkResult result = vmaCreateImage(allocator, &c_image_info, &allocation_info, &c_image, &m_allocation, nullptr);
-    assert(result == VK_SUCCESS);
-    image = c_image;
 }
 
 }

@@ -27,3 +27,8 @@ endif()
 ### Create empty target for shaders ###
 file(GLOB_RECURSE shader_list shaders/*)
 add_custom_target(ingenuity_shaders ALL SOURCES ${shader_list})
+
+add_custom_command(TARGET ingenuity POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E remove_directory $<TARGET_FILE_DIR:ingenuity>/textures
+    COMMAND ${CMAKE_COMMAND} -E copy_directory  ${PROJECT_SOURCE_DIR}/engine/textures $<TARGET_FILE_DIR:ingenuity>/textures
+    COMMENT Copy textures)

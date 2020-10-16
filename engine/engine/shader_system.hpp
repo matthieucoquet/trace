@@ -46,7 +46,7 @@ private:
         const std::vector<Shader_file>& scene_shader_files,
         Shader& shader, shaderc_shader_kind shader_kind, const std::string& group_name = {});
     [[nodiscard]] std::string read_file(std::filesystem::path path) const;
-    void write_file(Shader_file shader_file);
+    void write_file(Shader_file shader_file, bool engine_shader);
     void check_if_dirty(Shader& shader, shaderc_shader_kind shader_kind, const std::string& group_name = {});
 
 };

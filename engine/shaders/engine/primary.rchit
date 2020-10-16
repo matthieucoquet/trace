@@ -12,8 +12,8 @@ layout(binding = 0, set = 0) uniform accelerationStructureEXT topLevelAS;
 layout(location = 0) rayPayloadInEXT vec4 hit_value;
 layout(location = 1) rayPayloadEXT float shadow_payload;
 
-layout(binding = 2, set = 0, scalar) buffer Objects { Object o[]; } objects;
-layout(binding = 3, set = 0, scalar) buffer Materials { Material m[]; } materials;
+layout(binding = 3, set = 0, scalar) buffer Objects { Object o[]; } objects;
+layout(binding = 4, set = 0, scalar) buffer Materials { Material m[]; } materials;
 
 void main()
 {

@@ -1,5 +1,6 @@
 #include "imgui_render.hpp"
 #include "context.hpp"
+#include "command_buffer.hpp"
 #include <imgui.h>
 #include <fmt/core.h>
 #include <filesystem>
@@ -262,23 +263,25 @@ void Imgui_render::draw(ImDrawData* draw_data, vk::CommandBuffer command_buffer,
         if (m_size_vertex_buffer[command_pool_id] < vertex_size)
         {
             m_size_vertex_buffer[command_pool_id] = static_cast<uint32_t>(vertex_size);
-            m_vertex_buffer[command_pool_id] = Vma_buffer(vk::BufferCreateInfo{
+            m_vertex_buffer[command_pool_id] = Vma_buffer(
+                m_device, m_allocator,
+                vk::BufferCreateInfo{
                     .size = vertex_size,
                     .usage = vk::BufferUsageFlagBits::eVertexBuffer,
                     .sharingMode = vk::SharingMode::eExclusive },
-                VMA_MEMORY_USAGE_CPU_TO_GPU,
-                m_device, m_allocator);
+                VMA_MEMORY_USAGE_CPU_TO_GPU);
         }
         size_t index_size = draw_data->TotalIdxCount * sizeof(ImDrawIdx);
         if (m_size_index_buffer[command_pool_id] < index_size)
         {
             m_size_index_buffer[command_pool_id] = static_cast<uint32_t>(index_size);
-            m_index_buffer[command_pool_id] = Vma_buffer(vk::BufferCreateInfo{
+            m_index_buffer[command_pool_id] = Vma_buffer(
+                m_device, m_allocator,
+                vk::BufferCreateInfo{
                     .size = index_size,
                     .usage = vk::BufferUsageFlagBits::eIndexBuffer,
                     .sharingMode = vk::SharingMode::eExclusive },
-                VMA_MEMORY_USAGE_CPU_TO_GPU,
-                m_device, m_allocator);
+                VMA_MEMORY_USAGE_CPU_TO_GPU);
         }
 
         ImDrawIdx* index_mapped = static_cast<ImDrawIdx*>(m_index_buffer[command_pool_id].map());
@@ -362,7 +365,10 @@ void Imgui_render::create_fonts_texture(Context& context)
     io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
     size_t upload_size = width * height * 4 * sizeof(char);
 
-    m_font_image = vulkan::Vma_image(vk::ImageCreateInfo{
+    One_time_command_buffer command_buffer(context.device, context.command_pool, context.graphics_queue);
+    Image_from_staged image_and_staged(
+        m_device, context.allocator, command_buffer.command_buffer,
+        vk::ImageCreateInfo{
             .imageType = vk::ImageType::e2D,
             .format = vk::Format::eR8G8B8A8Unorm,
             .extent = { static_cast<uint32_t>(width), static_cast<uint32_t>(height), 1 },
@@ -374,8 +380,9 @@ void Imgui_render::create_fonts_texture(Context& context)
             .sharingMode = vk::SharingMode::eExclusive,
             .initialLayout = vk::ImageLayout::eUndefined
         },
-        pixels, upload_size,
-        m_device, context.allocator, context.command_pool, context.graphics_queue);
+        pixels, upload_size);
+    m_font_image = std::move(image_and_staged.result);
+    command_buffer.submit_and_wait_idle();
 
     m_font_image_view = m_device.createImageView(vk::ImageViewCreateInfo{
         .image = m_font_image.image,

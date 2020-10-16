@@ -15,8 +15,8 @@ if (FALSE) # To use vcpkg lib
         NO_CMAKE_PATH  
     )
     find_library(shaderc_LIBRARY_DEBUG
-        shaderc_combined
-        PATH ${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/debug/lib
+        shaderc_combinedd
+        PATH ${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/lib
         NO_CMAKE_PATH  
     )
 else() # To use lunarg lib, probably more up to date that vcpkg, but can not choose triplet
@@ -34,7 +34,7 @@ else() # To use lunarg lib, probably more up to date that vcpkg, but can not cho
     )
     find_library(shaderc_LIBRARY_DEBUG
         shaderc_combinedd
-        PATH ${vulkan_root}/Debug/lib
+        PATH ${vulkan_root}/lib
         NO_CMAKE_PATH  
     )
 endif()

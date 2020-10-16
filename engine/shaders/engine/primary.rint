@@ -4,10 +4,11 @@
 #extension GL_EXT_scalar_block_layout : enable
 #extension GL_GOOGLE_include_directive : enable
 #include "common_types.glsl"
+#include "miss.glsl"
 #include "map_function"
 #include "raymarch.glsl"
 
-layout(binding = 2, set = 0, scalar) buffer Objects { Object o[]; } objects;
+layout(binding = 3, set = 0, scalar) buffer Objects { Object o[]; } objects;
 
 void main()
 {
@@ -22,7 +23,9 @@ void main()
     Hit hit = raymarch(ray);
     if (hit.dist > 0.0)
     {
-        reportIntersectionEXT(hit.dist, hit.material_id);
+        if (map_miss(gl_WorldRayOriginEXT + gl_WorldRayDirectionEXT * hit.dist).dist > 0.0) {
+            reportIntersectionEXT(hit.dist, hit.material_id);
+        }
     }
 #endif
 }

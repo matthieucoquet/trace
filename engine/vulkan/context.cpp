@@ -273,8 +273,8 @@ void Context::init_descriptor_pool()
             .type = vk::DescriptorType::eUniformBuffer,
             .descriptorCount = max_swapchain_size },
         vk::DescriptorPoolSize {
-            .type = vk::DescriptorType::eSampler,
-            .descriptorCount = 1 }
+            .type = vk::DescriptorType::eCombinedImageSampler,
+            .descriptorCount = 2 }
     };
     descriptor_pool = device.createDescriptorPool(vk::DescriptorPoolCreateInfo{
         .maxSets = max_swapchain_size,

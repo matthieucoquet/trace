@@ -25,7 +25,7 @@ public:
     size_t nb_group_miss;
     size_t nb_group_primary;
 
-    Raytracing_pipeline(Context& context, Scene& scene);
+    Raytracing_pipeline(Context& context, Scene& scene, vk::Sampler immutable_sampler);
     Raytracing_pipeline(const Raytracing_pipeline& other) = delete;
     Raytracing_pipeline(Raytracing_pipeline&& other) = delete;
     Raytracing_pipeline& operator=(const Raytracing_pipeline& other) = default;
@@ -33,10 +33,11 @@ public:
     ~Raytracing_pipeline();
 
     void create_pipeline(Scene& scene);
+
+    void update_shader_binding_table();
+    std::vector<uint8_t> create_shader_binding_table();
 private:
     vk::Device m_device;
-
-    void create_shader_binding_table(Context& context, uint32_t group_count);
 };
 
 }

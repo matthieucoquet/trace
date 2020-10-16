@@ -200,11 +200,7 @@ void Session::draw_frame(Scene& scene, std::vector<std::unique_ptr<System>>& sys
             }
 
             size_t command_pool_id = m_command_pools.find_next();
-            auto command_buffers = m_command_pools.device.allocateCommandBuffers(vk::CommandBufferAllocateInfo{
-                .commandPool = m_command_pools.command_pools[command_pool_id],
-                .level = vk::CommandBufferLevel::ePrimary,
-                .commandBufferCount = 1 });
-            auto& command_buffer = command_buffers.back();
+            auto& command_buffer = m_command_pools.command_buffers[command_pool_id];
 
             uint32_t swapchain_index = m_ray_swapchain.swapchain.acquireSwapchainImage({});
 
