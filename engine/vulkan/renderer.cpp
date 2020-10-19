@@ -15,16 +15,6 @@ Renderer::Renderer(Context& context, Scene& scene) :
     m_pipeline(context, scene, m_noise_texture.sampler),
     m_blas(context)
 {
-    One_time_command_buffer command_buffer(context.device, context.command_pool, context.graphics_queue);
-    Buffer_from_staged buffer_and_staged(
-        context.device, context.allocator, command_buffer.command_buffer,
-        vk::BufferCreateInfo{
-            .size = sizeof(Material) * scene.materials.size(),
-            .usage = vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eRayTracingKHR
-        },
-        scene.materials.data());
-    material_buffer = std::move(buffer_and_staged.result);
-    command_buffer.submit_and_wait_idle();
 }
 
 Renderer::~Renderer()
@@ -53,12 +43,51 @@ void Renderer::start_recording(vk::CommandBuffer command_buffer, Scene& scene, v
         staging = std::move(buffer_and_staged.staging);
         scene.pipeline_dirty = false;
 
-        // TODO buffer pipeline
         command_buffer.pipelineBarrier(
             vk::PipelineStageFlagBits::eTransfer,
             vk::PipelineStageFlagBits::eRayTracingShaderKHR,
-            {}, {}, {}, {});
+            {}, {}, 
+            vk::BufferMemoryBarrier{
+                .srcAccessMask = vk::AccessFlagBits::eTransferWrite,
+                .dstAccessMask = vk::AccessFlagBits::eShaderRead,
+                .buffer = m_pipeline.shader_binding_table.buffer,
+                .offset = 0u,
+                .size = VK_WHOLE_SIZE
+            }, {});
     }
+    command_buffer.pipelineBarrier(
+        vk::PipelineStageFlagBits::eHost,
+        vk::PipelineStageFlagBits::eRayTracingShaderKHR,
+        {}, {},
+        vk::BufferMemoryBarrier{
+            .srcAccessMask = vk::AccessFlagBits::eHostWrite,
+            .dstAccessMask = vk::AccessFlagBits::eShaderRead,
+            .buffer = per_frame[command_pool_id].materials.buffer,
+            .offset = 0u,
+            .size = VK_WHOLE_SIZE
+        }, {});
+    command_buffer.pipelineBarrier(
+        vk::PipelineStageFlagBits::eHost,
+        vk::PipelineStageFlagBits::eRayTracingShaderKHR,
+        {}, {},
+        vk::BufferMemoryBarrier{
+            .srcAccessMask = vk::AccessFlagBits::eHostWrite,
+            .dstAccessMask = vk::AccessFlagBits::eShaderRead,
+            .buffer = per_frame[command_pool_id].lights.buffer,
+            .offset = 0u,
+            .size = VK_WHOLE_SIZE
+        }, {});
+    command_buffer.pipelineBarrier(
+        vk::PipelineStageFlagBits::eHost,
+        vk::PipelineStageFlagBits::eRayTracingShaderKHR,
+        {}, {},
+        vk::BufferMemoryBarrier{
+            .srcAccessMask = vk::AccessFlagBits::eHostWrite,
+            .dstAccessMask = vk::AccessFlagBits::eShaderRead,
+            .buffer = per_frame[command_pool_id].objects.buffer,
+            .offset = 0u,
+            .size = VK_WHOLE_SIZE
+        }, {});
 
     //  Swapchain to dst
     command_buffer.pipelineBarrier(
@@ -283,9 +312,23 @@ void Renderer::create_per_frame_data(Context& context, Scene& scene, vk::Extent2
                 .size = sizeof(glm::mat4) * scene.objects_transform.size(),
                 .usage = vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eRayTracingKHR },
             VMA_MEMORY_USAGE_CPU_TO_GPU);
+        Vma_buffer material_buffer = Vma_buffer(
+            context.device, context.allocator,
+            vk::BufferCreateInfo{
+                .size = sizeof(Material) * scene.materials.size(),
+                .usage = vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eRayTracingKHR },
+                VMA_MEMORY_USAGE_CPU_TO_GPU);
+        Vma_buffer lights_buffer = Vma_buffer(
+            context.device, context.allocator,
+            vk::BufferCreateInfo{
+                .size = sizeof(Light) * scene.lights.size(),
+                .usage = vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eRayTracingKHR },
+                VMA_MEMORY_USAGE_CPU_TO_GPU);
         per_frame.push_back(Per_frame{
             .tlas = Tlas(command_buffer.command_buffer, context, m_blas, scene),
             .objects = std::move(object_buffer),
+            .materials = std::move(material_buffer),
+            .lights = std::move(lights_buffer),
             .storage_image = std::move(image),
             .image_view = image_view
             });
@@ -296,6 +339,8 @@ void Renderer::create_per_frame_data(Context& context, Scene& scene, vk::Extent2
 void Renderer::update_per_frame_data(Scene& scene, size_t command_pool_id)
 {
     per_frame[command_pool_id].objects.copy(scene.objects_transform.data(), sizeof(glm::mat4) * scene.objects_transform.size());
+    per_frame[command_pool_id].materials.copy(scene.materials.data(), sizeof(Material) * scene.materials.size());
+    per_frame[command_pool_id].lights.copy(scene.lights.data(), sizeof(Light) * scene.lights.size());
 }
 
 void Renderer::create_descriptor_sets(vk::DescriptorPool descriptor_pool, size_t command_pool_size)
@@ -305,12 +350,6 @@ void Renderer::create_descriptor_sets(vk::DescriptorPool descriptor_pool, size_t
         .descriptorPool = descriptor_pool,
         .descriptorSetCount = static_cast<uint32_t>(layouts.size()),
         .pSetLayouts = layouts.data()});
-
-    vk::DescriptorBufferInfo material_info{
-        .buffer = material_buffer.buffer,
-        .offset = 0u,
-        .range = VK_WHOLE_SIZE
-    };
 
     for (size_t i = 0; i < command_pool_size; i++)
     {
@@ -326,6 +365,16 @@ void Renderer::create_descriptor_sets(vk::DescriptorPool descriptor_pool, size_t
 
         vk::DescriptorBufferInfo objects_info{
             .buffer = per_frame[i].objects.buffer,
+            .offset = 0u,
+            .range = VK_WHOLE_SIZE
+        };
+        vk::DescriptorBufferInfo material_info{
+            .buffer = per_frame[i].materials.buffer,
+            .offset = 0u,
+            .range = VK_WHOLE_SIZE
+        };
+        vk::DescriptorBufferInfo light_info{
+            .buffer = per_frame[i].lights.buffer,
             .offset = 0u,
             .range = VK_WHOLE_SIZE
         };
@@ -370,6 +419,13 @@ void Renderer::create_descriptor_sets(vk::DescriptorPool descriptor_pool, size_t
                 .descriptorCount = 1,
                 .descriptorType = vk::DescriptorType::eStorageBuffer,
                 .pBufferInfo = &material_info},
+            vk::WriteDescriptorSet{
+                .dstSet = m_descriptor_sets[i],
+                .dstBinding = 5,
+                .dstArrayElement = 0,
+                .descriptorCount = 1,
+                .descriptorType = vk::DescriptorType::eStorageBuffer,
+                .pBufferInfo = &light_info},
             }, {});
     }
 }

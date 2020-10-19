@@ -1,5 +1,8 @@
 #define ADVANCE_RATIO 1.0
 
+#define ROCK_ID 3
+#define SAND_ID 4
+
 layout(binding = 2, set = 0) uniform sampler2D noise_lut;
 
 // See https://www.shadertoy.com/view/4sfGzS and iq website for more info about noise
@@ -61,20 +64,16 @@ float fbm(in vec2 pos)
 Hit map_miss(in vec3 position)
 {
     vec2 pos = position.xz;
-	float layer1 = noise(pos * 0.03) * 4.10 - 1.2;
-	float layer2 = noise(pos * 0.53) * 0.421;
-	float layer3 = noise(pos * 4.03) * 0.1045;
-	float height = max(0.0, layer1 + layer2 + layer3);
+    float layer1 = pow(smoothstep(0.4, 0.9, noise(pos * 0.035)), 2.0) * 6.10;
+    float layer2 = noise(pos * 0.5) * 0.421 - 0.2;
+    float layer3 = noise(pos * 2.3) * 0.1045;
+    float height = layer1 + layer2 + layer3;
+
+    uint material_id = height >= 0.0 ? ROCK_ID : SAND_ID;
+    height = max(0.0, height);
+    
     float d = position.y - height;
-    //float d = position.y;
-
-    /*float n = noise(16.0 * position);
-    uint material_id = WHITE_ID;
-    if (n < 0.5) {
-        material_id = RED_ID;
-    }*/
-
-    return Hit(d, RED_ID);
+    return Hit(d, material_id);
 }
 
 vec3 background_miss(in vec3 position)

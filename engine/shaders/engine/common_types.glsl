@@ -24,6 +24,7 @@ layout(push_constant, scalar) uniform Scene_global {
     vec3 ui_position;
     vec3 ui_normal;
     float time;
+    int nb_lights;
 } scene_global;
 
 struct Ray
@@ -37,15 +38,16 @@ struct Object
     mat4 world_to_model;
 };
 
+struct Light
+{
+    vec3 position;
+    vec3 color;
+};
+
 struct Material
 {
     vec3 color;
 };
-
-#define BLACK_ID 0
-#define WHITE_ID 1
-#define RED_ID 2
-#define BLUE_ID 3
 
 struct Hit
 {

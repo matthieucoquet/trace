@@ -34,14 +34,13 @@ void Ui_system::step(Scene& scene)
         for (auto& shader_file : scene.engine_shader_files)
         {
             ImGuiTreeNodeFlags leaf_flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
-            if (m_selected_shader == id) {
+            if (m_selected == Selected::engine_shader && m_selected_id == id) {
                 leaf_flags |= ImGuiTreeNodeFlags_Selected;
             }
             ImGui::TreeNodeEx(shader_file.name.c_str(), leaf_flags);
             if (ImGui::IsItemClicked()) {
-                m_selected_engine = true;
-                m_selected_shader = id;
-                m_selected_object = std::numeric_limits<int>::max();
+                m_selected = Selected::engine_shader;
+                m_selected_id = id;
             }
             id++;
         }
@@ -53,32 +52,63 @@ void Ui_system::step(Scene& scene)
         for (auto& shader_file : scene.scene_shader_files)
         {
             ImGuiTreeNodeFlags leaf_flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
-            if (m_selected_shader == id) {
+            if (m_selected == Selected::scenes_shader && m_selected_id == id) {
                 leaf_flags |= ImGuiTreeNodeFlags_Selected;
             }
             ImGui::TreeNodeEx(shader_file.name.c_str(), leaf_flags);
             if (ImGui::IsItemClicked()) {
-                m_selected_engine = false;
-                m_selected_shader = id;
-                m_selected_object = std::numeric_limits<int>::max();
+                m_selected = Selected::scenes_shader;
+                m_selected_id = id;
             }
             id++;
         }
         ImGui::TreePop();
     }
     ImGui::Separator();
-    if (ImGui::TreeNodeEx("Scene", ImGuiTreeNodeFlags_DefaultOpen))
+    if (ImGui::TreeNodeEx("Objects", ImGuiTreeNodeFlags_DefaultOpen))
     {
         for (int id = 0; id < std::ssize(scene.objects); id++)
         {
             ImGuiTreeNodeFlags leaf_flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
-            if (m_selected_object == id) {
+            if (m_selected == Selected::object && m_selected_id == id) {
                 leaf_flags |= ImGuiTreeNodeFlags_Selected;
             }
             ImGui::TreeNodeEx(scene.objects[id].name.c_str(), leaf_flags);
             if (ImGui::IsItemClicked()) {
-                m_selected_shader = std::numeric_limits<int>::max();
-                m_selected_object = id;
+                m_selected = Selected::object;
+                m_selected_id = id;
+            }
+        }
+        ImGui::TreePop();
+    }
+    if (ImGui::TreeNodeEx("Materials", ImGuiTreeNodeFlags_DefaultOpen))
+    {
+        for (int id = 0; id < std::ssize(scene.materials); id++)
+        {
+            ImGuiTreeNodeFlags leaf_flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+            if (m_selected == Selected::material && m_selected_id == id) {
+                leaf_flags |= ImGuiTreeNodeFlags_Selected;
+            }
+            ImGui::TreeNodeEx(fmt::format("material_{}", id).c_str(), leaf_flags);
+            if (ImGui::IsItemClicked()) {
+                m_selected = Selected::material;
+                m_selected_id = id;
+            }
+        }
+        ImGui::TreePop();
+    }
+    if (ImGui::TreeNodeEx("Lights", ImGuiTreeNodeFlags_DefaultOpen))
+    {
+        for (int id = 0; id < std::ssize(scene.lights); id++)
+        {
+            ImGuiTreeNodeFlags leaf_flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+            if (m_selected == Selected::light && m_selected_id == id) {
+                leaf_flags |= ImGuiTreeNodeFlags_Selected;
+            }
+            ImGui::TreeNodeEx(fmt::format("light_{}", id).c_str(), leaf_flags);
+            if (ImGui::IsItemClicked()) {
+                m_selected = Selected::light;
+                m_selected_id = id;
             }
         }
         ImGui::TreePop();
@@ -121,17 +151,20 @@ void Ui_system::record_selected(Scene& scene)
     ImGuiStyle& style = ImGui::GetStyle();
     ImGui::BeginChild("##shader_window", ImVec2(ImGui::GetWindowWidth() * 0.7f - 2 * style.WindowPadding.x - style.ItemSpacing.x, 0), true, ImGuiWindowFlags_None);
 
-    if (m_selected_shader != std::numeric_limits<int>::max())
+    switch (m_selected)
+    {
+    case Selected::engine_shader:
+    case Selected::scenes_shader:
     {
         if (ImGui::BeginTabBar("tabs", ImGuiTabBarFlags_None))
         {
             if (ImGui::BeginTabItem("Shader"))
             {
-                if (m_selected_engine) {
-                    shader_text(scene.engine_shader_files[m_selected_shader]);
+                if (m_selected == Selected::engine_shader) {
+                    shader_text(scene.engine_shader_files[m_selected_id]);
                 }
                 else {
-                    shader_text(scene.scene_shader_files[m_selected_shader]);
+                    shader_text(scene.scene_shader_files[m_selected_id]);
                 }
                 ImGui::EndTabItem();
             }
@@ -157,18 +190,34 @@ void Ui_system::record_selected(Scene& scene)
             }
             ImGui::EndTabBar();
         }
+        break;
     }
-    else if (m_selected_object != std::numeric_limits<int>::max())
+    case Selected::object:
     {
-        Object& object = scene.objects[m_selected_object];
+        Object& object = scene.objects[m_selected_id];
         bool dirty = ImGui::InputFloat3("Position", glm::value_ptr(object.position));
-        dirty =! ImGui::InputFloat4("Rotation", glm::value_ptr(object.rotation));
-        dirty =! ImGui::SliderFloat("Scale", &object.scale, 0.03f, 5.0f, "%.3f");
+        dirty = !ImGui::InputFloat4("Rotation", glm::value_ptr(object.rotation));
+        dirty = !ImGui::SliderFloat("Scale", &object.scale, 0.03f, 5.0f, "%.3f");
         if (dirty)
         {
             glm::mat4 model_to_world = glm::translate(object.position) * glm::toMat4(object.rotation) * glm::scale(glm::vec3(object.scale));
-            scene.objects_transform[m_selected_object] = glm::inverse(model_to_world);
+            scene.objects_transform[m_selected_id] = glm::inverse(model_to_world);
         }
+        break;
+    }
+    case Selected::material:
+    {
+        Material& material = scene.materials[m_selected_id];
+        ImGui::ColorPicker3("Color", glm::value_ptr(material.color));
+        break;
+    }
+    case Selected::light:
+    {
+        Light& light = scene.lights[m_selected_id];
+        ImGui::InputFloat3("Position", glm::value_ptr(light.position));
+        ImGui::InputFloat3("Color", glm::value_ptr(light.color));
+        break;
+    }
     }
     ImGui::EndChild();
 

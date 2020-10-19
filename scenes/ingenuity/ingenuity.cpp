@@ -36,10 +36,14 @@ Scene make_scene()
     scene.scene_global.ui_position = scene.ui_object.position;
     scene.scene_global.ui_normal = glm::rotate(scene.ui_object.rotation, glm::vec3(0.0f, 0.0f, 1.0f));
 
-    scene.materials.push_back(Material{ .color = glm::vec3(0.05f) });
-    scene.materials.push_back(Material{ .color = glm::vec3(0.8f) });
-    scene.materials.push_back(Material{ .color = glm::vec3(0.95f, 0.05f, 0.15f) });
-    scene.materials.push_back(Material{ .color = glm::vec3(0.1f, 0.15f, 0.85f) });
+    scene.materials.push_back(Material{ .color = glm::vec3(0.05f) }); // White
+    scene.materials.push_back(Material{ .color = glm::vec3(0.8f) }); // Black
+    scene.materials.push_back(Material{ .color = glm::vec3(0.95f, 0.05f, 0.15f) }); // Red
+    scene.materials.push_back(Material{ .color = glm::vec3(0.765f, 0.494f, 0.341f) }); // Rock
+    scene.materials.push_back(Material{ .color = glm::vec3(0.424f, 0.298f, 0.231f) }); // Sand
+
+    scene.lights.push_back(Light{ .position = glm::vec3{ 20.0f, 60.0f, -100.0f }, .color = glm::vec3{ 1.0f } });
+    //scene.lights.push_back(Light{ .position = glm::vec3{ -20.0f, 20.0f, 20.0f }, .color = glm::vec3{ 1.0f } });
     return scene;
 }
 

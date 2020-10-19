@@ -51,9 +51,10 @@ void Engine::run()
 {
     while (m_window.step())
     {
-        m_session->step(m_vr_instance.instance, m_scene, m_systems);
         Duration time_since_start = Clock::now() - m_start_clock;
         m_scene.scene_global.time = time_since_start.count();
+        m_scene.scene_global.nb_lights = static_cast<int>(std::ssize(m_scene.lights));
+        m_session->step(m_vr_instance.instance, m_scene, m_systems);
     }
 }
 

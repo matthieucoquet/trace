@@ -18,7 +18,10 @@ public:
     ~Vma_buffer();
 
     void copy(const void* data, size_t size);
-    void* map();
+    void* map(); 
+    void flush() {
+        vmaFlushAllocation(m_allocator, m_allocation, 0, VK_WHOLE_SIZE);
+    }
     void unmap();
 private:
     vk::Device m_device;

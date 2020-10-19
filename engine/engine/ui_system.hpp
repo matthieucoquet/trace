@@ -16,9 +16,17 @@ public:
     ~Ui_system() override final = default;
     void step(Scene& scene) override final;
 private:
-    bool m_selected_engine{ true };
-    int m_selected_shader{ 0 };
-    int m_selected_object{ std::numeric_limits<int>::max() };
+    enum class Selected
+    {
+        engine_shader,
+        scenes_shader,
+        object,
+        material,
+        light
+    };
+
+    Selected m_selected{ Selected::engine_shader };
+    int m_selected_id{ 0 };
 
     void shader_text(Shader_file& shader_file);
 

@@ -18,9 +18,16 @@ struct Scene_global
     glm::vec3 ui_position;
     glm::vec3 ui_normal;
     float time = {};
+    int nb_lights = {};
 };
 
 struct Material
 {
+    glm::vec3 color;
+};
+
+struct Light
+{
+    glm::vec3 position;
     glm::vec3 color;
 };

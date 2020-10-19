@@ -27,6 +27,7 @@ struct Scene
     Object ui_object;
 
     std::vector<Material> materials;
+    std::vector<Light> lights;
 
     bool pipeline_dirty = false;
     std::vector<Shader_file> engine_shader_files;
