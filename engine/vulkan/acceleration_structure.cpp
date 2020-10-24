@@ -191,7 +191,7 @@ Tlas::Tlas(vk::CommandBuffer command_buffer, Context& context, const Blas& blas,
             .usage = vk::BufferUsageFlagBits::eShaderDeviceAddress | vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eRayTracingKHR
         },
         VMA_MEMORY_USAGE_CPU_TO_GPU);
-
+    m_instance_buffer.map();
     m_scratch_buffer = allocate_scratch_buffer();
 
     update(command_buffer, scene, true);

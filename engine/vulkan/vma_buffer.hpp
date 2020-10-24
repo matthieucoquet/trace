@@ -27,6 +27,7 @@ private:
     vk::Device m_device;
     VmaAllocator m_allocator;
     VmaAllocation m_allocation{};
+    void* m_mapped = nullptr;
 };
 
 struct Buffer_from_staged

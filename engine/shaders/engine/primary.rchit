@@ -33,15 +33,16 @@ void main()
     vec3 model_position = vec3(object.world_to_model * vec4(position, 1.0f));
     vec3 normal = normal(model_position);
     vec3 view_dir = normalize(vec3(object.world_to_model * vec4(gl_WorldRayOriginEXT, 1.0f)) - model_position);
-    for (int i = 0; i < scene_global.nb_lights; i++)
+    for (int i = 0; i < 1/*scene_global.nb_lights*/; i++)
     {
-        vec3 light_dir = normalize(vec3(object.world_to_model * vec4(lights.l[i].position, 1.0f)) - model_position);
+        Light light = lights.l[nonuniformEXT(i)];  // nonuniformEXT shouldnt be needed
+        vec3 light_dir = normalize(vec3(object.world_to_model * vec4(light.position, 1.0f)) - model_position);
 
-        vec3 diffuse = max(dot(normal, light_dir), 0.0) * lights.l[i].color;
-        vec3 ambient = 0.1 * lights.l[i].color;
+        vec3 diffuse = max(dot(normal, light_dir), 0.0) * light.color;
+        vec3 ambient = 0.1 * light.color;
 
         vec3 halfway = normalize(light_dir + view_dir);
-        vec3 spec = pow(max(dot(normal, halfway), 0.0), 32.0) * lights.l[i].color;
+        vec3 spec = pow(max(dot(normal, halfway), 0.0), 32.0) * light.color;
 
         shadow_payload = 0.0;
         if (dot(normal, light_dir) > 0)

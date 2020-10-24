@@ -62,6 +62,7 @@ void Context::init_instance(Window& window, vr::Instance& vr_instance)
     }
 
     vk::DebugUtilsMessengerCreateInfoEXT debug_create_info {
+        .pNext = nullptr,
         .messageSeverity = /*vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose |*/ vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning |
             /*vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo |*/ vk::DebugUtilsMessageSeverityFlagBitsEXT::eError,
         .messageType = vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral | vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance | vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation,

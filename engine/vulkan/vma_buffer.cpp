@@ -8,12 +8,14 @@ Vma_buffer::Vma_buffer(Vma_buffer&& other) noexcept :
     buffer(std::move(other.buffer)),
     m_device(other.m_device),
     m_allocator(other.m_allocator),
-    m_allocation(other.m_allocation)
+    m_allocation(other.m_allocation),
+    m_mapped(other.m_mapped)
 {
     other.m_device = nullptr;
     other.buffer = nullptr;
     other.m_allocator = nullptr;
     other.m_allocation = nullptr;
+    other.m_mapped = nullptr;
 }
 
 Vma_buffer& Vma_buffer::operator=(Vma_buffer&& other) noexcept
@@ -22,6 +24,7 @@ Vma_buffer& Vma_buffer::operator=(Vma_buffer&& other) noexcept
     std::swap(buffer, other.buffer);
     std::swap(m_allocator, other.m_allocator);
     std::swap(m_allocation, other.m_allocation);
+    std::swap(m_mapped, other.m_mapped);
     return *this;
 }
 
@@ -40,6 +43,9 @@ Vma_buffer::Vma_buffer(vk::Device device, VmaAllocator allocator, vk::BufferCrea
 
 Vma_buffer::~Vma_buffer()
 {
+    if (m_mapped) {
+        unmap();
+    }
     if (m_device) {
         m_device.destroyBuffer(buffer);
         vmaFreeMemory(m_allocator, m_allocation);
@@ -48,24 +54,20 @@ Vma_buffer::~Vma_buffer()
 
 void Vma_buffer::copy(const void* data, size_t size)
 {
-    void* mapped;
-    vmaMapMemory(m_allocator, m_allocation, &mapped);
-    memcpy(mapped, data, size);
-    vmaFlushAllocation(m_allocator, m_allocation, 0, VK_WHOLE_SIZE);
-    vmaUnmapMemory(m_allocator, m_allocation);
+    memcpy(m_mapped, data, size);
 }
 
 void* Vma_buffer::map()
 {
-    void* mapped;
-    vmaMapMemory(m_allocator, m_allocation, &mapped);
-    return mapped;
+    vmaMapMemory(m_allocator, m_allocation, &m_mapped);
+    return m_mapped;
 }
 
 void Vma_buffer::unmap()
 {
     vmaFlushAllocation(m_allocator, m_allocation, 0, VK_WHOLE_SIZE);
     vmaUnmapMemory(m_allocator, m_allocation);
+    m_mapped = nullptr;
 }
 
 Buffer_from_staged::Buffer_from_staged(vk::Device device, VmaAllocator allocator, vk::CommandBuffer command_buffer, vk::BufferCreateInfo buffer_info, const void* data)
@@ -76,7 +78,9 @@ Buffer_from_staged::Buffer_from_staged(vk::Device device, VmaAllocator allocator
             .size = buffer_info.size,
             .usage = vk::BufferUsageFlagBits::eTransferSrc },
         VMA_MEMORY_USAGE_CPU_ONLY);
+    staging.map();
     staging.copy(data, buffer_info.size);
+    staging.unmap();
 
     buffer_info.usage |= vk::BufferUsageFlagBits::eTransferDst;
     result = Vma_buffer(device, allocator, buffer_info, VMA_MEMORY_USAGE_GPU_ONLY);

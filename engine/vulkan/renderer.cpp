@@ -325,7 +325,7 @@ void Renderer::create_per_frame_data(Context& context, Scene& scene, vk::Extent2
                 .usage = vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eRayTracingKHR },
                 VMA_MEMORY_USAGE_CPU_TO_GPU);
         per_frame.push_back(Per_frame{
-            .tlas = Tlas(command_buffer.command_buffer, context, m_blas, scene),
+            .tlas = {command_buffer.command_buffer, context, m_blas, scene},
             .objects = std::move(object_buffer),
             .materials = std::move(material_buffer),
             .lights = std::move(lights_buffer),
@@ -334,6 +334,11 @@ void Renderer::create_per_frame_data(Context& context, Scene& scene, vk::Extent2
             });
     }
     command_buffer.submit_and_wait_idle();
+    for (size_t i = 0u; i < command_pool_size; i++) {
+        per_frame[i].objects.map();
+        per_frame[i].materials.map();
+        per_frame[i].lights.map();
+    }
 }
 
 void Renderer::update_per_frame_data(Scene& scene, size_t command_pool_id)

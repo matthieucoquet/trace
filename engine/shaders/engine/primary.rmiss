@@ -51,11 +51,12 @@ void main()
         vec3 normal = normal(position);
 
         vec3 color  = vec3(0.0);
-        for (int i = 0; i < scene_global.nb_lights; i++)
+        for (int i = 0; i < 1/*scene_global.nb_lights*/; i++)
         {
-            vec3 light_dir = normalize(lights.l[i].position - position);
-            vec3 diffuse = max(dot(normal, light_dir), 0.0) * lights.l[i].color;
-            vec3 ambient = 0.1 * lights.l[i].color;
+            Light light = lights.l[nonuniformEXT(i)];  // nonuniformEXT shouldnt be needed
+            vec3 light_dir = normalize(light.position - position);
+            vec3 diffuse = max(dot(normal, light_dir), 0.0) * light.color;
+            vec3 ambient = 0.1 * light.color;
 
             vec3 reflection = reflect(gl_WorldRayDirectionEXT, normal);
             shadow_payload = 0.0;
