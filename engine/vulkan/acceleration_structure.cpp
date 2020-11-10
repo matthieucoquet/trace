@@ -227,6 +227,18 @@ void Tlas::update(vk::CommandBuffer command_buffer, const Scene& scene, bool fir
         .firstVertex = 0,
         .transformOffset = 0 };
 
+    command_buffer.pipelineBarrier(
+        vk::PipelineStageFlagBits::eTopOfPipe,
+        vk::PipelineStageFlagBits::eAccelerationStructureBuildKHR,
+        {}, {},
+        vk::BufferMemoryBarrier{
+            .srcAccessMask = {},
+            .dstAccessMask = vk::AccessFlagBits::eAccelerationStructureWriteKHR,
+            .buffer = m_scratch_buffer.buffer,
+            .offset = 0u,
+            .size = VK_WHOLE_SIZE
+        }, {});
+
     command_buffer.buildAccelerationStructureKHR(
         vk::AccelerationStructureBuildGeometryInfoKHR{
             .type = vk::AccelerationStructureTypeKHR::eTopLevel,

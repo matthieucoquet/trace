@@ -32,11 +32,11 @@ Session::Session(xr::Session new_session, Instance& instance, vulkan::Context& c
     m_stage_space = session.createReferenceSpace(xr::ReferenceSpaceCreateInfo{
         .referenceSpaceType = Scene::standing ? xr::ReferenceSpaceType::Stage : xr::ReferenceSpaceType::Local });
 
-    uint32_t size_swapchain = m_ray_swapchain.size();
+    //uint32_t size_swapchain = m_ray_swapchain.size();
     auto extent = m_ray_swapchain.vk_view_extent();
     extent.width *= 2;
-    m_renderer.create_per_frame_data(context, scene, extent, m_ray_swapchain.required_format, size_swapchain);
-    m_renderer.create_descriptor_sets(context.descriptor_pool, size_swapchain);
+    m_renderer.create_per_frame_data(context, scene, extent, m_ray_swapchain.required_format, size_command_buffers);
+    m_renderer.create_descriptor_sets(context.descriptor_pool, size_command_buffers);
 
     for(size_t eye_id = 0u; eye_id < 2u; eye_id++)
     {
@@ -208,8 +208,13 @@ void Session::draw_frame(Scene& scene, std::vector<std::unique_ptr<System>>& sys
 
             m_renderer.update_per_frame_data(scene, command_pool_id);
 
-            m_renderer.start_recording(command_buffer, scene, m_ray_swapchain.vk_images[swapchain_index], command_pool_id, m_ray_swapchain.vk_view_extent());
+            auto total_extent = m_ray_swapchain.vk_view_extent();
+            total_extent.width *= 2;
+            m_renderer.start_recording(command_buffer, scene, command_pool_id);
+            m_renderer.barrier_vr_swapchain(command_buffer, m_ray_swapchain.vk_images[swapchain_index]);
+            m_renderer.trace(command_buffer, scene, command_pool_id, total_extent);
             m_mirror.copy(command_buffer, m_renderer.per_frame[command_pool_id].storage_image.image, command_pool_id, m_ray_swapchain.vk_view_extent());
+            m_renderer.copy_to_vr_swapchain(command_buffer, m_ray_swapchain.vk_images[swapchain_index], command_pool_id, total_extent);
             m_renderer.end_recording(command_buffer, command_pool_id);
 
             swapchain_index = m_ui_swapchain.swapchain.acquireSwapchainImage({});

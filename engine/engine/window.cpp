@@ -13,6 +13,14 @@ Window::Window(float recommended_ratio)
     window = glfwCreateWindow(static_cast<int>(recommended_ratio * initial_height), initial_height, "Mirror window", nullptr, nullptr);
 }
 
+Window::Window(int width, int height)
+{
+    glfwInit();
+    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+    window = glfwCreateWindow(width, height, "sdf editor", nullptr, nullptr);
+}
+
 Window::~Window()
 {
     glfwDestroyWindow(window);

@@ -13,6 +13,11 @@ find_package(marl CONFIG REQUIRED)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 find_package(shaderc MODULE REQUIRED)
 
+set(USE_AFTERMATH FALSE CACHE BOOL "")
+if (USE_AFTERMATH)
+find_package(aftermath MODULE REQUIRED)
+endif()
+
 add_library(engine STATIC)
 
 set(SOURCE_CORE
@@ -22,7 +27,7 @@ set(SOURCE_CORE
     core/system.hpp
     core/transform_helpers.hpp)
 set(SOURCE_ENGINE
-    engine/engine.cpp engine/engine.hpp
+    engine/app.cpp engine/app.hpp
     engine/input_glfw_system.cpp engine/input_glfw_system.hpp
     engine/shader_system.cpp engine/shader_system.hpp
     engine/ui_system.cpp engine/ui_system.hpp
@@ -82,6 +87,10 @@ target_link_libraries(engine
     fmt::fmt
     # OpenXR::headers
     OpenXR::openxr_loader)
+if(USE_AFTERMATH)
+target_link_libraries(engine PUBLIC aftermath::aftermath)
+target_compile_options(engine PUBLIC USING_AFTERMATH)
+endif()
 target_compile_features(engine PRIVATE cxx_std_20)
 add_library(sdf_editor::engine ALIAS engine)
 

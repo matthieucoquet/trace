@@ -54,11 +54,13 @@ Scene make_scene()
     scene.materials.push_back(Material{ .color = glm::vec3(0.8f) });
     scene.materials.push_back(Material{ .color = glm::vec3(0.95f, 0.05f, 0.15f) });
     scene.materials.push_back(Material{ .color = glm::vec3(0.1f, 0.15f, 0.85f) });
+
+    scene.lights.push_back(Light{ .position = glm::vec3{ 20.0f, 60.0f, -100.0f }, .color = glm::vec3{ 1.0f } });
     return scene;
 }
 
 Demo::Demo() :
-    Engine(make_scene(), SHADER_SOURCE)
+    App(make_scene(), SHADER_SOURCE)
 {
 }
 

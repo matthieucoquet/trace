@@ -28,3 +28,8 @@ endif()
 ### Create empty target for shaders ###
 file(GLOB_RECURSE shader_list shaders/*)
 add_custom_target(demo_shaders ALL SOURCES ${shader_list})
+
+add_custom_command(TARGET demo POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E remove_directory $<TARGET_FILE_DIR:demo>/textures
+    COMMAND ${CMAKE_COMMAND} -E copy_directory  ${PROJECT_SOURCE_DIR}/engine/textures $<TARGET_FILE_DIR:demo>/textures
+    COMMENT Copy textures)

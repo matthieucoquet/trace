@@ -1,4 +1,4 @@
-#define ADVANCE_RATIO 1.0
+#define ADVANCE_RATIO_MISS 1.0
 
 #define ROCK_ID 3
 #define SAND_ID 4

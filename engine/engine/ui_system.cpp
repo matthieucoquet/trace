@@ -176,8 +176,7 @@ void Ui_system::record_selected(Scene& scene)
                         ImGui::TextWrapped(shader.error.c_str());
                     }
                 };
-                print_error(scene.raygen_narrow_shader);
-                print_error(scene.raygen_wide_shader);
+                print_error(scene.raygen_shader);
                 print_error(scene.primary_miss_shader);
                 print_error(scene.shadow_miss_shader);
                 print_error(scene.shadow_intersection_shader);

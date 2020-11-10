@@ -1,6 +1,8 @@
 //#define DEBUG_SDF
 #define ADVANCE_RATIO 0.9
 
+#define RED_ID 2
+
 float sd_sphere(in vec3 position, in float radius)
 {
     float d = length(position) - radius;

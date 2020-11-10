@@ -4,6 +4,7 @@
 #include "core/shader_data.hpp"
 #include <filesystem>
 #include <shaderc/shaderc.hpp>
+#include <marl/scheduler.h>
 
 namespace vulkan {
 class Context;
@@ -33,6 +34,8 @@ private:
     std::filesystem::path m_engine_directory;
     std::filesystem::path m_scene_directory;
     shaderc::CompileOptions m_group_compile_options;
+
+    marl::Scheduler m_scheduler{ marl::Scheduler::Config::allCores() };
 
     // For multithread access
     std::vector<Shader_file> m_engine_files_copy;

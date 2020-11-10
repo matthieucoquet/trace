@@ -48,7 +48,7 @@ Scene make_scene()
 }
 
 Ingenuity::Ingenuity() :
-    Engine(make_scene(), SHADER_SOURCE)
+    App(make_scene(), SHADER_SOURCE)
 {
 }
 

@@ -9,6 +9,7 @@ public:
     bool framebuffer_minimized = false;
 
     Window(float recommended_ratio);
+    Window(int width, int height);
     Window(const Window& other) = delete;
     Window(Window&& other) = delete;
     Window& operator=(const Window& other) = delete;

@@ -3,6 +3,7 @@
 #include "command_buffer.hpp"
 
 #include <iostream>
+#undef MemoryBarrier
 
 namespace vulkan
 {
@@ -24,7 +25,7 @@ Renderer::~Renderer()
     }
 }
 
-void Renderer::start_recording(vk::CommandBuffer command_buffer, Scene& scene, vk::Image swapchain_image, size_t command_pool_id, vk::Extent2D extent)
+void Renderer::start_recording(vk::CommandBuffer command_buffer, Scene& scene, size_t command_pool_id)
 {
     command_buffer.begin({ .flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit });
     if (scene.pipeline_dirty) {
@@ -46,7 +47,7 @@ void Renderer::start_recording(vk::CommandBuffer command_buffer, Scene& scene, v
         command_buffer.pipelineBarrier(
             vk::PipelineStageFlagBits::eTransfer,
             vk::PipelineStageFlagBits::eRayTracingShaderKHR,
-            {}, {}, 
+            {}, {},
             vk::BufferMemoryBarrier{
                 .srcAccessMask = vk::AccessFlagBits::eTransferWrite,
                 .dstAccessMask = vk::AccessFlagBits::eShaderRead,
@@ -77,18 +78,10 @@ void Renderer::start_recording(vk::CommandBuffer command_buffer, Scene& scene, v
             .offset = 0u,
             .size = VK_WHOLE_SIZE
         }, {});
-    command_buffer.pipelineBarrier(
-        vk::PipelineStageFlagBits::eHost,
-        vk::PipelineStageFlagBits::eRayTracingShaderKHR,
-        {}, {},
-        vk::BufferMemoryBarrier{
-            .srcAccessMask = vk::AccessFlagBits::eHostWrite,
-            .dstAccessMask = vk::AccessFlagBits::eShaderRead,
-            .buffer = per_frame[command_pool_id].objects.buffer,
-            .offset = 0u,
-            .size = VK_WHOLE_SIZE
-        }, {});
+}
 
+void Renderer::barrier_vr_swapchain(vk::CommandBuffer command_buffer, vk::Image swapchain_image)
+{
     //  Swapchain to dst
     command_buffer.pipelineBarrier(
         vk::PipelineStageFlagBits::eTopOfPipe,
@@ -110,22 +103,24 @@ void Renderer::start_recording(vk::CommandBuffer command_buffer, Scene& scene, v
                 .layerCount = 1
             }
         });
+}
 
+void Renderer::trace(vk::CommandBuffer command_buffer, Scene& scene, size_t command_pool_id, vk::Extent2D extent)
+{
     per_frame[command_pool_id].tlas.update(command_buffer, scene, false);
     command_buffer.pipelineBarrier(
         vk::PipelineStageFlagBits::eAccelerationStructureBuildKHR,
         vk::PipelineStageFlagBits::eRayTracingShaderKHR,
-        {}, {}, {}, {});
+        {},
+        vk::MemoryBarrier{
+            .srcAccessMask = vk::AccessFlagBits::eAccelerationStructureWriteKHR,
+            .dstAccessMask = vk::AccessFlagBits::eAccelerationStructureReadKHR,
+        },
+        {}, {});
 
-    vk::StridedBufferRegionKHR raygen_shader_narrow_entry{
+    vk::StridedBufferRegionKHR raygen_shader_entry{
         .buffer = m_pipeline.shader_binding_table.buffer,
         .offset = 0u,
-        .stride = m_pipeline.raytracing_properties.shaderGroupHandleSize,
-        .size = m_pipeline.raytracing_properties.shaderGroupHandleSize,
-    };
-    vk::StridedBufferRegionKHR raygen_shader_wide_entry{
-        .buffer = m_pipeline.shader_binding_table.buffer,
-        .offset = m_pipeline.offset_raygen_side_group,
         .stride = m_pipeline.raytracing_properties.shaderGroupHandleSize,
         .size = m_pipeline.raytracing_properties.shaderGroupHandleSize,
     };
@@ -151,17 +146,17 @@ void Renderer::start_recording(vk::CommandBuffer command_buffer, Scene& scene, v
 
     command_buffer.pushConstants(
         m_pipeline.pipeline_layout,
-        vk::ShaderStageFlagBits::eRaygenKHR | vk::ShaderStageFlagBits::eIntersectionKHR | 
+        vk::ShaderStageFlagBits::eRaygenKHR | vk::ShaderStageFlagBits::eIntersectionKHR |
         vk::ShaderStageFlagBits::eAnyHitKHR | vk::ShaderStageFlagBits::eClosestHitKHR | vk::ShaderStageFlagBits::eMissKHR, 0,
         sizeof(Scene_global), &scene.scene_global);
 
-    constexpr unsigned int foveated_rate = 4u;
-    extent.width *= 2;
-    assert(extent.width % foveated_rate == 0);
-    assert(extent.height % 4 == 0);
+    //constexpr unsigned int foveated_rate = 4u;
+    //extent.width *= 2;
+    //assert(extent.width % foveated_rate == 0);
+    //assert(extent.height % 4 == 0);
 
 
-    command_buffer.traceRaysKHR(
+    /*command_buffer.traceRaysKHR(
         &raygen_shader_wide_entry,
         &miss_shader_entry,
         &hit_shader_entry,
@@ -173,15 +168,15 @@ void Renderer::start_recording(vk::CommandBuffer command_buffer, Scene& scene, v
     command_buffer.pipelineBarrier(
         vk::PipelineStageFlagBits::eRayTracingShaderKHR,
         vk::PipelineStageFlagBits::eRayTracingShaderKHR,
-        {}, {}, {}, {});
+        {}, {}, {}, {});*/
 
     command_buffer.traceRaysKHR(
-        &raygen_shader_narrow_entry,
+        &raygen_shader_entry,
         &miss_shader_entry,
         &hit_shader_entry,
         &callable_shader_entry,
-        extent.width / 2,
-        extent.height / 2,
+        extent.width /*/ 2*/,
+        extent.height /*/ 2*/,
         1u);
 
     //  Img to source
@@ -205,7 +200,10 @@ void Renderer::start_recording(vk::CommandBuffer command_buffer, Scene& scene, v
                 .layerCount = 1
             }
         });
+}
 
+void Renderer::copy_to_vr_swapchain(vk::CommandBuffer command_buffer, vk::Image swapchain_image, size_t command_pool_id, vk::Extent2D extent)
+{
     command_buffer.copyImage(
         per_frame[command_pool_id].storage_image.image, vk::ImageLayout::eTransferSrcOptimal,
         swapchain_image, vk::ImageLayout::eTransferDstOptimal,
@@ -306,12 +304,6 @@ void Renderer::create_per_frame_data(Context& context, Scene& scene, vk::Extent2
                     .layerCount = 1
                 }});
 
-        Vma_buffer object_buffer = Vma_buffer(
-            context.device, context.allocator,
-            vk::BufferCreateInfo{
-                .size = sizeof(glm::mat4) * scene.objects_transform.size(),
-                .usage = vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eRayTracingKHR },
-            VMA_MEMORY_USAGE_CPU_TO_GPU);
         Vma_buffer material_buffer = Vma_buffer(
             context.device, context.allocator,
             vk::BufferCreateInfo{
@@ -326,7 +318,6 @@ void Renderer::create_per_frame_data(Context& context, Scene& scene, vk::Extent2
                 VMA_MEMORY_USAGE_CPU_TO_GPU);
         per_frame.push_back(Per_frame{
             .tlas = {command_buffer.command_buffer, context, m_blas, scene},
-            .objects = std::move(object_buffer),
             .materials = std::move(material_buffer),
             .lights = std::move(lights_buffer),
             .storage_image = std::move(image),
@@ -335,7 +326,6 @@ void Renderer::create_per_frame_data(Context& context, Scene& scene, vk::Extent2
     }
     command_buffer.submit_and_wait_idle();
     for (size_t i = 0u; i < command_pool_size; i++) {
-        per_frame[i].objects.map();
         per_frame[i].materials.map();
         per_frame[i].lights.map();
     }
@@ -343,7 +333,6 @@ void Renderer::create_per_frame_data(Context& context, Scene& scene, vk::Extent2
 
 void Renderer::update_per_frame_data(Scene& scene, size_t command_pool_id)
 {
-    per_frame[command_pool_id].objects.copy(scene.objects_transform.data(), sizeof(glm::mat4) * scene.objects_transform.size());
     per_frame[command_pool_id].materials.copy(scene.materials.data(), sizeof(Material) * scene.materials.size());
     per_frame[command_pool_id].lights.copy(scene.lights.data(), sizeof(Light) * scene.lights.size());
 }
@@ -368,11 +357,6 @@ void Renderer::create_descriptor_sets(vk::DescriptorPool descriptor_pool, size_t
             .imageLayout = vk::ImageLayout::eGeneral
         };
 
-        vk::DescriptorBufferInfo objects_info{
-            .buffer = per_frame[i].objects.buffer,
-            .offset = 0u,
-            .range = VK_WHOLE_SIZE
-        };
         vk::DescriptorBufferInfo material_info{
             .buffer = per_frame[i].materials.buffer,
             .offset = 0u,
@@ -416,17 +400,10 @@ void Renderer::create_descriptor_sets(vk::DescriptorPool descriptor_pool, size_t
                 .dstArrayElement = 0,
                 .descriptorCount = 1,
                 .descriptorType = vk::DescriptorType::eStorageBuffer,
-                .pBufferInfo = &objects_info},
-            vk::WriteDescriptorSet{
-                .dstSet = m_descriptor_sets[i],
-                .dstBinding = 4,
-                .dstArrayElement = 0,
-                .descriptorCount = 1,
-                .descriptorType = vk::DescriptorType::eStorageBuffer,
                 .pBufferInfo = &material_info},
             vk::WriteDescriptorSet{
                 .dstSet = m_descriptor_sets[i],
-                .dstBinding = 5,
+                .dstBinding = 4,
                 .dstArrayElement = 0,
                 .descriptorCount = 1,
                 .descriptorType = vk::DescriptorType::eStorageBuffer,

@@ -13,7 +13,7 @@ namespace vulkan
 
 constexpr bool verbose = false;
 
-Context::Context(Window& window, vr::Instance& vr_instance)
+Context::Context(Window& window, vr::Instance* vr_instance)
 {
     init_instance(window, vr_instance);
     surface = window.create_surface(instance);
@@ -33,15 +33,19 @@ Context::~Context()
     instance.destroy();
 }
 
-void Context::init_instance(Window& window, vr::Instance& vr_instance)
+void Context::init_instance(Window& window, vr::Instance* vr_instance)
 {
     auto required_extensions = window.required_extensions();
     required_extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 
     // Warning: vr_required_extensions hold the memory to the string, should not be destroyed until createInstance
-    auto vr_required_extensions = vr_instance.instance.getVulkanInstanceExtensionsKHR(vr_instance.system_id);
-    if (!vr_required_extensions.empty()) {
-        vr_instance.split_and_append(vr_required_extensions.data(), required_extensions);
+    std::string vr_required_extensions{};
+    if (vr_instance)
+    {
+        vr_required_extensions = vr_instance->instance.getVulkanInstanceExtensionsKHR(vr_instance->system_id);
+        if (!vr_required_extensions.empty()) {
+            vr_instance->split_and_append(vr_required_extensions.data(), required_extensions);
+        }
     }
 
     std::array required_instance_layers{ "VK_LAYER_KHRONOS_validation" };
@@ -83,8 +87,8 @@ void Context::init_instance(Window& window, vr::Instance& vr_instance)
     };
 
     instance = vk::createInstance(vk::InstanceCreateInfo{
-        .pNext = &debug_create_info,
-        //.pNext = &validation_features_ext,
+        //.pNext = &debug_create_info,
+        .pNext = &validation_features_ext,
         .pApplicationInfo = &app_info,
         .enabledLayerCount = static_cast<uint32_t>(required_instance_layers.size()),
         .ppEnabledLayerNames = required_instance_layers.data(),
@@ -95,7 +99,7 @@ void Context::init_instance(Window& window, vr::Instance& vr_instance)
     m_debug_messenger = instance.createDebugUtilsMessengerEXT(debug_create_info);
 }
 
-void Context::init_device(vr::Instance& vr_instance)
+void Context::init_device(vr::Instance* vr_instance)
 {
     std::vector required_device_extensions = {
         VK_KHR_SWAPCHAIN_EXTENSION_NAME,
@@ -107,15 +111,25 @@ void Context::init_device(vr::Instance& vr_instance)
         // VK_NV_DEVICE_DIAGNOSTIC_CHECKPOINTS_EXTENSION_NAME
     };
 
-    std::vector<vk::PhysicalDevice> potential_physical_devices;
-    auto vr_required_extensions = vr_instance.instance.getVulkanDeviceExtensionsKHR(vr_instance.system_id);
-    if (!vr_required_extensions.empty()) {
-        vr_instance.split_and_append(vr_required_extensions.data(), required_device_extensions);
-    }
-    potential_physical_devices.push_back(vr_instance.instance.getVulkanGraphicsDeviceKHR(vr_instance.system_id, instance));
+#ifdef USING_AFTERMATH
+    required_device_extensions.push_back(VK_NV_DEVICE_DIAGNOSTIC_CHECKPOINTS_EXTENSION_NAME);
+    required_device_extensions.push_back(VK_NV_DEVICE_DIAGNOSTICS_CONFIG_EXTENSION_NAME);
+#endif
 
-    // If no VR
-    //potential_physical_devices = instance.enumeratePhysicalDevices();
+    std::vector<vk::PhysicalDevice> potential_physical_devices;
+    std::string vr_required_extensions{};
+    if (vr_instance)
+    {
+        vr_required_extensions = vr_instance->instance.getVulkanDeviceExtensionsKHR(vr_instance->system_id);
+        if (!vr_required_extensions.empty()) {
+            vr_instance->split_and_append(vr_required_extensions.data(), required_device_extensions);
+        }
+        potential_physical_devices.push_back(vr_instance->instance.getVulkanGraphicsDeviceKHR(vr_instance->system_id, instance));
+    }
+    else
+    {
+        potential_physical_devices = instance.enumeratePhysicalDevices();
+    }
 
     for (const auto& potential_physical_device : potential_physical_devices)
     {
@@ -192,6 +206,16 @@ void Context::init_device(vr::Instance& vr_instance)
             .uniformBufferStandardLayout = true,
             .bufferDeviceAddress = true
         };
+#ifdef USING_AFTERMATH
+        vk::DeviceDiagnosticsConfigCreateInfoNV aftermath_features{
+            .flags =
+                vk::DeviceDiagnosticsConfigFlagBitsNV::eEnableAutomaticCheckpoints |
+                vk::DeviceDiagnosticsConfigFlagBitsNV::eEnableResourceTracking |
+                vk::DeviceDiagnosticsConfigFlagBitsNV::eEnableShaderDebugInfo
+        };
+        vulkan_12_features.pNext = &aftermath_features;
+#endif
+
         vk::PhysicalDeviceRayTracingFeaturesKHR raytracing_features {
             .pNext = &vulkan_12_features,
             .rayTracing = true
@@ -202,6 +226,7 @@ void Context::init_device(vr::Instance& vr_instance)
                 .shaderStorageImageMultisample = true,
             }
         };
+
         device = physical_device.createDevice(vk::DeviceCreateInfo{
             .pNext = &device_features,  // Using pNext instead of pEnabledFeatures to enable raytracing
             .queueCreateInfoCount = 1u,
@@ -258,7 +283,7 @@ void Context::init_allocator()
 
 void Context::init_descriptor_pool()
 {
-    constexpr uint32_t max_swapchain_size = 4u;
+    constexpr uint32_t max_swapchain_size = 10u;
     std::array pool_sizes
     {
         vk::DescriptorPoolSize {

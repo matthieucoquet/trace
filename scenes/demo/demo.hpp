@@ -1,10 +1,12 @@
 #pragma once
-#include "engine/engine.hpp"
+#include "engine/app.hpp"
 
 namespace demo
 {
 
-class Demo : public Engine
+using App = Desktop_app;
+
+class Demo : public App
 {
 public:
     Demo();

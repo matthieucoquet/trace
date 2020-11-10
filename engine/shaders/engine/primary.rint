@@ -8,13 +8,10 @@
 #include "map_function"
 #include "raymarch.glsl"
 
-layout(binding = 3, set = 0, scalar) buffer Objects { Object o[]; } objects;
-
 void main()
 {
-    Object object = objects.o[nonuniformEXT(gl_InstanceID)];
-    Ray ray = Ray(vec3(object.world_to_model * vec4(gl_WorldRayOriginEXT, 1.0f)), 
-                  vec3(object.world_to_model * vec4(gl_WorldRayDirectionEXT, 0.0f)));
+    Ray ray = Ray(vec3(gl_WorldToObjectEXT * vec4(gl_WorldRayOriginEXT, 1.0f)), 
+                  vec3(gl_WorldToObjectEXT * vec4(gl_WorldRayDirectionEXT, 0.0f)));
 #ifdef DEBUG_SDF
     vec3 normal = vec3(0.0, 0.0, 1.0);
     float t = -dot(ray.origin, normal) / dot(ray.direction, normal);

@@ -66,8 +66,9 @@ Shader_system::Shader_system(vulkan::Context& context, Scene& scene, std::string
     m_engine_directory(SHADER_SOURCE),
     m_scene_directory(scene_shader_path)
 {
-    //m_group_compile_options.SetOptimizationLevel(shaderc_optimization_level_performance);
-    m_group_compile_options.SetOptimizationLevel(shaderc_optimization_level_zero);
+    m_scheduler.bind();
+    m_group_compile_options.SetOptimizationLevel(shaderc_optimization_level_performance);
+    //m_group_compile_options.SetOptimizationLevel(shaderc_optimization_level_zero);
     m_group_compile_options.SetWarningsAsErrors();
     m_group_compile_options.SetTargetEnvironment(shaderc_target_env_vulkan, shaderc_env_version_vulkan_1_2);
     m_group_compile_options.SetTargetSpirv(shaderc_spirv_version_1_5);
@@ -108,8 +109,7 @@ Shader_system::Shader_system(vulkan::Context& context, Scene& scene, std::string
         assert(file_it != scene.engine_shader_files.cend());
         return static_cast<int>(std::distance(scene.engine_shader_files.cbegin(), file_it));
     };
-    scene.raygen_narrow_shader.file_id = find_file("raygen_narrow.rgen");
-    scene.raygen_wide_shader.file_id = find_file("raygen_wide.rgen");
+    scene.raygen_shader.file_id = find_file("raygen.rgen");
     scene.primary_miss_shader.file_id = find_file("primary.rmiss");
     scene.shadow_miss_shader.file_id = find_file("shadow.rmiss");
     scene.shadow_intersection_shader.file_id = find_file("shadow.rint");
@@ -129,8 +129,7 @@ Shader_system::Shader_system(vulkan::Context& context, Scene& scene, std::string
             compile_shaders.done();
         });
     }
-    compile(scene.engine_shader_files, scene.scene_shader_files, scene.raygen_narrow_shader, shaderc_raygen_shader);
-    compile(scene.engine_shader_files, scene.scene_shader_files, scene.raygen_wide_shader, shaderc_raygen_shader);
+    compile(scene.engine_shader_files, scene.scene_shader_files, scene.raygen_shader, shaderc_raygen_shader);
     compile(scene.engine_shader_files, scene.scene_shader_files, scene.primary_miss_shader, shaderc_miss_shader);
     compile(scene.engine_shader_files, scene.scene_shader_files, scene.shadow_miss_shader, shaderc_miss_shader);
     compile(scene.engine_shader_files, scene.scene_shader_files, scene.shadow_intersection_shader, shaderc_intersection_shader);
@@ -182,8 +181,7 @@ void Shader_system::step(Scene& scene)
             marl::schedule([&scene, this]
             {
                 m_recompile_info.clear();
-                check_if_dirty(scene.raygen_narrow_shader, shaderc_raygen_shader);
-                check_if_dirty(scene.raygen_wide_shader, shaderc_raygen_shader);
+                check_if_dirty(scene.raygen_shader, shaderc_raygen_shader);
                 check_if_dirty(scene.primary_miss_shader, shaderc_miss_shader);
                 check_if_dirty(scene.shadow_miss_shader, shaderc_miss_shader);
                 check_if_dirty(scene.shadow_intersection_shader, shaderc_intersection_shader);
@@ -240,10 +238,8 @@ void Shader_system::check_if_dirty(Shader& shader, shaderc_shader_kind shader_ki
 
 void Shader_system::cleanup(Scene& scene)
 {
-    if (scene.raygen_narrow_shader.module)
-        m_device.destroyShaderModule(scene.raygen_narrow_shader.module);
-    if (scene.raygen_wide_shader.module)
-        m_device.destroyShaderModule(scene.raygen_wide_shader.module);
+    if (scene.raygen_shader.module)
+        m_device.destroyShaderModule(scene.raygen_shader.module);
     if (scene.primary_miss_shader.module)
         m_device.destroyShaderModule(scene.primary_miss_shader.module);
     if (scene.shadow_miss_shader.module)
@@ -258,6 +254,7 @@ void Shader_system::cleanup(Scene& scene)
         if (shader_group.shadow_any_hit.module)
             m_device.destroyShaderModule(shader_group.shadow_any_hit.module);
     }
+    m_scheduler.unbind();
 }
 
 void Shader_system::compile(

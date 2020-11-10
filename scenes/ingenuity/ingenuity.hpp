@@ -1,10 +1,11 @@
 #pragma once
-#include "engine/engine.hpp"
+#include "engine/app.hpp"
 
 namespace ingenuity
 {
 
-class Ingenuity : public Engine
+using App = Vr_app;
+class Ingenuity : public App
 {
 public:
     Ingenuity();

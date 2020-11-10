@@ -19,7 +19,6 @@ public:
     vk::DescriptorSetLayout descriptor_set_layout;
     Vma_buffer shader_binding_table{};
 
-    vk::DeviceSize offset_raygen_side_group;
     vk::DeviceSize offset_miss_group;
     vk::DeviceSize offset_hit_group;
     size_t nb_group_miss;

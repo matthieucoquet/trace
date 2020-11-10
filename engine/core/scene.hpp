@@ -32,8 +32,7 @@ struct Scene
     bool pipeline_dirty = false;
     std::vector<Shader_file> engine_shader_files;
     std::vector<Shader_file> scene_shader_files;
-    Shader raygen_narrow_shader;
-    Shader raygen_wide_shader;
+    Shader raygen_shader;
     Shader primary_miss_shader;
     Shader shadow_miss_shader;
     Shader shadow_intersection_shader;
