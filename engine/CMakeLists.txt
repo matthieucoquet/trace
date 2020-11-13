@@ -11,7 +11,9 @@ find_package(marl CONFIG REQUIRED)
 # import shaderc as a module
 # Should switch to a config when shaderc supports it
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
+if (WIN32)
 find_package(shaderc MODULE REQUIRED)
+endif()
 
 set(USE_AFTERMATH FALSE CACHE BOOL "")
 if (USE_AFTERMATH)
@@ -76,10 +78,14 @@ target_include_directories(engine PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(engine SYSTEM PUBLIC ${Vulkan_INCLUDE_DIR}
                                                 ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
+if (WIN32)
+    target_link_libraries(engine PRIVATE shaderc::shaderc_combined)
+else()
+    target_link_libraries(engine PRIVATE shaderc_combined)
+endif()
 target_link_libraries(engine
     PRIVATE
     glfw
-    shaderc::shaderc_combined
     imgui::imgui
     PUBLIC
     glm

@@ -30,8 +30,8 @@ public:
     Renderer(Context& context, Scene& scene);
     Renderer(const Renderer& other) = delete;
     Renderer(Renderer&& other) = delete;
-    Renderer& operator=(const Renderer& other) = default;
-    Renderer& operator=(Renderer&& other) = default;
+    Renderer& operator=(const Renderer& other) = delete;
+    Renderer& operator=(Renderer&& other) = delete;
     ~Renderer();
 
     void update_per_frame_data(Scene& scene, size_t command_pool_id);

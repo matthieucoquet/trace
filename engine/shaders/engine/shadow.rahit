@@ -23,21 +23,17 @@ float soft_shadow(in Ray ray, in float factor)
         distance = distance / len;
         res = min(res, factor * distance / t);
         t += ADVANCE_RATIO * distance;
-        //res = min( res, 0.4);
     }
     return res;
 }
 
 void main()
 {
-    shadow_payload = 0.0f;
-    //Ray ray = Ray(gl_WorldToObjectEXT * vec4(gl_WorldRayOriginEXT, 1.0f), 
-    //              gl_WorldToObjectEXT * vec4(gl_WorldRayDirectionEXT, 0.0f));
-    //shadow_payload = 0.5f;
-    //shadow_payload = min(shadow_payload, soft_shadow(ray, 32.0));
-    //shadow_payload = soft_shadow(ray, 32.0);
-    //if (shadow_payload == 0.0)
-    //{
-    //    terminateRayEXT();
-    //}
+    Ray ray = Ray(gl_WorldToObjectEXT * vec4(gl_WorldRayOriginEXT, 1.0f),
+                  gl_WorldToObjectEXT * vec4(gl_WorldRayDirectionEXT, 0.0f));
+    shadow_payload = min(shadow_payload, soft_shadow(ray, 32.0));
+    if (shadow_payload == 0.0)
+    {
+        terminateRayEXT();
+    }
 }

@@ -10,7 +10,7 @@ class Context;
 class Desktop_mirror
 {
 public:
-    Desktop_mirror(Context& context, size_t size);
+    Desktop_mirror(Context& context, size_t size, bool vr_mode = true);
     Desktop_mirror(const Desktop_mirror& other) = delete;
     Desktop_mirror(Desktop_mirror&& other) = delete;
     Desktop_mirror& operator=(const Desktop_mirror& other) = default;

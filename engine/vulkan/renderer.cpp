@@ -150,26 +150,6 @@ void Renderer::trace(vk::CommandBuffer command_buffer, Scene& scene, size_t comm
         vk::ShaderStageFlagBits::eAnyHitKHR | vk::ShaderStageFlagBits::eClosestHitKHR | vk::ShaderStageFlagBits::eMissKHR, 0,
         sizeof(Scene_global), &scene.scene_global);
 
-    //constexpr unsigned int foveated_rate = 4u;
-    //extent.width *= 2;
-    //assert(extent.width % foveated_rate == 0);
-    //assert(extent.height % 4 == 0);
-
-
-    /*command_buffer.traceRaysKHR(
-        &raygen_shader_wide_entry,
-        &miss_shader_entry,
-        &hit_shader_entry,
-        &callable_shader_entry,
-        extent.width / foveated_rate,
-        extent.height / foveated_rate,
-        1u);
-
-    command_buffer.pipelineBarrier(
-        vk::PipelineStageFlagBits::eRayTracingShaderKHR,
-        vk::PipelineStageFlagBits::eRayTracingShaderKHR,
-        {}, {}, {}, {});*/
-
     command_buffer.traceRaysKHR(
         &raygen_shader_entry,
         &miss_shader_entry,
@@ -215,7 +195,7 @@ void Renderer::copy_to_vr_swapchain(vk::CommandBuffer command_buffer, vk::Image 
                 .layerCount = 1u
             },
             .srcOffset = { 0, 0, 0 },
-            .dstSubresource = /*vk::ImageSubresourceLayers*/{
+            .dstSubresource = {
                 .aspectMask = vk::ImageAspectFlagBits::eColor,
                 .mipLevel = 0u,
                 .baseArrayLayer = 0u,
@@ -388,7 +368,7 @@ void Renderer::create_descriptor_sets(vk::DescriptorPool descriptor_pool, size_t
                 .descriptorType = vk::DescriptorType::eStorageImage,
                 .pImageInfo = &image_info},
             vk::WriteDescriptorSet{
-                .dstSet = m_descriptor_sets[0],
+                .dstSet = m_descriptor_sets[i],
                 .dstBinding = 2,
                 .dstArrayElement = 0,
                 .descriptorCount = 1,

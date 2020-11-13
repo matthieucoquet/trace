@@ -3,7 +3,7 @@
 
 struct GLFWwindow;
 
-class Input_glfw_system : public System
+class Input_glfw_system final : public System
 {
 public:
     GLFWwindow* window;
@@ -12,7 +12,7 @@ public:
     Input_glfw_system(Input_glfw_system&& other) = delete;
     Input_glfw_system& operator=(const Input_glfw_system& other) = delete;
     Input_glfw_system& operator=(Input_glfw_system&& other) = delete;
-    ~Input_glfw_system() override final;
+    ~Input_glfw_system() override;
     void step(Scene& scene) override final;
 private:
     double m_time = 0.0;

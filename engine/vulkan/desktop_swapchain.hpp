@@ -17,7 +17,7 @@ public:
     vk::Extent2D extent;
     std::array<vk::Image, image_count> images;
 
-    Desktop_swapchain(Context& context);
+    Desktop_swapchain(Context& context, bool vr_mode);
     Desktop_swapchain(const Desktop_swapchain& other) = delete;
     Desktop_swapchain(Desktop_swapchain&& other) = delete;
     Desktop_swapchain& operator=(const Desktop_swapchain& other) = default;

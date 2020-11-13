@@ -5,7 +5,7 @@
 struct Shader;
 struct Shader_file;
 
-class Ui_system : public System
+class Ui_system final : public System
 {
 public:
     Ui_system();
@@ -13,7 +13,7 @@ public:
     Ui_system(Ui_system&& other) = delete;
     Ui_system& operator=(const Ui_system& other) = delete;
     Ui_system& operator=(Ui_system&& other) = delete;
-    ~Ui_system() override final = default;
+    ~Ui_system() override = default;
     void step(Scene& scene) override final;
 private:
     enum class Selected

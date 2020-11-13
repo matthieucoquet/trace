@@ -48,8 +48,8 @@ void main()
     {
         vec3 position = gl_WorldRayOriginEXT + gl_WorldRayDirectionEXT * hit.dist;
 
-        vec3 normal = normal(position);
-        vec3 color  = vec3(0.0);        
+        vec3 normal = normal(position);
+        vec3 color  = vec3(0.0);        
         for (int i = 0; i < scene_global.nb_lights; i++)
         {
             Light light = lights.l[nonuniformEXT(i)];  // nonuniformEXT shouldnt be needed
@@ -59,8 +59,7 @@ void main()
 
             vec3 reflection = reflect(gl_WorldRayDirectionEXT, normal);
             shadow_payload = 0.0;
-            //if (dot(normal, light_dir) > 0)
-            /*if (true)
+            if (dot(normal, light_dir) > 0)
             {
                 shadow_payload = 1.0;
                 traceRayEXT(topLevelAS,  // acceleration structure
@@ -75,32 +74,14 @@ void main()
                             10.0,       // ray max range
                             1            // payload (location = 1)
                             );
-            }*/
-            /*if (hit_value.x == 0.0)
-            {
-                hit_value.x = 0.1;
-                vec3 reflection = reflect(gl_WorldRayDirectionEXT, normal);
-                traceRayEXT(topLevelAS,  // acceleration structure
-                    gl_RayFlagsOpaqueEXT,
-                    0xFF,        // cullMask
-                    0,           // sbtRecordOffset
-                    0,           // sbtRecordStride
-                    0,           // missIndex
-                    position,    // ray origin
-                    0.001,       // ray min range
-                    reflection,   // ray direction
-                    100.0,       // ray max range
-                    0            // payload (location = 1)
-                    );
-            }*/
+            }
             vec3 spec = vec3(max(dot(normal, reflection), 0.0));
             color = ambient + shadow_payload * (spec + diffuse);
         }
         
         Material material = materials.m[nonuniformEXT(hit.material_id)];
         float front = dot(position - scene_global.ui_position, scene_global.ui_normal) <= 0.0f ? 0.0f : 1.0f;
-        //hit_value = vec4(color * material.color, front);
-        hit_value = vec4(color, front);
+        hit_value = vec4(color * material.color, front);
     }
     else
     {

@@ -10,7 +10,7 @@ namespace vulkan {
 class Context;
 }
 
-class Shader_system : public System
+class Shader_system final : public System
 {
 public:
     Shader_system(vulkan::Context& context, Scene& scene, std::string_view scene_shader_path);
@@ -18,7 +18,7 @@ public:
     Shader_system(Shader_system&& other) = delete;
     Shader_system& operator=(const Shader_system& other) = delete;
     Shader_system& operator=(Shader_system&& other) = delete;
-    ~Shader_system() override final = default;
+    ~Shader_system() override = default;
     void step(Scene& scene) override final;
     void cleanup(Scene& scene)  override final;
 private:

@@ -39,8 +39,8 @@ public:
     Blas(Context& context);
     Blas(const Blas& other) = delete;
     Blas(Blas&& other) = delete;
-    Blas& operator=(const Blas& other) = default;
-    Blas& operator=(Blas&& other) = default;
+    Blas& operator=(const Blas& other) = delete;
+    Blas& operator=(Blas&& other) = delete;
     ~Blas() = default;
 private:
     Vma_buffer m_aabbs_buffer;
@@ -52,8 +52,8 @@ public:
     Tlas(vk::CommandBuffer command_buffer, Context& context, const Blas& blas, const Scene& scene);
     Tlas(const Tlas& other) = delete;
     Tlas(Tlas&& other) = default;
-    Tlas& operator=(const Tlas& other) = default;
-    Tlas& operator=(Tlas&& other) = default;
+    Tlas& operator=(const Tlas& other) = delete;
+    Tlas& operator=(Tlas&& other) = delete;
     ~Tlas() = default;
 
     void update(vk::CommandBuffer command_buffer, const Scene& scene, bool first_build);

@@ -4,7 +4,7 @@
 namespace ingenuity
 {
 
-using App = Vr_app;
+using App = Desktop_app;
 class Ingenuity : public App
 {
 public:

@@ -45,7 +45,7 @@ void main()
         vec3 spec = pow(max(dot(normal, halfway), 0.0), 32.0) * light.color;
 
         shadow_payload = 0.0;
-        //if (dot(normal, light_dir) > 0)
+        if (dot(normal, light_dir) > 0)
         {
             light_dir =  gl_ObjectToWorldEXT * vec4(light_dir, 0.0f);
             shadow_payload = 1.0;
@@ -62,23 +62,6 @@ void main()
                         1            // payload (location = 1)
                         );
         }
-        /*if (hit_value.x == 0.0)
-        {
-            hit_value.x = 0.1;
-                    vec3 reflection = reflect(gl_WorldRayDirectionEXT, normal);
-                    traceRayEXT(topLevelAS,  // acceleration structure
-                        gl_RayFlagsOpaqueEXT,
-                        0xFF,        // cullMask
-                        0,           // sbtRecordOffset
-                        0,           // sbtRecordStride
-                        0,           // missIndex
-                        position,    // ray origin
-                        0.001,       // ray min range
-                        reflection,   // ray direction
-                        100.0,       // ray max range
-                        0            // payload (location = 1)
-                        );
-        }*/
         
         color = ambient + hit_value.xyz;
         color = ambient + shadow_payload * (spec + diffuse);
@@ -86,7 +69,6 @@ void main()
     
 
     Material material = materials.m[nonuniformEXT(gl_HitKindEXT)];
-    hit_value = vec4(color, front);
-    //hit_value = vec4(color * material.color, front);
+    hit_value = vec4(color * material.color, front);
 #endif
 }

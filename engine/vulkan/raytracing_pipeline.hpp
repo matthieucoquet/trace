@@ -27,8 +27,8 @@ public:
     Raytracing_pipeline(Context& context, Scene& scene, vk::Sampler immutable_sampler);
     Raytracing_pipeline(const Raytracing_pipeline& other) = delete;
     Raytracing_pipeline(Raytracing_pipeline&& other) = delete;
-    Raytracing_pipeline& operator=(const Raytracing_pipeline& other) = default;
-    Raytracing_pipeline& operator=(Raytracing_pipeline&& other) = default;
+    Raytracing_pipeline& operator=(const Raytracing_pipeline& other) = delete;
+    Raytracing_pipeline& operator=(Raytracing_pipeline&& other) = delete;
     ~Raytracing_pipeline();
 
     void create_pipeline(Scene& scene);

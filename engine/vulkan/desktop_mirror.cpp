@@ -5,10 +5,10 @@
 namespace vulkan
 {
 
-Desktop_mirror::Desktop_mirror(Context& context, size_t size) :
+Desktop_mirror::Desktop_mirror(Context& context, size_t size, bool vr_mode) :
     m_device(context.device),
     m_queue(context.graphics_queue),
-    m_swapchain(context)
+    m_swapchain(context, vr_mode)
 {
     create_synchronization(size);
 }

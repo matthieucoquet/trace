@@ -6,11 +6,11 @@
 namespace vulkan
 {
 
-Desktop_swapchain::Desktop_swapchain(Context& context) :
+Desktop_swapchain::Desktop_swapchain(Context& context, bool vr_mode) :
     m_device(context.device)
 {
     constexpr vk::ColorSpaceKHR colorspace{ vk::ColorSpaceKHR::eSrgbNonlinear };
-    constexpr vk::PresentModeKHR present_mode{ vk::PresentModeKHR::eMailbox };
+    const vk::PresentModeKHR present_mode{ vr_mode ? vk::PresentModeKHR::eMailbox : vk::PresentModeKHR::eFifo };
 
     auto available_formats = context.physical_device.getSurfaceFormatsKHR(context.surface);
     if (std::find(available_formats.cbegin(), available_formats.cend(), vk::SurfaceFormatKHR{ format, colorspace }) == available_formats.cend())
