@@ -5,6 +5,9 @@
 #include <filesystem>
 #include <shaderc/shaderc.hpp>
 #include <marl/scheduler.h>
+#ifdef USING_AFTERMATH
+#include "vulkan/aftermath_database.hpp"
+#endif
 
 namespace vulkan {
 class Context;
@@ -36,6 +39,10 @@ private:
     shaderc::CompileOptions m_group_compile_options;
 
     marl::Scheduler m_scheduler{ marl::Scheduler::Config::allCores() };
+
+#ifdef USING_AFTERMATH
+    Aftermath_database* m_aftermath_database;
+#endif
 
     // For multithread access
     std::vector<Shader_file> m_engine_files_copy;

@@ -19,7 +19,8 @@ Acceleration_structure::Acceleration_structure(Acceleration_structure&& other) n
     acceleration_structure(other.acceleration_structure),
     m_device(other.m_device),
     m_allocator(other.m_allocator),
-    m_allocation(other.m_allocation)
+    m_allocation(other.m_allocation),
+    m_structure_buffer(std::move(other.m_structure_buffer))
 {
     other.acceleration_structure = nullptr;
     other.m_device = nullptr;
@@ -43,107 +44,83 @@ Acceleration_structure::~Acceleration_structure()
     }
 }
 
-Vma_buffer Acceleration_structure::allocate_scratch_buffer() const
-{
-    auto memory_requirement = m_device.getAccelerationStructureMemoryRequirementsKHR(vk::AccelerationStructureMemoryRequirementsInfoKHR{
-        .type = vk::AccelerationStructureMemoryRequirementsTypeKHR::eBuildScratch,
-        .buildType = vk::AccelerationStructureBuildTypeKHR::eDevice,
-        .accelerationStructure = acceleration_structure });
-
-    return Vma_buffer(
-        m_device, m_allocator,
-        vk::BufferCreateInfo{
-            .size = memory_requirement.memoryRequirements.size,
-            .usage = vk::BufferUsageFlagBits::eShaderDeviceAddress | vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eRayTracingKHR,
-            .sharingMode = vk::SharingMode::eExclusive },
-        VMA_MEMORY_USAGE_GPU_ONLY);
-}
-
-void Acceleration_structure::allocate_object_memory()
-{
-    auto memory_requirement = m_device.getAccelerationStructureMemoryRequirementsKHR(vk::AccelerationStructureMemoryRequirementsInfoKHR{
-        .type = vk::AccelerationStructureMemoryRequirementsTypeKHR::eObject,
-        .buildType = vk::AccelerationStructureBuildTypeKHR::eDevice,
-        .accelerationStructure = acceleration_structure });
-    ;
-    VmaAllocationCreateInfo alloc_create_info{
-        .usage = VMA_MEMORY_USAGE_GPU_ONLY
-    };
-    vmaAllocateMemory(m_allocator,
-        reinterpret_cast<const VkMemoryRequirements*>(&memory_requirement.memoryRequirements),
-        &alloc_create_info, &m_allocation, nullptr);
-
-    VmaAllocationInfo allocation_info;
-    vmaGetAllocationInfo(m_allocator, m_allocation, &allocation_info);
-    assert(allocation_info.offset % memory_requirement.memoryRequirements.alignment == 0);
-
-    m_device.bindAccelerationStructureMemoryKHR(vk::BindAccelerationStructureMemoryInfoKHR{
-        .accelerationStructure = acceleration_structure,
-        .memory = allocation_info.deviceMemory,
-        .memoryOffset = allocation_info.offset });
-}
-
-
 Blas::Blas(Context& context) :
     Acceleration_structure(context)
 {
-    vk::AccelerationStructureCreateGeometryTypeInfoKHR create_geometry {
-        .geometryType = vk::GeometryTypeKHR::eAabbs,
-        .maxPrimitiveCount = 1u,
-        .indexType = vk::IndexType::eNoneKHR,
-        .maxVertexCount = 0,
-        .vertexFormat = vk::Format::eUndefined,
-        .allowsTransforms = false };
-    acceleration_structure = m_device.createAccelerationStructureKHR(vk::AccelerationStructureCreateInfoKHR{
-        .type = vk::AccelerationStructureTypeKHR::eBottomLevel,
-        .flags = vk::BuildAccelerationStructureFlagBitsKHR::ePreferFastTrace,
-        .maxGeometryCount = 1u,
-        .pGeometryInfos = &create_geometry });
-    allocate_object_memory();
-
-
     vk::AabbPositionsKHR aabb{ -0.5f, -0.5f, -0.5f, 0.5f, 0.5f, 0.5f };
     One_time_command_buffer command_buffer(context.device, context.command_pool, context.graphics_queue);
     Buffer_from_staged buffer_and_stage(
         context.device, context.allocator, command_buffer.command_buffer,
         vk::BufferCreateInfo{
             .size = sizeof(vk::AabbPositionsKHR),
-            .usage = vk::BufferUsageFlagBits::eShaderDeviceAddress | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eRayTracingKHR },
-        &aabb);
+            .usage = vk::BufferUsageFlagBits::eAccelerationStructureBuildInputReadOnlyKHR },
+            &aabb);
     m_aabbs_buffer = std::move(buffer_and_stage.result);
 
     vk::DeviceAddress aabb_buffer_address = m_device.getBufferAddress(vk::BufferDeviceAddressInfo{ .buffer = m_aabbs_buffer.buffer });
-    vk::AccelerationStructureGeometryKHR acceleration_structure_geometry {
+    vk::AccelerationStructureGeometryKHR acceleration_structure_geometry{
         .geometryType = vk::GeometryTypeKHR::eAabbs,
         .geometry = vk::AccelerationStructureGeometryDataKHR(vk::AccelerationStructureGeometryAabbsDataKHR{
             .data = vk::DeviceOrHostAddressConstKHR(aabb_buffer_address),
-            .stride = sizeof(vk::AabbPositionsKHR) })
+            .stride = sizeof(vk::AabbPositionsKHR) }),
+        //.flags = vk::GeometryFlagBitsKHR::eOpaque
     };
-    vk::AccelerationStructureGeometryKHR* pointer_acceleration_structure_geometry = &acceleration_structure_geometry;
-    auto build_info_offset = vk::AccelerationStructureBuildOffsetInfoKHR {
-        .primitiveCount = 1u,
-        .primitiveOffset = 0,
-        .firstVertex = 0u,
-        .transformOffset = 0u };
 
-    auto scratch_buffer = allocate_scratch_buffer();
+    vk::AccelerationStructureBuildGeometryInfoKHR geom_info{
+            .type = vk::AccelerationStructureTypeKHR::eBottomLevel,
+            .flags = vk::BuildAccelerationStructureFlagBitsKHR::ePreferFastTrace,
+            .mode = vk::BuildAccelerationStructureModeKHR::eBuild,
+            .geometryCount = 1u,
+            .pGeometries = &acceleration_structure_geometry
+    };
+
+    vk::AccelerationStructureBuildSizesInfoKHR build_size = m_device.getAccelerationStructureBuildSizesKHR(
+        vk::AccelerationStructureBuildTypeKHR::eDevice, geom_info, 1u);
+
+    m_structure_buffer = Vma_buffer(
+        m_device, m_allocator,
+        vk::BufferCreateInfo{
+            .size = build_size.accelerationStructureSize,
+            .usage = vk::BufferUsageFlagBits::eAccelerationStructureStorageKHR | vk::BufferUsageFlagBits::eShaderDeviceAddress,
+            .sharingMode = vk::SharingMode::eExclusive },
+            VmaAllocationCreateInfo{ .usage = VMA_MEMORY_USAGE_GPU_ONLY });
+    Vma_buffer scratch_buffer(
+        m_device, m_allocator,
+        vk::BufferCreateInfo{
+            .size = build_size.accelerationStructureSize,
+            .usage = vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
+            .sharingMode = vk::SharingMode::eExclusive },
+            VmaAllocationCreateInfo{ .usage = VMA_MEMORY_USAGE_GPU_ONLY });
     vk::DeviceAddress scratch_address = m_device.getBufferAddress(vk::BufferDeviceAddressInfo{ .buffer = scratch_buffer.buffer });
+
+    acceleration_structure = m_device.createAccelerationStructureKHR(vk::AccelerationStructureCreateInfoKHR{
+        .createFlags = {},
+        .buffer = m_structure_buffer.buffer,
+        .offset = 0u,
+        .size = build_size.accelerationStructureSize,
+        .type = vk::AccelerationStructureTypeKHR::eBottomLevel });
+
+    geom_info.dstAccelerationStructure = acceleration_structure;
+    geom_info.scratchData = scratch_address;
 
     command_buffer.command_buffer.pipelineBarrier(
         vk::PipelineStageFlagBits::eTransfer,
         vk::PipelineStageFlagBits::eAccelerationStructureBuildKHR,
-        {}, {}, {}, {});
-    command_buffer.command_buffer.buildAccelerationStructureKHR(
-        vk::AccelerationStructureBuildGeometryInfoKHR{
-            .type = vk::AccelerationStructureTypeKHR::eBottomLevel,
-            .flags = vk::BuildAccelerationStructureFlagBitsKHR::ePreferFastTrace,
-            .update = false,
-            .dstAccelerationStructure = acceleration_structure,
-            .geometryArrayOfPointers = false,
-            .geometryCount = 1u,
-            .ppGeometries = &pointer_acceleration_structure_geometry,
-            .scratchData = scratch_address },
-        &build_info_offset);
+        {}, {},
+        vk::BufferMemoryBarrier{
+            .srcAccessMask = vk::AccessFlagBits::eTransferWrite,
+            .dstAccessMask = vk::AccessFlagBits::eShaderRead,
+            .buffer = m_aabbs_buffer.buffer,
+            .offset = 0u,
+            .size = VK_WHOLE_SIZE
+        }, {});
+    vk::AccelerationStructureBuildRangeInfoKHR build_range{
+            .primitiveCount = 1u,
+            .primitiveOffset = 0u,
+            .firstVertex = 0u,
+            .transformOffset = 0u
+    };
+    command_buffer.command_buffer.buildAccelerationStructuresKHR(geom_info, &build_range);
     command_buffer.submit_and_wait_idle();
 
     structure_address = m_device.getAccelerationStructureAddressKHR(vk::AccelerationStructureDeviceAddressInfoKHR{
@@ -155,17 +132,6 @@ Tlas::Tlas(vk::CommandBuffer command_buffer, Context& context, const Blas& blas,
     Acceleration_structure(context)
 {
     auto nb_instances = static_cast<uint32_t>(scene.objects.size());
-    vk::AccelerationStructureCreateGeometryTypeInfoKHR create_geometry{
-        .geometryType = vk::GeometryTypeKHR::eInstances,
-        .maxPrimitiveCount = nb_instances,
-        .allowsTransforms = false };
-    acceleration_structure = m_device.createAccelerationStructureKHR(vk::AccelerationStructureCreateInfoKHR{
-        .type = vk::AccelerationStructureTypeKHR::eTopLevel,
-        .flags = vk::BuildAccelerationStructureFlagBitsKHR::ePreferFastBuild | vk::BuildAccelerationStructureFlagBitsKHR::eAllowUpdate,
-        .maxGeometryCount = 1u,
-        .pGeometryInfos = &create_geometry });
-    allocate_object_memory();
-
     std::vector<vk::AccelerationStructureInstanceKHR> instances{};
     for (uint32_t i = 0u; i < scene.objects.size(); i++)
     {
@@ -181,18 +147,58 @@ Tlas::Tlas(vk::CommandBuffer command_buffer, Context& context, const Blas& blas,
             .mask = 0xFF,
             .instanceShaderBindingTableRecordOffset = 2 * static_cast<uint32_t>(scene.objects[i].group_id), // 2 for primary + shadow
             .accelerationStructureReference = blas.structure_address
-        });
+            });
     }
 
     m_instance_buffer = Vma_buffer(
         context.device, context.allocator,
         vk::BufferCreateInfo{
             .size = sizeof(vk::AccelerationStructureInstanceKHR) * nb_instances,
-            .usage = vk::BufferUsageFlagBits::eShaderDeviceAddress | vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eRayTracingKHR
+            .usage = vk::BufferUsageFlagBits::eAccelerationStructureBuildInputReadOnlyKHR
         },
-        VMA_MEMORY_USAGE_CPU_TO_GPU);
-    m_instance_buffer.map();
-    m_scratch_buffer = allocate_scratch_buffer();
+        VmaAllocationCreateInfo{
+            .flags = VMA_ALLOCATION_CREATE_MAPPED_BIT,
+            .usage = VMA_MEMORY_USAGE_CPU_TO_GPU
+        });
+
+    vk::DeviceAddress instance_buffer_address = m_device.getBufferAddress(vk::BufferDeviceAddressInfo{ .buffer = m_instance_buffer.buffer });
+    m_acceleration_structure_geometry = vk::AccelerationStructureGeometryKHR{
+        .geometryType = vk::GeometryTypeKHR::eInstances,
+        .geometry = vk::AccelerationStructureGeometryDataKHR(vk::AccelerationStructureGeometryInstancesDataKHR{
+            .arrayOfPointers = false,
+            .data = vk::DeviceOrHostAddressConstKHR(instance_buffer_address) })
+    };
+    //m_acceleration_structure_geometry.geometry.instances.data.hostAddress = nullptr;
+
+    vk::AccelerationStructureBuildGeometryInfoKHR geom_info{
+        .type = vk::AccelerationStructureTypeKHR::eTopLevel,
+        .flags = vk::BuildAccelerationStructureFlagBitsKHR::ePreferFastTrace | vk::BuildAccelerationStructureFlagBitsKHR::eAllowUpdate,
+        .geometryCount = 1u,
+        .pGeometries = &m_acceleration_structure_geometry
+    };
+    vk::AccelerationStructureBuildSizesInfoKHR build_size = m_device.getAccelerationStructureBuildSizesKHR(
+        vk::AccelerationStructureBuildTypeKHR::eDevice, geom_info, nb_instances);
+    m_structure_buffer = Vma_buffer(
+        m_device, m_allocator,
+        vk::BufferCreateInfo{
+            .size = build_size.accelerationStructureSize,
+            .usage = vk::BufferUsageFlagBits::eAccelerationStructureStorageKHR | vk::BufferUsageFlagBits::eShaderDeviceAddress,
+            .sharingMode = vk::SharingMode::eExclusive },
+            VmaAllocationCreateInfo{ .usage = VMA_MEMORY_USAGE_GPU_ONLY });
+    m_scratch_buffer = Vma_buffer(
+        m_device, m_allocator,
+        vk::BufferCreateInfo{
+            .size = std::max(build_size.buildScratchSize, build_size.updateScratchSize),
+            .usage = vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
+            .sharingMode = vk::SharingMode::eExclusive },
+            VmaAllocationCreateInfo{ .usage = VMA_MEMORY_USAGE_GPU_ONLY });
+
+    acceleration_structure = m_device.createAccelerationStructureKHR(vk::AccelerationStructureCreateInfoKHR{
+        .createFlags = {},
+        .buffer = m_structure_buffer.buffer,
+        .offset = 0u,
+        .size = build_size.accelerationStructureSize,
+        .type = vk::AccelerationStructureTypeKHR::eTopLevel });
 
     update(command_buffer, scene, true);
 }
@@ -210,47 +216,29 @@ void Tlas::update(vk::CommandBuffer command_buffer, const Scene& scene, bool fir
         };
     }
     m_instance_buffer.copy(reinterpret_cast<void*>(m_instances.data()), m_instances.size() * sizeof(vk::AccelerationStructureInstanceKHR));
+    m_instance_buffer.flush();
 
-    vk::DeviceAddress instance_buffer_address = m_device.getBufferAddress(vk::BufferDeviceAddressInfo{ .buffer = m_instance_buffer.buffer });
     vk::DeviceAddress scratch_address = m_device.getBufferAddress(vk::BufferDeviceAddressInfo{ .buffer = m_scratch_buffer.buffer });
 
-    vk::AccelerationStructureGeometryKHR acceleration_structure_geometry{
-        .geometryType = vk::GeometryTypeKHR::eInstances,
-        .geometry = vk::AccelerationStructureGeometryDataKHR(vk::AccelerationStructureGeometryInstancesDataKHR{
-            .arrayOfPointers = false,
-            .data = vk::DeviceOrHostAddressConstKHR(instance_buffer_address) })
+    vk::AccelerationStructureBuildRangeInfoKHR build_range{
+            .primitiveCount = static_cast<uint32_t>(scene.objects.size()),
+            .primitiveOffset = 0u,
+            .firstVertex = 0u,
+            .transformOffset = 0u
     };
-    vk::AccelerationStructureGeometryKHR* pointer_acceleration_structure_geometry = &acceleration_structure_geometry;
-    vk::AccelerationStructureBuildOffsetInfoKHR build_info_offset{
-        .primitiveCount = static_cast<uint32_t>(scene.objects.size()),
-        .primitiveOffset = 0,
-        .firstVertex = 0,
-        .transformOffset = 0 };
-
-    command_buffer.pipelineBarrier(
-        vk::PipelineStageFlagBits::eTopOfPipe,
-        vk::PipelineStageFlagBits::eAccelerationStructureBuildKHR,
-        {}, {},
-        vk::BufferMemoryBarrier{
-            .srcAccessMask = {},
-            .dstAccessMask = vk::AccessFlagBits::eAccelerationStructureWriteKHR,
-            .buffer = m_scratch_buffer.buffer,
-            .offset = 0u,
-            .size = VK_WHOLE_SIZE
-        }, {});
-
-    command_buffer.buildAccelerationStructureKHR(
+    command_buffer.buildAccelerationStructuresKHR(
         vk::AccelerationStructureBuildGeometryInfoKHR{
             .type = vk::AccelerationStructureTypeKHR::eTopLevel,
-            .flags = vk::BuildAccelerationStructureFlagBitsKHR::ePreferFastBuild | vk::BuildAccelerationStructureFlagBitsKHR::eAllowUpdate,
-            .update = !first_build,
+            .flags = vk::BuildAccelerationStructureFlagBitsKHR::ePreferFastTrace | vk::BuildAccelerationStructureFlagBitsKHR::eAllowUpdate,
+            .mode = first_build ? vk::BuildAccelerationStructureModeKHR::eBuild : vk::BuildAccelerationStructureModeKHR::eUpdate,
             .srcAccelerationStructure = first_build ? nullptr : acceleration_structure,
             .dstAccelerationStructure = acceleration_structure,
-            .geometryArrayOfPointers = false,
-            .geometryCount = 1u,
-            .ppGeometries = &pointer_acceleration_structure_geometry,
-            .scratchData = scratch_address },
-        &build_info_offset);
+            .geometryCount = 1,
+            .pGeometries = &m_acceleration_structure_geometry,
+            .scratchData = scratch_address
+        },
+        &build_range
+        );
 }
 
 }

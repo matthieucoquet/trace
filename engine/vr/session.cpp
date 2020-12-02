@@ -210,7 +210,7 @@ void Session::draw_frame(Scene& scene, std::vector<std::unique_ptr<System>>& sys
 
             auto total_extent = m_ray_swapchain.vk_view_extent();
             total_extent.width *= 2;
-            m_renderer.start_recording(command_buffer, scene, command_pool_id);
+            m_renderer.start_recording(command_buffer, scene);
             m_renderer.barrier_vr_swapchain(command_buffer, m_ray_swapchain.vk_images[swapchain_index]);
             m_renderer.trace(command_buffer, scene, command_pool_id, total_extent);
             m_mirror.copy(command_buffer, m_renderer.per_frame[command_pool_id].storage_image.image, command_pool_id, m_ray_swapchain.vk_view_extent());

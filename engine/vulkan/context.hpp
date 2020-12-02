@@ -1,6 +1,10 @@
 #pragma once
 #include "vk_common.hpp"
 
+#ifdef USING_AFTERMATH
+#include "aftermath_crash_tracker.hpp"
+#endif
+
 class Window;
 namespace vr {
 class Instance;
@@ -12,6 +16,10 @@ namespace vulkan
 class Context
 {
 public:
+#ifdef USING_AFTERMATH
+    Aftermath_crash_tracker aftermath{};
+#endif
+
     vk::Instance instance;
     vk::SurfaceKHR surface;
     vk::Device device;

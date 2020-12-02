@@ -269,7 +269,7 @@ void Imgui_render::draw(ImDrawData* draw_data, vk::CommandBuffer command_buffer,
                     .size = vertex_size,
                     .usage = vk::BufferUsageFlagBits::eVertexBuffer,
                     .sharingMode = vk::SharingMode::eExclusive },
-                VMA_MEMORY_USAGE_CPU_TO_GPU);
+                VmaAllocationCreateInfo{ .usage = VMA_MEMORY_USAGE_CPU_TO_GPU });
         }
         size_t index_size = draw_data->TotalIdxCount * sizeof(ImDrawIdx);
         if (m_size_index_buffer[command_pool_id] < index_size)
@@ -281,7 +281,7 @@ void Imgui_render::draw(ImDrawData* draw_data, vk::CommandBuffer command_buffer,
                     .size = index_size,
                     .usage = vk::BufferUsageFlagBits::eIndexBuffer,
                     .sharingMode = vk::SharingMode::eExclusive },
-                VMA_MEMORY_USAGE_CPU_TO_GPU);
+                VmaAllocationCreateInfo{ .usage = VMA_MEMORY_USAGE_CPU_TO_GPU });
         }
 
         ImDrawIdx* index_mapped = static_cast<ImDrawIdx*>(m_index_buffer[command_pool_id].map());

@@ -36,7 +36,7 @@ public:
 
     void update_per_frame_data(Scene& scene, size_t command_pool_id);
 
-    void start_recording(vk::CommandBuffer command_buffer, Scene& scene, size_t command_pool_id);
+    void start_recording(vk::CommandBuffer command_buffer, Scene& scene);
     void barrier_vr_swapchain(vk::CommandBuffer command_buffer, vk::Image swapchain_image);
     void trace(vk::CommandBuffer command_buffer, Scene& scene, size_t command_pool_id, vk::Extent2D extent);
     void copy_to_vr_swapchain(vk::CommandBuffer command_buffer, vk::Image swapchain_image, size_t command_pool_id, vk::Extent2D extent);

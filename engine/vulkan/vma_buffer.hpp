@@ -14,14 +14,12 @@ public:
     Vma_buffer(Vma_buffer&& other) noexcept;
     Vma_buffer& operator=(const Vma_buffer& other) = delete;
     Vma_buffer& operator=(Vma_buffer&& other) noexcept;
-    Vma_buffer(vk::Device device, VmaAllocator allocator, vk::BufferCreateInfo buffer_info, VmaMemoryUsage memory_usage);
+    Vma_buffer(vk::Device device, VmaAllocator allocator, vk::BufferCreateInfo buffer_info, VmaAllocationCreateInfo allocation_info);
     ~Vma_buffer();
 
     void copy(const void* data, size_t size);
-    void* map(); 
-    void flush() {
-        vmaFlushAllocation(m_allocator, m_allocation, 0, VK_WHOLE_SIZE);
-    }
+    void flush();
+    void* map();
     void unmap();
 private:
     vk::Device m_device;
@@ -36,5 +34,28 @@ struct Buffer_from_staged
     Vma_buffer result;
     Vma_buffer staging;
 };
+
+inline void Vma_buffer::copy(const void* data, size_t size)
+{
+    memcpy(m_mapped, data, size);
+}
+
+inline void Vma_buffer::flush()
+{
+    vmaFlushAllocation(m_allocator, m_allocation, 0, VK_WHOLE_SIZE);
+}
+
+inline void* Vma_buffer::map()
+{
+    vmaMapMemory(m_allocator, m_allocation, &m_mapped);
+    return m_mapped;
+}
+
+inline void Vma_buffer::unmap()
+{
+    vmaFlushAllocation(m_allocator, m_allocation, 0, VK_WHOLE_SIZE);
+    vmaUnmapMemory(m_allocator, m_allocation);
+    m_mapped = nullptr;
+}
 
 }

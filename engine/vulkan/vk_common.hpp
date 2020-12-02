@@ -7,7 +7,7 @@
 #define VK_NO_PROTOTYPES
 #define VULKAN_HPP_NO_SMART_HANDLE  //disable because of bug in vulkan_hpp, its fix in master i think (bug in 141 fixed in 147)
 #define VULKAN_HPP_NO_STRUCT_CONSTRUCTORS
-#define VK_ENABLE_BETA_EXTENSIONS
+//#define VK_ENABLE_BETA_EXTENSIONS
 //#define GLFW_INCLUDE_VULKAN
 //#define VK_USE_PLATFORM_WIN32_KHR
 

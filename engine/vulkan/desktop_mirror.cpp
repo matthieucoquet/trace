@@ -96,7 +96,7 @@ void Desktop_mirror::copy(vk::CommandBuffer& command_buffer, vk::Image vr_image,
             .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
             .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
             .image = m_swapchain.images[m_image_id],
-            .subresourceRange = /*vk::ImageSubresourceRange*/{
+            .subresourceRange = {
                 .aspectMask = vk::ImageAspectFlagBits::eColor,
                 .baseMipLevel = 0,
                 .levelCount = 1u,
@@ -108,6 +108,7 @@ void Desktop_mirror::copy(vk::CommandBuffer& command_buffer, vk::Image vr_image,
 
 void Desktop_mirror::present(vk::CommandBuffer& command_buffer, vk::Fence fence, size_t command_pool_id)
 {
+    //m_queue.waitIdle();
     vk::PipelineStageFlags wait_stages = vk::PipelineStageFlagBits::eTransfer;
     m_queue.submit(
         vk::SubmitInfo{
@@ -120,7 +121,7 @@ void Desktop_mirror::present(vk::CommandBuffer& command_buffer, vk::Fence fence,
             .pSignalSemaphores = &m_semaphore_finished[command_pool_id]
         },
         fence);
-
+    //m_queue.waitIdle();
     auto present_result = m_queue.presentKHR(vk::PresentInfoKHR{
         .waitSemaphoreCount = 1,
         .pWaitSemaphores = &m_semaphore_finished[command_pool_id],
@@ -131,7 +132,7 @@ void Desktop_mirror::present(vk::CommandBuffer& command_buffer, vk::Fence fence,
         assert(false);
     }
     //[[maybe_unused]] auto result = m_device.waitForFences(fence, true, std::numeric_limits<uint64_t>::max());
-    //m_queue.waitIdle();
+    m_queue.waitIdle();
 }
 
 

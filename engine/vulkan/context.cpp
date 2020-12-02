@@ -12,6 +12,7 @@ namespace vulkan
 {
 
 constexpr bool verbose = false;
+constexpr bool sdk_available = false;
 
 Context::Context(Window& window, vr::Instance* vr_instance)
 {
@@ -65,21 +66,21 @@ void Context::init_instance(Window& window, vr::Instance* vr_instance)
         }
     }
 
-    vk::DebugUtilsMessengerCreateInfoEXT debug_create_info {
-        .pNext = nullptr,
-        .messageSeverity = /*vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose |*/ vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning |
-            /*vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo |*/ vk::DebugUtilsMessageSeverityFlagBitsEXT::eError,
-        .messageType = vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral | vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance | vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation,
-        .pfnUserCallback = &debug_callback 
-    };
     std::array validation_features{ vk::ValidationFeatureEnableEXT::eBestPractices };
-        //vk::ValidationFeatureEnableEXT::eGpuAssisted,
-        //vk::ValidationFeatureEnableEXT::eGpuAssistedReserveBindingSlot };
-    vk::ValidationFeaturesEXT validation_features_ext {
-        .pNext = static_cast<vk::DebugUtilsMessengerCreateInfoEXT*>(&debug_create_info),
+    //vk::ValidationFeatureEnableEXT::eGpuAssisted,
+    //vk::ValidationFeatureEnableEXT::eGpuAssistedReserveBindingSlot };
+    vk::ValidationFeaturesEXT validation_features_ext{
         .enabledValidationFeatureCount = static_cast<uint32_t>(validation_features.size()),
         .pEnabledValidationFeatures = validation_features.data()
     };
+    vk::DebugUtilsMessengerCreateInfoEXT debug_create_info{
+        .pNext = sdk_available ? &validation_features : nullptr,
+        .messageSeverity = /*vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose |*/ vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning |
+        /*vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo |*/ vk::DebugUtilsMessageSeverityFlagBitsEXT::eError,
+    .messageType = vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral | vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance | vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation,
+    .pfnUserCallback = &debug_callback
+    };
+
 
     vk::ApplicationInfo app_info {
         .pApplicationName = "trace",
@@ -87,11 +88,10 @@ void Context::init_instance(Window& window, vr::Instance* vr_instance)
     };
 
     instance = vk::createInstance(vk::InstanceCreateInfo{
-        //.pNext = &debug_create_info,
-        .pNext = &validation_features_ext,
+        .pNext = &debug_create_info,
         .pApplicationInfo = &app_info,
-        .enabledLayerCount = static_cast<uint32_t>(required_instance_layers.size()),
-        .ppEnabledLayerNames = required_instance_layers.data(),
+        .enabledLayerCount = static_cast<uint32_t>(sdk_available ? required_instance_layers.size() : 0u),
+        .ppEnabledLayerNames = sdk_available ? required_instance_layers.data() : nullptr,
         .enabledExtensionCount = static_cast<uint32_t>(required_extensions.size()),
         .ppEnabledExtensionNames = required_extensions.data()
     });
@@ -103,17 +103,17 @@ void Context::init_device(vr::Instance* vr_instance)
 {
     std::vector required_device_extensions = {
         VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-        VK_KHR_RAY_TRACING_EXTENSION_NAME,
-        // The followings are required for VK_KHR_ray_tracing
-        VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
-        VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME,
-        // The following is required to debug device lost
-        // VK_NV_DEVICE_DIAGNOSTIC_CHECKPOINTS_EXTENSION_NAME
+        VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
+        VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME
+        // Needed for acc structure
+        //VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
+        // VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME
     };
 
 #ifdef USING_AFTERMATH
     required_device_extensions.push_back(VK_NV_DEVICE_DIAGNOSTIC_CHECKPOINTS_EXTENSION_NAME);
     required_device_extensions.push_back(VK_NV_DEVICE_DIAGNOSTICS_CONFIG_EXTENSION_NAME);
+    // required_device_extensions.push_back(VK_NV_DEVICE_DIAGNOSTIC_CHECKPOINTS_EXTENSION_NAME);
 #endif
 
     std::vector<vk::PhysicalDevice> potential_physical_devices;
@@ -155,10 +155,13 @@ void Context::init_device(vr::Instance* vr_instance)
         // Checking features
         {
             auto vulkan_12_features = vk::PhysicalDeviceVulkan12Features();
-            auto raytracing_features = vk::PhysicalDeviceRayTracingFeaturesKHR{ .pNext = &vulkan_12_features };
-            auto features = vk::PhysicalDeviceFeatures2{ .pNext = &raytracing_features };
+            auto as_features = vk::PhysicalDeviceAccelerationStructureFeaturesKHR{ .pNext = &vulkan_12_features };
+            auto pipeline_features = vk::PhysicalDeviceRayTracingPipelineFeaturesKHR{ .pNext = &as_features };
+            auto features = vk::PhysicalDeviceFeatures2{ .pNext = &pipeline_features };
             potential_physical_device.getFeatures2(&features);
-            if (!raytracing_features.rayTracing)
+            if (!pipeline_features.rayTracingPipeline || !pipeline_features.rayTraversalPrimitiveCulling)
+                continue;
+            if (!as_features.accelerationStructure /*|| !as_features.descriptorBindingAccelerationStructureUpdateAfterBind*/)
                 continue;
             if (!vulkan_12_features.bufferDeviceAddress || !vulkan_12_features.uniformBufferStandardLayout || !vulkan_12_features.scalarBlockLayout ||
                 !vulkan_12_features.uniformAndStorageBuffer8BitAccess)
@@ -216,12 +219,17 @@ void Context::init_device(vr::Instance* vr_instance)
         vulkan_12_features.pNext = &aftermath_features;
 #endif
 
-        vk::PhysicalDeviceRayTracingFeaturesKHR raytracing_features {
+        vk::PhysicalDeviceAccelerationStructureFeaturesKHR raytracing_as_features{
             .pNext = &vulkan_12_features,
-            .rayTracing = true
+            .accelerationStructure = true
+        };
+        vk::PhysicalDeviceRayTracingPipelineFeaturesKHR raytracing_pileline_features {
+            .pNext = &raytracing_as_features,
+            .rayTracingPipeline = true,
+            .rayTraversalPrimitiveCulling = true,
         };
         vk::PhysicalDeviceFeatures2 device_features {
-            .pNext = &raytracing_features,
+            .pNext = &raytracing_pileline_features,
             .features = {
                 .shaderStorageImageMultisample = true,
             }

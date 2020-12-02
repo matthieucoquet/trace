@@ -65,10 +65,13 @@ Shader_system::Shader_system(vulkan::Context& context, Scene& scene, std::string
     m_device(context.device),
     m_engine_directory(SHADER_SOURCE),
     m_scene_directory(scene_shader_path)
+#ifdef USING_AFTERMATH
+    , m_aftermath_database(&context.aftermath.database)
+#endif
 {
     m_scheduler.bind();
-    m_group_compile_options.SetOptimizationLevel(shaderc_optimization_level_performance);
-    //m_group_compile_options.SetOptimizationLevel(shaderc_optimization_level_zero);
+    //m_group_compile_options.SetOptimizationLevel(shaderc_optimization_level_performance);
+    m_group_compile_options.SetOptimizationLevel(shaderc_optimization_level_zero);
     m_group_compile_options.SetWarningsAsErrors();
     m_group_compile_options.SetTargetEnvironment(shaderc_target_env_vulkan, shaderc_env_version_vulkan_1_2);
     m_group_compile_options.SetTargetSpirv(shaderc_spirv_version_1_5);
@@ -266,6 +269,9 @@ void Shader_system::compile(
     shader.engine_included_id.clear();
     shader.scene_included_id.clear();
     auto group_compile_options = m_group_compile_options;
+#ifdef USING_AFTERMATH
+    group_compile_options.SetGenerateDebugInfo();
+#endif
 
     std::string group_name_file(group_name + ".glsl");
     group_compile_options.SetIncluder(std::make_unique<Includer>(shader, engine_shader_files, scene_shader_files, group_name_file));
@@ -277,10 +283,47 @@ void Shader_system::compile(
     }
     else {
         shader.error = "";
+        size_t code_size = sizeof(shaderc::SpvCompilationResult::element_type) * std::distance(compile_result.begin(), compile_result.end());
         shader.module = m_device.createShaderModule(vk::ShaderModuleCreateInfo{
-            .codeSize = sizeof(shaderc::SpvCompilationResult::element_type) * std::distance(compile_result.begin(), compile_result.end()),
+            .codeSize = code_size,
             .pCode = compile_result.begin()
             });
+
+#ifdef USING_AFTERMATH
+        m_aftermath_database->add_binary(std::vector<uint8_t>((uint8_t*)compile_result.begin(), (uint8_t*)compile_result.end()));
+
+        auto assembly = m_compiler.CompileGlslToSpvAssembly(shader_file.data.data(), shader_file.size, shader_kind, shader_file.name.c_str(), group_compile_options);
+
+        std::filesystem::path assembly_dir("assembly");
+        std::filesystem::path bin_dir("binary");
+        if (!std::filesystem::exists(assembly_dir)) {
+            std::filesystem::create_directory(assembly_dir);
+        }
+        if (!std::filesystem::exists(bin_dir)) {
+            std::filesystem::create_directory(bin_dir);
+        }
+        
+        {
+            std::ofstream file(assembly_dir / fmt::format("{}_{}.spv", group_name, shader_file.name), std::ios::trunc | std::ios::binary);
+            if (!file.is_open()) {
+                throw std::runtime_error("failed to open file!");
+            }
+            file.write(
+                assembly.begin(),
+                sizeof(shaderc::AssemblyCompilationResult::element_type) * std::distance(assembly.begin(), assembly.end()));
+            file.close();
+        }
+        {
+            std::ofstream file(bin_dir / fmt::format("{}_{}.spv", group_name, shader_file.name), std::ios::trunc | std::ios::binary);
+            if (!file.is_open()) {
+                throw std::runtime_error("failed to open file!");
+            }
+            file.write(
+                reinterpret_cast<const char*>(compile_result.begin()),
+                code_size);
+            file.close();
+        }
+#endif
     }
 }
 

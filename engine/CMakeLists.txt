@@ -44,6 +44,8 @@ set(SOURCE_VR
     vr/vr_swapchain.cpp vr/vr_swapchain.hpp
     vr/vr_common.hpp)
 set(SOURCE_VULKAN
+    vulkan/aftermath_crash_tracker.cpp vulkan/aftermath_crash_tracker.hpp
+    vulkan/aftermath_database.cpp vulkan/aftermath_database.hpp
     vulkan/acceleration_structure.cpp vulkan/acceleration_structure.hpp
     vulkan/command_buffer.hpp
     vulkan/command_checkpoint.hpp
@@ -79,9 +81,9 @@ target_include_directories(engine SYSTEM PUBLIC ${Vulkan_INCLUDE_DIR}
                                                 ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 if (WIN32)
-    target_link_libraries(engine PRIVATE shaderc::shaderc_combined)
+    target_link_libraries(engine PUBLIC shaderc::shaderc_combined)
 else()
-    target_link_libraries(engine PRIVATE shaderc_combined)
+    target_link_libraries(engine PUBLIC shaderc_combined)
 endif()
 target_link_libraries(engine
     PRIVATE
@@ -91,11 +93,11 @@ target_link_libraries(engine
     glm
     marl::marl
     fmt::fmt
-    # OpenXR::headers
+    #OpenXR::headers)
     OpenXR::openxr_loader)
 if(USE_AFTERMATH)
 target_link_libraries(engine PUBLIC aftermath::aftermath)
-target_compile_options(engine PUBLIC USING_AFTERMATH)
+target_compile_definitions(engine PUBLIC USING_AFTERMATH)
 endif()
 target_compile_features(engine PRIVATE cxx_std_20)
 add_library(sdf_editor::engine ALIAS engine)

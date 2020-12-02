@@ -3,7 +3,7 @@
 #include "core/scene.hpp"
 #include "command_buffer.hpp"
 #include <fstream>
-
+#include <fmt/core.h>
 namespace vulkan
 {
 
@@ -13,6 +13,7 @@ Raytracing_pipeline::Raytracing_pipeline(Context& context, Scene& scene, vk::Sam
     vk::PhysicalDeviceProperties2 properties{};
     properties.pNext = &raytracing_properties;
     context.physical_device.getProperties2(&properties);
+    fmt::print("Max ray {}\n", raytracing_properties.maxRayDispatchInvocationCount);
 
     std::array array_bindings
     {
@@ -68,7 +69,7 @@ Raytracing_pipeline::Raytracing_pipeline(Context& context, Scene& scene, vk::Sam
         context.device, context.allocator, command_buffer.command_buffer,
         vk::BufferCreateInfo{
             .size = temp_buffer_aligned.size(),
-            .usage = vk::BufferUsageFlagBits::eRayTracingKHR
+            .usage = vk::BufferUsageFlagBits::eShaderBindingTableKHR
         },
         temp_buffer_aligned.data());
     shader_binding_table = std::move(buffer_and_staged.result);
@@ -86,16 +87,19 @@ std::vector<uint8_t> Raytracing_pipeline::create_shader_binding_table()
 {
     auto group_count = static_cast<uint32_t>(1 + nb_group_miss + 2 * nb_group_primary);
 
-    auto find_alignement = [alignement = raytracing_properties.shaderGroupBaseAlignment](vk::DeviceSize offset) {
+    auto base_alignement = [alignement = raytracing_properties.shaderGroupBaseAlignment](vk::DeviceSize offset) {
         auto ret = offset % alignement;
         return ret == 0 ? offset : offset + alignement - ret;
     };
-
-    offset_miss_group = find_alignement(1u * raytracing_properties.shaderGroupHandleSize);
-    offset_hit_group = find_alignement(offset_miss_group + nb_group_miss * raytracing_properties.shaderGroupHandleSize);
+    uint32_t handle_size = raytracing_properties.shaderGroupHandleSize;
+    if (handle_size % raytracing_properties.shaderGroupHandleAlignment != 0) {
+        handle_size = handle_size - handle_size % raytracing_properties.shaderGroupHandleAlignment - raytracing_properties.shaderGroupHandleAlignment;
+    }
+    offset_miss_group = base_alignement(1u * handle_size);
+    offset_hit_group = base_alignement(offset_miss_group + nb_group_miss * handle_size);
 
     auto shader_binding_table_size = raytracing_properties.shaderGroupHandleSize * group_count;
-    auto shader_binding_table_size_aligned = static_cast<uint32_t>(offset_hit_group + raytracing_properties.shaderGroupHandleSize * 2 * nb_group_primary);
+    auto shader_binding_table_size_aligned = static_cast<uint32_t>(offset_hit_group + handle_size * 2 * nb_group_primary);
 
     std::vector<uint8_t> temp_buffer = m_device.getRayTracingShaderGroupHandlesKHR<uint8_t>(pipeline, 0u, group_count, shader_binding_table_size);
 
@@ -103,9 +107,14 @@ std::vector<uint8_t> Raytracing_pipeline::create_shader_binding_table()
     // Copy raygen
     memcpy(temp_buffer_aligned.data(), temp_buffer.data(), raytracing_properties.shaderGroupHandleSize);
     // Copy miss
-    memcpy(temp_buffer_aligned.data() + offset_miss_group, temp_buffer.data() + 1 * raytracing_properties.shaderGroupHandleSize, nb_group_miss * raytracing_properties.shaderGroupHandleSize);
+    memcpy(temp_buffer_aligned.data() + offset_miss_group, temp_buffer.data() + 1 * raytracing_properties.shaderGroupHandleSize, raytracing_properties.shaderGroupHandleSize);
+    memcpy(temp_buffer_aligned.data() + offset_miss_group + handle_size, temp_buffer.data() + 2 * raytracing_properties.shaderGroupHandleSize, raytracing_properties.shaderGroupHandleSize);
     // Copy hit
-    memcpy(temp_buffer_aligned.data() + offset_hit_group, temp_buffer.data() + (1 + nb_group_miss) * raytracing_properties.shaderGroupHandleSize, (2 * nb_group_primary) * raytracing_properties.shaderGroupHandleSize);
+    for (int i = 0; i < nb_group_primary; i++) {
+        memcpy(temp_buffer_aligned.data() + offset_hit_group + 2 * i * handle_size, temp_buffer.data() + (1 + nb_group_miss + 2 * i) * raytracing_properties.shaderGroupHandleSize, raytracing_properties.shaderGroupHandleSize);
+        memcpy(temp_buffer_aligned.data() + offset_hit_group + (2 * i + 1) * handle_size, temp_buffer.data() + (1 + nb_group_miss + 2 * i + 1) * raytracing_properties.shaderGroupHandleSize, raytracing_properties.shaderGroupHandleSize);
+    }
+    shader_binding_table_stride = handle_size;
     return temp_buffer_aligned;
 }
 
@@ -188,14 +197,14 @@ void Raytracing_pipeline::create_pipeline(Scene& scene)
     }
 
     pipeline = m_device.createRayTracingPipelineKHR(
-        nullptr,
+        nullptr, nullptr,
         vk::RayTracingPipelineCreateInfoKHR{
             //.flags = vk::PipelineCreateFlagBits::eRayTracingSkipTrianglesKHR,
             .stageCount = static_cast<uint32_t>(shader_stages.size()),
             .pStages = shader_stages.data(),
             .groupCount = static_cast<uint32_t>(groups.size()),
             .pGroups = groups.data(),
-            .maxRecursionDepth = std::min(4u, raytracing_properties.maxRecursionDepth),
+            .maxPipelineRayRecursionDepth = std::min(4u, raytracing_properties.maxRayRecursionDepth),
             .layout = pipeline_layout }).value;
 }
 

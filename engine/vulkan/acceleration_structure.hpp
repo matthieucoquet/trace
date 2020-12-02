@@ -25,10 +25,7 @@ protected:
     vk::Device m_device;
     VmaAllocator m_allocator;
     VmaAllocation m_allocation{};
-
-
-    Vma_buffer allocate_scratch_buffer() const;
-    void allocate_object_memory();
+    Vma_buffer m_structure_buffer{};
 };
 
 class Blas : public Acceleration_structure
@@ -61,6 +58,7 @@ protected:
     Vma_buffer m_instance_buffer;
     Vma_buffer m_scratch_buffer;
     std::vector<vk::AccelerationStructureInstanceKHR> m_instances{};
+    vk::AccelerationStructureGeometryKHR m_acceleration_structure_geometry;
 };
 
 }

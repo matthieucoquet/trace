@@ -53,7 +53,7 @@ Image_from_staged::Image_from_staged(vk::Device device, VmaAllocator allocator, 
         vk::BufferCreateInfo{
             .size = size,
             .usage = vk::BufferUsageFlagBits::eTransferSrc },
-        VMA_MEMORY_USAGE_CPU_ONLY);
+            VmaAllocationCreateInfo{ .usage = VMA_MEMORY_USAGE_CPU_ONLY });
     staging.map();
     staging.copy(data, size);
     staging.unmap();

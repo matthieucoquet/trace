@@ -105,7 +105,7 @@ void Desktop_app::run()
         auto& command_buffer = m_command_pools.command_buffers[command_pool_id];
         m_renderer.update_per_frame_data(m_scene, command_pool_id);
 
-        m_renderer.start_recording(command_buffer, m_scene, command_pool_id);
+        m_renderer.start_recording(command_buffer, m_scene);
         m_renderer.trace(command_buffer, m_scene, command_pool_id, m_trace_extent);
         m_mirror.copy(command_buffer, m_renderer.per_frame[command_pool_id].storage_image.image, command_pool_id, m_trace_extent);
         m_renderer.end_recording(command_buffer, command_pool_id);

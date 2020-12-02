@@ -25,7 +25,7 @@ Renderer::~Renderer()
     }
 }
 
-void Renderer::start_recording(vk::CommandBuffer command_buffer, Scene& scene, size_t command_pool_id)
+void Renderer::start_recording(vk::CommandBuffer command_buffer, Scene& scene)
 {
     command_buffer.begin({ .flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit });
     if (scene.pipeline_dirty) {
@@ -37,7 +37,7 @@ void Renderer::start_recording(vk::CommandBuffer command_buffer, Scene& scene, s
             m_device, m_allocator, command_buffer,
             vk::BufferCreateInfo{
                 .size = temp_buffer_aligned.size(),
-                .usage = vk::BufferUsageFlagBits::eRayTracingKHR
+                .usage = vk::BufferUsageFlagBits::eShaderBindingTableKHR
             },
             temp_buffer_aligned.data());
         m_pipeline.shader_binding_table = std::move(buffer_and_staged.result);
@@ -56,28 +56,6 @@ void Renderer::start_recording(vk::CommandBuffer command_buffer, Scene& scene, s
                 .size = VK_WHOLE_SIZE
             }, {});
     }
-    command_buffer.pipelineBarrier(
-        vk::PipelineStageFlagBits::eHost,
-        vk::PipelineStageFlagBits::eRayTracingShaderKHR,
-        {}, {},
-        vk::BufferMemoryBarrier{
-            .srcAccessMask = vk::AccessFlagBits::eHostWrite,
-            .dstAccessMask = vk::AccessFlagBits::eShaderRead,
-            .buffer = per_frame[command_pool_id].materials.buffer,
-            .offset = 0u,
-            .size = VK_WHOLE_SIZE
-        }, {});
-    command_buffer.pipelineBarrier(
-        vk::PipelineStageFlagBits::eHost,
-        vk::PipelineStageFlagBits::eRayTracingShaderKHR,
-        {}, {},
-        vk::BufferMemoryBarrier{
-            .srcAccessMask = vk::AccessFlagBits::eHostWrite,
-            .dstAccessMask = vk::AccessFlagBits::eShaderRead,
-            .buffer = per_frame[command_pool_id].lights.buffer,
-            .offset = 0u,
-            .size = VK_WHOLE_SIZE
-        }, {});
 }
 
 void Renderer::barrier_vr_swapchain(vk::CommandBuffer command_buffer, vk::Image swapchain_image)
@@ -118,28 +96,26 @@ void Renderer::trace(vk::CommandBuffer command_buffer, Scene& scene, size_t comm
         },
         {}, {});
 
-    vk::StridedBufferRegionKHR raygen_shader_entry{
-        .buffer = m_pipeline.shader_binding_table.buffer,
-        .offset = 0u,
-        .stride = m_pipeline.raytracing_properties.shaderGroupHandleSize,
-        .size = m_pipeline.raytracing_properties.shaderGroupHandleSize,
+    vk::DeviceAddress table_address = m_device.getBufferAddress(vk::BufferDeviceAddressInfo{ .buffer = m_pipeline.shader_binding_table.buffer });
+    vk::StridedDeviceAddressRegionKHR raygen_shader_entry{
+        .deviceAddress = table_address,
+        .stride = m_pipeline.shader_binding_table_stride,
+        .size = m_pipeline.shader_binding_table_stride,
     };
 
-    vk::StridedBufferRegionKHR miss_shader_entry{
-        .buffer = m_pipeline.shader_binding_table.buffer,
-        .offset = m_pipeline.offset_miss_group,
-        .stride = m_pipeline.raytracing_properties.shaderGroupHandleSize,
-        .size = m_pipeline.raytracing_properties.shaderGroupHandleSize * vk::DeviceSize(m_pipeline.nb_group_miss)
+    vk::StridedDeviceAddressRegionKHR miss_shader_entry{
+        .deviceAddress = table_address + m_pipeline.offset_miss_group,
+        .stride = m_pipeline.shader_binding_table_stride,
+        .size = m_pipeline.shader_binding_table_stride * vk::DeviceSize(m_pipeline.nb_group_miss)
     };
 
-    vk::StridedBufferRegionKHR hit_shader_entry{
-        .buffer = m_pipeline.shader_binding_table.buffer,
-        .offset = m_pipeline.offset_hit_group,
-        .stride = m_pipeline.raytracing_properties.shaderGroupHandleSize,
-        .size = m_pipeline.raytracing_properties.shaderGroupHandleSize * vk::DeviceSize(2 * m_pipeline.nb_group_primary)
+    vk::StridedDeviceAddressRegionKHR hit_shader_entry{
+        .deviceAddress = table_address + m_pipeline.offset_hit_group,
+        .stride = m_pipeline.shader_binding_table_stride,
+        .size = m_pipeline.shader_binding_table_stride * vk::DeviceSize(2 * m_pipeline.nb_group_primary)
     };
 
-    vk::StridedBufferRegionKHR callable_shader_entry{};
+    vk::StridedDeviceAddressRegionKHR callable_shader_entry{};
 
     command_buffer.bindPipeline(vk::PipelineBindPoint::eRayTracingKHR, m_pipeline.pipeline);
     command_buffer.bindDescriptorSets(vk::PipelineBindPoint::eRayTracingKHR, m_pipeline.pipeline_layout, 0, m_descriptor_sets[command_pool_id], {});
@@ -155,8 +131,9 @@ void Renderer::trace(vk::CommandBuffer command_buffer, Scene& scene, size_t comm
         &miss_shader_entry,
         &hit_shader_entry,
         &callable_shader_entry,
-        extent.width /*/ 2*/,
-        extent.height /*/ 2*/,
+        //100, 100,
+        extent.width,
+        extent.height,
         1u);
 
     //  Img to source
@@ -238,7 +215,7 @@ void Renderer::create_per_frame_data(Context& context, Scene& scene, vk::Extent2
     One_time_command_buffer command_buffer(m_device, context.command_pool, context.graphics_queue);
     for (size_t i = 0u; i < command_pool_size; i++) {
         // Images
-        auto image = Vma_image(
+        Vma_image image(
             m_device, context.allocator,
             vk::ImageCreateInfo{
                 .imageType = vk::ImageType::e2D,
@@ -288,14 +265,20 @@ void Renderer::create_per_frame_data(Context& context, Scene& scene, vk::Extent2
             context.device, context.allocator,
             vk::BufferCreateInfo{
                 .size = sizeof(Material) * scene.materials.size(),
-                .usage = vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eRayTracingKHR },
-                VMA_MEMORY_USAGE_CPU_TO_GPU);
+                .usage = vk::BufferUsageFlagBits::eStorageBuffer },
+                VmaAllocationCreateInfo {
+                    .flags = VMA_ALLOCATION_CREATE_MAPPED_BIT,
+                    .usage = VMA_MEMORY_USAGE_CPU_TO_GPU
+                });
         Vma_buffer lights_buffer = Vma_buffer(
             context.device, context.allocator,
             vk::BufferCreateInfo{
                 .size = sizeof(Light) * scene.lights.size(),
-                .usage = vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eRayTracingKHR },
-                VMA_MEMORY_USAGE_CPU_TO_GPU);
+                .usage = vk::BufferUsageFlagBits::eStorageBuffer },
+                VmaAllocationCreateInfo{
+                    .flags = VMA_ALLOCATION_CREATE_MAPPED_BIT,
+                    .usage = VMA_MEMORY_USAGE_CPU_TO_GPU
+                });
         per_frame.push_back(Per_frame{
             .tlas = {command_buffer.command_buffer, context, m_blas, scene},
             .materials = std::move(material_buffer),
@@ -305,16 +288,14 @@ void Renderer::create_per_frame_data(Context& context, Scene& scene, vk::Extent2
             });
     }
     command_buffer.submit_and_wait_idle();
-    for (size_t i = 0u; i < command_pool_size; i++) {
-        per_frame[i].materials.map();
-        per_frame[i].lights.map();
-    }
 }
 
 void Renderer::update_per_frame_data(Scene& scene, size_t command_pool_id)
 {
     per_frame[command_pool_id].materials.copy(scene.materials.data(), sizeof(Material) * scene.materials.size());
     per_frame[command_pool_id].lights.copy(scene.lights.data(), sizeof(Light) * scene.lights.size());
+    per_frame[command_pool_id].materials.flush();
+    per_frame[command_pool_id].lights.flush();
 }
 
 void Renderer::create_descriptor_sets(vk::DescriptorPool descriptor_pool, size_t command_pool_size)
