@@ -7,6 +7,7 @@
         "imgui",
         "stb",
         "fmt",
-        "marl"
+        "marl",
+	"tinygltf"
     ]
 }

@@ -23,6 +23,7 @@ endif()
 add_library(engine STATIC)
 
 set(SOURCE_CORE
+    core/character.cpp core/character.hpp
     core/shader_data.hpp
     core/scene.hpp
     core/device_data.hpp
@@ -30,6 +31,7 @@ set(SOURCE_CORE
     core/transform_helpers.hpp)
 set(SOURCE_ENGINE
     engine/app.cpp engine/app.hpp
+    engine/gltf_loader.cpp engine/gltf_loader.hpp
     engine/input_glfw_system.cpp engine/input_glfw_system.hpp
     engine/shader_system.cpp engine/shader_system.hpp
     engine/ui_system.cpp engine/ui_system.hpp
@@ -95,6 +97,10 @@ target_link_libraries(engine
     fmt::fmt
     #OpenXR::headers)
     OpenXR::openxr_loader)
+
+find_path(TINYGLTF_INCLUDE_DIRS "tiny_gltf.h")
+target_include_directories(engine PRIVATE ${TINYGLTF_INCLUDE_DIRS})
+
 if(USE_AFTERMATH)
 target_link_libraries(engine PUBLIC aftermath::aftermath)
 target_compile_definitions(engine PUBLIC USING_AFTERMATH)
@@ -105,6 +111,8 @@ add_library(sdf_editor::engine ALIAS engine)
 get_filename_component(shader_locations shaders ABSOLUTE)
 set_source_files_properties(engine/shader_system.cpp PROPERTIES COMPILE_DEFINITIONS SHADER_SOURCE="${shader_locations}/engine")
 set_source_files_properties(vulkan/imgui_render.cpp PROPERTIES COMPILE_DEFINITIONS SHADER_SOURCE="${shader_locations}/ui")
+
+set_source_files_properties(engine/gltf_loader.cpp PROPERTIES COMPILE_DEFINITIONS DATA_SOURCE="${PROJECT_SOURCE_DIR}/data")
 
 if(MSVC)
     target_compile_options(engine PRIVATE /experimental:external /external:anglebrackets /external:W0)

@@ -31,7 +31,7 @@ void Ui_system::step(Scene& scene)
     if (ImGui::TreeNodeEx("Engine shaders", ImGuiTreeNodeFlags_DefaultOpen))
     {
         int id = 0;
-        for (auto& shader_file : scene.engine_shader_files)
+        for (auto& shader_file : scene.shaders.engine_files)
         {
             ImGuiTreeNodeFlags leaf_flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
             if (m_selected == Selected::engine_shader && m_selected_id == id) {
@@ -49,7 +49,7 @@ void Ui_system::step(Scene& scene)
     if (ImGui::TreeNodeEx("Scene shaders", ImGuiTreeNodeFlags_DefaultOpen))
     {
         int id = 0;
-        for (auto& shader_file : scene.scene_shader_files)
+        for (auto& shader_file : scene.shaders.scene_files)
         {
             ImGuiTreeNodeFlags leaf_flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
             if (m_selected == Selected::scenes_shader && m_selected_id == id) {
@@ -161,10 +161,10 @@ void Ui_system::record_selected(Scene& scene)
             if (ImGui::BeginTabItem("Shader"))
             {
                 if (m_selected == Selected::engine_shader) {
-                    shader_text(scene.engine_shader_files[m_selected_id]);
+                    shader_text(scene.shaders.engine_files[m_selected_id]);
                 }
                 else {
-                    shader_text(scene.scene_shader_files[m_selected_id]);
+                    shader_text(scene.shaders.scene_files[m_selected_id]);
                 }
                 ImGui::EndTabItem();
             }
@@ -176,11 +176,11 @@ void Ui_system::record_selected(Scene& scene)
                         ImGui::TextWrapped(shader.error.c_str());
                     }
                 };
-                print_error(scene.raygen_shader);
-                print_error(scene.primary_miss_shader);
-                print_error(scene.shadow_miss_shader);
-                print_error(scene.shadow_intersection_shader);
-                for (const auto& shader_group : scene.shader_groups) {
+                print_error(scene.shaders.raygen);
+                print_error(scene.shaders.primary_miss);
+                print_error(scene.shaders.shadow_miss);
+                print_error(scene.shaders.shadow_intersection);
+                for (const auto& shader_group : scene.shaders.groups) {
                     print_error(shader_group.primary_intersection);
                     print_error(shader_group.primary_closest_hit);
                     print_error(shader_group.shadow_any_hit);

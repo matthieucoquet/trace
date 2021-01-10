@@ -15,6 +15,7 @@ class Context;
 
 struct Per_frame
 {
+    std::vector<Blas> characters_blas;
     Tlas tlas;
     Vma_buffer materials;
     Vma_buffer lights;

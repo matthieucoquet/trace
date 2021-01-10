@@ -69,7 +69,7 @@ Raytracing_pipeline::Raytracing_pipeline(Context& context, Scene& scene, vk::Sam
         context.device, context.allocator, command_buffer.command_buffer,
         vk::BufferCreateInfo{
             .size = temp_buffer_aligned.size(),
-            .usage = vk::BufferUsageFlagBits::eShaderBindingTableKHR
+            .usage = vk::BufferUsageFlagBits::eShaderBindingTableKHR | vk::BufferUsageFlagBits::eShaderDeviceAddress
         },
         temp_buffer_aligned.data());
     shader_binding_table = std::move(buffer_and_staged.result);
@@ -123,20 +123,20 @@ void Raytracing_pipeline::create_pipeline(Scene& scene)
     std::vector shader_stages{
         vk::PipelineShaderStageCreateInfo{
             .stage = vk::ShaderStageFlagBits::eRaygenKHR,
-            .module = scene.raygen_shader.module,
+            .module = scene.shaders.raygen.module,
             .pName = "main" },
         vk::PipelineShaderStageCreateInfo{
             .stage = vk::ShaderStageFlagBits::eMissKHR,
-            .module = scene.primary_miss_shader.module,
+            .module = scene.shaders.primary_miss.module,
             .pName = "main" },
-        vk::PipelineShaderStageCreateInfo{
+        /*vk::PipelineShaderStageCreateInfo{
             .stage = vk::ShaderStageFlagBits::eMissKHR,
-            .module = scene.shadow_miss_shader.module,
+            .module = scene.shaders.shadow_miss.module,
             .pName = "main" },
         vk::PipelineShaderStageCreateInfo{
             .stage = vk::ShaderStageFlagBits::eIntersectionKHR,
-            .module = scene.shadow_intersection_shader.module,
-            .pName = "main" }
+            .module = scene.shaders.shadow_intersection.module,
+            .pName = "main" }*/
     };
     std::vector groups{
         // Raygens (0)
@@ -161,13 +161,13 @@ void Raytracing_pipeline::create_pipeline(Scene& scene)
             .intersectionShader = VK_SHADER_UNUSED_KHR},
     };
     nb_group_miss = 2u;
-    nb_group_primary = scene.shader_groups.size();
+    nb_group_primary = scene.shaders.groups.size();
 
-    shader_stages.reserve(shader_stages.size() + 3 * scene.shader_groups.size());
+    shader_stages.reserve(shader_stages.size() + 3 * nb_group_primary);
     groups.reserve(groups.size() + 2 * nb_group_primary);
     uint32_t id = static_cast<uint32_t>(shader_stages.size());
 
-    for (const auto shader_group : scene.shader_groups) {
+    for (const auto shader_group : scene.shaders.groups) {
         shader_stages.push_back(vk::PipelineShaderStageCreateInfo{
             .stage = vk::ShaderStageFlagBits::eIntersectionKHR,
             .module = shader_group.primary_intersection.module,
@@ -204,7 +204,7 @@ void Raytracing_pipeline::create_pipeline(Scene& scene)
             .pStages = shader_stages.data(),
             .groupCount = static_cast<uint32_t>(groups.size()),
             .pGroups = groups.data(),
-            .maxPipelineRayRecursionDepth = std::min(4u, raytracing_properties.maxRayRecursionDepth),
+            .maxPipelineRayRecursionDepth = 4, //raytracing_properties.maxRayRecursionDepth, // * std::min(4u, raytracing_properties.maxRayRecursionDepth),
             .layout = pipeline_layout }).value;
 }
 

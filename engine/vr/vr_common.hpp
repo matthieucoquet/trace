@@ -1,7 +1,7 @@
 #pragma once
 #include "vulkan/vk_common.hpp"
 
-// #define TRACE_USE_DYNAMIC_LOADER
+//#define TRACE_USE_DYNAMIC_LOADER
 
 #ifdef TRACE_USE_DYNAMIC_LOADER
 #define XR_NO_PROTOTYPES

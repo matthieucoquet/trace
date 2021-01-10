@@ -21,6 +21,7 @@ public:
     void flush();
     void* map();
     void unmap();
+    void free();
 private:
     vk::Device m_device;
     VmaAllocator m_allocator;
@@ -56,6 +57,15 @@ inline void Vma_buffer::unmap()
     vmaFlushAllocation(m_allocator, m_allocation, 0, VK_WHOLE_SIZE);
     vmaUnmapMemory(m_allocator, m_allocation);
     m_mapped = nullptr;
+}
+
+inline void Vma_buffer::free()
+{
+    if (m_device) {
+        m_device.destroyBuffer(buffer);
+        vmaFreeMemory(m_allocator, m_allocation);
+        m_device = nullptr;
+    }
 }
 
 }

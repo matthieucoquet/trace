@@ -9,8 +9,8 @@ namespace ingenuity
 Scene make_scene()
 {
     Scene scene{};
-    scene.shader_groups.push_back(Shader_group{ .name = "hand" });
-    scene.shader_groups.push_back(Shader_group{ .name = "ingenuity" });
+    scene.shaders.groups.push_back(Shader_group{ .name = "hand" });
+    scene.shaders.groups.push_back(Shader_group{ .name = "ingenuity" });
     size_t hand_id = 0u;
     size_t ingenuity_id = 1u;
 

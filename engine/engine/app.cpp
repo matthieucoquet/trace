@@ -6,6 +6,7 @@
 #include <ranges>
 #include <algorithm>
 #include <imgui.h>
+#include "engine/gltf_loader.hpp"
 
 Vr_app::Vr_app(Scene scene, std::string_view scene_shader_path) :
     m_scene(std::move(scene)),
@@ -53,7 +54,7 @@ void Vr_app::run()
     }
 }
 
-static constexpr size_t size_command_buffers = 4u;
+static constexpr size_t size_command_buffers = 1u;
 
 Desktop_app::Desktop_app(Scene scene, std::string_view scene_shader_path) :
     m_scene(std::move(scene)),
@@ -64,7 +65,7 @@ Desktop_app::Desktop_app(Scene scene, std::string_view scene_shader_path) :
     m_mirror(m_context, size_command_buffers, false),
     m_command_pools(m_context.device, m_context.queue_family, size_command_buffers)
 {
-
+    //Gltf_loader gltf{};
     m_renderer.create_per_frame_data(m_context, m_scene, m_trace_extent, vk::Format::eR8G8B8A8Unorm, size_command_buffers);
     m_renderer.create_descriptor_sets(m_context.descriptor_pool, size_command_buffers);
 }

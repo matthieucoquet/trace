@@ -80,62 +80,62 @@ Shader_system::Shader_system(vulkan::Context& context, Scene& scene, std::string
     for (auto& directory_entry : std::filesystem::directory_iterator(m_engine_directory))
     {
         auto& path = directory_entry.path();
-        auto& back = scene.engine_shader_files.emplace_back(Shader_file{
+        auto& back = scene.shaders.engine_files.emplace_back(Shader_file{
             .name = path.filename().string(),
             .data = read_file(path)
         });
         back.size = static_cast<int>(std::ssize(back.data));
         m_engine_files_copy.push_back(Shader_file{
             .name = path.filename().string(),
-            .data = scene.engine_shader_files.back().data,
+            .data = scene.shaders.engine_files.back().data,
             .size = back.size
          });
     }
     for (auto& directory_entry : std::filesystem::directory_iterator(m_scene_directory))
     {
         auto& path = directory_entry.path();
-        auto& back = scene.scene_shader_files.emplace_back(Shader_file{
+        auto& back = scene.shaders.scene_files.emplace_back(Shader_file{
             .name = path.filename().string(),
             .data = read_file(path)
             });
         back.size = static_cast<int>(std::ssize(back.data));
         m_scene_files_copy.push_back(Shader_file{
             .name = path.filename().string(),
-            .data = scene.scene_shader_files.back().data,
+            .data = scene.shaders.scene_files.back().data,
             .size = back.size
             });
     }
     auto find_file = [&scene](const auto& name) {
-        auto file_it = std::find_if(scene.engine_shader_files.cbegin(), scene.engine_shader_files.cend(), [name](const Shader_file& shader_file) {
+        auto file_it = std::find_if(scene.shaders.engine_files.cbegin(), scene.shaders.engine_files.cend(), [name](const Shader_file& shader_file) {
             return shader_file.name == name;
         });
-        assert(file_it != scene.engine_shader_files.cend());
-        return static_cast<int>(std::distance(scene.engine_shader_files.cbegin(), file_it));
+        assert(file_it != scene.shaders.engine_files.cend());
+        return static_cast<int>(std::distance(scene.shaders.engine_files.cbegin(), file_it));
     };
-    scene.raygen_shader.file_id = find_file("raygen.rgen");
-    scene.primary_miss_shader.file_id = find_file("primary.rmiss");
-    scene.shadow_miss_shader.file_id = find_file("shadow.rmiss");
-    scene.shadow_intersection_shader.file_id = find_file("shadow.rint");
-    for (auto& shader_group : scene.shader_groups) {
+    scene.shaders.raygen.file_id = find_file("raygen.rgen");
+    scene.shaders.primary_miss.file_id = find_file("primary.rmiss");
+    scene.shaders.shadow_miss.file_id = find_file("shadow.rmiss");
+    scene.shaders.shadow_intersection.file_id = find_file("shadow.rint");
+    for (auto& shader_group : scene.shaders.groups) {
         shader_group.primary_intersection.file_id = find_file("primary.rint");
         shader_group.primary_closest_hit.file_id = find_file("primary.rchit");
         shader_group.shadow_any_hit.file_id = find_file("shadow.rahit");
     }
 
-    marl::WaitGroup compile_shaders(static_cast<unsigned int>(scene.shader_groups.size()));
-    for (auto& shader_group : scene.shader_groups) {
+    marl::WaitGroup compile_shaders(static_cast<unsigned int>(scene.shaders.groups.size()));
+    for (auto& shader_group : scene.shaders.groups) {
         marl::schedule([this, compile_shaders, &scene, &shader_group = shader_group]
         {
-            compile(scene.engine_shader_files, scene.scene_shader_files, shader_group.primary_intersection, shaderc_intersection_shader, shader_group.name);
-            compile(scene.engine_shader_files, scene.scene_shader_files, shader_group.primary_closest_hit, shaderc_closesthit_shader, shader_group.name);
-            compile(scene.engine_shader_files, scene.scene_shader_files, shader_group.shadow_any_hit, shaderc_anyhit_shader, shader_group.name);
+            compile(scene.shaders.engine_files, scene.shaders.scene_files, shader_group.primary_intersection, shaderc_intersection_shader, shader_group.name);
+            compile(scene.shaders.engine_files, scene.shaders.scene_files, shader_group.primary_closest_hit, shaderc_closesthit_shader, shader_group.name);
+            compile(scene.shaders.engine_files, scene.shaders.scene_files, shader_group.shadow_any_hit, shaderc_anyhit_shader, shader_group.name);
             compile_shaders.done();
         });
     }
-    compile(scene.engine_shader_files, scene.scene_shader_files, scene.raygen_shader, shaderc_raygen_shader);
-    compile(scene.engine_shader_files, scene.scene_shader_files, scene.primary_miss_shader, shaderc_miss_shader);
-    compile(scene.engine_shader_files, scene.scene_shader_files, scene.shadow_miss_shader, shaderc_miss_shader);
-    compile(scene.engine_shader_files, scene.scene_shader_files, scene.shadow_intersection_shader, shaderc_intersection_shader);
+    compile(scene.shaders.engine_files, scene.shaders.scene_files, scene.shaders.raygen, shaderc_raygen_shader);
+    compile(scene.shaders.engine_files, scene.shaders.scene_files, scene.shaders.primary_miss, shaderc_miss_shader);
+    compile(scene.shaders.engine_files, scene.shaders.scene_files, scene.shaders.shadow_miss, shaderc_miss_shader);
+    compile(scene.shaders.engine_files, scene.shaders.scene_files, scene.shaders.shadow_intersection, shaderc_intersection_shader);
     compile_shaders.wait();
 }
 
@@ -144,10 +144,10 @@ void Shader_system::step(Scene& scene)
     if (m_shaders_dirty)
     {
         if (!m_compiling.test(std::memory_order_relaxed)) {
-            scene.pipeline_dirty = true;
+            scene.shaders.pipeline_dirty = true;
             for (auto& shader_info : m_recompile_info) {
                 if (!shader_info.copy.module) {
-                    scene.pipeline_dirty = false;
+                    scene.shaders.pipeline_dirty = false;
                 }
                 if (shader_info.original->module) {
                     m_device.destroyShaderModule(shader_info.original->module);
@@ -160,7 +160,7 @@ void Shader_system::step(Scene& scene)
     else
     {
         size_t id = 0u;
-        for (auto& file : scene.engine_shader_files)
+        for (auto& file : scene.shaders.engine_files)
         {
             if (file.dirty) {
                 m_engine_files_copy[id] = file;
@@ -169,7 +169,7 @@ void Shader_system::step(Scene& scene)
             id++;
         }
         id = 0u;
-        for (auto& file : scene.scene_shader_files)
+        for (auto& file : scene.shaders.scene_files)
         {
             if (file.dirty) {
                 m_scene_files_copy[id] = file;
@@ -184,11 +184,11 @@ void Shader_system::step(Scene& scene)
             marl::schedule([&scene, this]
             {
                 m_recompile_info.clear();
-                check_if_dirty(scene.raygen_shader, shaderc_raygen_shader);
-                check_if_dirty(scene.primary_miss_shader, shaderc_miss_shader);
-                check_if_dirty(scene.shadow_miss_shader, shaderc_miss_shader);
-                check_if_dirty(scene.shadow_intersection_shader, shaderc_intersection_shader);
-                for (auto& shader_group : scene.shader_groups) {
+                check_if_dirty(scene.shaders.raygen, shaderc_raygen_shader);
+                check_if_dirty(scene.shaders.primary_miss, shaderc_miss_shader);
+                check_if_dirty(scene.shaders.shadow_miss, shaderc_miss_shader);
+                check_if_dirty(scene.shaders.shadow_intersection, shaderc_intersection_shader);
+                for (auto& shader_group : scene.shaders.groups) {
                     check_if_dirty(shader_group.primary_intersection, shaderc_intersection_shader, shader_group.name);
                     check_if_dirty(shader_group.primary_closest_hit, shaderc_closesthit_shader, shader_group.name);
                     check_if_dirty(shader_group.shadow_any_hit, shaderc_anyhit_shader, shader_group.name);
@@ -206,14 +206,14 @@ void Shader_system::step(Scene& scene)
                 m_compiling.clear(std::memory_order_release);
             });
 
-            for (auto& file : scene.engine_shader_files)
+            for (auto& file : scene.shaders.engine_files)
             {
                 if (file.dirty) {
                     write_file(file, true);  // Do during destructor or multithread if too slow
                     file.dirty = false;
                 }
             }
-            for (auto& file : scene.scene_shader_files)
+            for (auto& file : scene.shaders.scene_files)
             {
                 if (file.dirty) {
                     write_file(file, false);
@@ -241,15 +241,15 @@ void Shader_system::check_if_dirty(Shader& shader, shaderc_shader_kind shader_ki
 
 void Shader_system::cleanup(Scene& scene)
 {
-    if (scene.raygen_shader.module)
-        m_device.destroyShaderModule(scene.raygen_shader.module);
-    if (scene.primary_miss_shader.module)
-        m_device.destroyShaderModule(scene.primary_miss_shader.module);
-    if (scene.shadow_miss_shader.module)
-        m_device.destroyShaderModule(scene.shadow_miss_shader.module);
-    if (scene.shadow_intersection_shader.module)
-        m_device.destroyShaderModule(scene.shadow_intersection_shader.module);
-    for (auto& shader_group : scene.shader_groups) {
+    if (scene.shaders.raygen.module)
+        m_device.destroyShaderModule(scene.shaders.raygen.module);
+    if (scene.shaders.primary_miss.module)
+        m_device.destroyShaderModule(scene.shaders.primary_miss.module);
+    if (scene.shaders.shadow_miss.module)
+        m_device.destroyShaderModule(scene.shaders.shadow_miss.module);
+    if (scene.shaders.shadow_intersection.module)
+        m_device.destroyShaderModule(scene.shaders.shadow_intersection.module);
+    for (auto& shader_group : scene.shaders.groups) {
         if (shader_group.primary_intersection.module)
             m_device.destroyShaderModule(shader_group.primary_intersection.module);
         if (shader_group.primary_closest_hit.module)

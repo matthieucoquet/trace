@@ -24,14 +24,15 @@ public:
 protected:
     vk::Device m_device;
     VmaAllocator m_allocator;
-    VmaAllocation m_allocation{};
     Vma_buffer m_structure_buffer{};
+    Vma_buffer m_scratch_buffer{};
 };
 
 class Blas : public Acceleration_structure
 {
 public:
     vk::DeviceAddress structure_address;
+    std::vector<vk::AabbPositionsKHR> aabbs;
 
     Blas(Context& context);
     Blas(const Blas& other) = delete;
@@ -39,6 +40,8 @@ public:
     Blas& operator=(const Blas& other) = delete;
     Blas& operator=(Blas&& other) = delete;
     ~Blas() = default;
+
+    void build(vk::CommandBuffer command_buffer, bool dynamic);
 private:
     Vma_buffer m_aabbs_buffer;
 };
@@ -56,7 +59,6 @@ public:
     void update(vk::CommandBuffer command_buffer, const Scene& scene, bool first_build);
 protected:
     Vma_buffer m_instance_buffer;
-    Vma_buffer m_scratch_buffer;
     std::vector<vk::AccelerationStructureInstanceKHR> m_instances{};
     vk::AccelerationStructureGeometryKHR m_acceleration_structure_geometry;
 };

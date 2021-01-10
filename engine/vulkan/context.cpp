@@ -12,7 +12,7 @@ namespace vulkan
 {
 
 constexpr bool verbose = false;
-constexpr bool sdk_available = false;
+constexpr bool sdk_available = true;
 
 Context::Context(Window& window, vr::Instance* vr_instance)
 {
@@ -56,6 +56,10 @@ void Context::init_instance(Window& window, vr::Instance* vr_instance)
     VULKAN_HPP_DEFAULT_DISPATCHER.init(vkGetInstanceProcAddr);
 
     if constexpr (verbose) {
+        fmt::print("Instance layers:\n");
+        for (const auto& property : vk::enumerateInstanceLayerProperties()) {
+            fmt::print("\t{}\n", property.layerName);
+        }
         fmt::print("Instance extensions:\n");
         for (const auto& property : vk::enumerateInstanceExtensionProperties()) {
             fmt::print("\t{}\n", property.extensionName);
@@ -74,7 +78,8 @@ void Context::init_instance(Window& window, vr::Instance* vr_instance)
         .pEnabledValidationFeatures = validation_features.data()
     };
     vk::DebugUtilsMessengerCreateInfoEXT debug_create_info{
-        .pNext = sdk_available ? &validation_features : nullptr,
+        //.pNext = sdk_available ? &validation_features : nullptr,
+        .pNext = nullptr,
         .messageSeverity = /*vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose |*/ vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning |
         /*vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo |*/ vk::DebugUtilsMessageSeverityFlagBitsEXT::eError,
     .messageType = vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral | vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance | vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation,
@@ -88,8 +93,10 @@ void Context::init_instance(Window& window, vr::Instance* vr_instance)
     };
 
     instance = vk::createInstance(vk::InstanceCreateInfo{
-        .pNext = &debug_create_info,
+        .pNext = nullptr, //&debug_create_info,
         .pApplicationInfo = &app_info,
+        //.enabledLayerCount = static_cast<uint32_t>(required_instance_layers.size()),
+        //.ppEnabledLayerNames = required_instance_layers.data(),
         .enabledLayerCount = static_cast<uint32_t>(sdk_available ? required_instance_layers.size() : 0u),
         .ppEnabledLayerNames = sdk_available ? required_instance_layers.data() : nullptr,
         .enabledExtensionCount = static_cast<uint32_t>(required_extensions.size()),
@@ -104,9 +111,8 @@ void Context::init_device(vr::Instance* vr_instance)
     std::vector required_device_extensions = {
         VK_KHR_SWAPCHAIN_EXTENSION_NAME,
         VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
-        VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME
-        // Needed for acc structure
-        //VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
+        VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
+        VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME
         // VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME
     };
 

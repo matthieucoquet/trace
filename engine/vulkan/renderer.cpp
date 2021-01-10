@@ -16,6 +16,9 @@ Renderer::Renderer(Context& context, Scene& scene) :
     m_pipeline(context, scene, m_noise_texture.sampler),
     m_blas(context)
 {
+    One_time_command_buffer command_buffer(context.device, context.command_pool, context.graphics_queue);
+    m_blas.build(command_buffer.command_buffer, true);
+    command_buffer.submit_and_wait_idle();
 }
 
 Renderer::~Renderer()
@@ -28,8 +31,8 @@ Renderer::~Renderer()
 void Renderer::start_recording(vk::CommandBuffer command_buffer, Scene& scene)
 {
     command_buffer.begin({ .flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit });
-    if (scene.pipeline_dirty) {
-        m_queue.waitIdle();
+    if (scene.shaders.pipeline_dirty) {
+        /*m_queue.waitIdle();
         m_device.destroyPipeline(m_pipeline.pipeline);
         m_pipeline.create_pipeline(scene);
         auto temp_buffer_aligned = m_pipeline.create_shader_binding_table();
@@ -37,12 +40,12 @@ void Renderer::start_recording(vk::CommandBuffer command_buffer, Scene& scene)
             m_device, m_allocator, command_buffer,
             vk::BufferCreateInfo{
                 .size = temp_buffer_aligned.size(),
-                .usage = vk::BufferUsageFlagBits::eShaderBindingTableKHR
+                .usage = vk::BufferUsageFlagBits::eShaderBindingTableKHR | vk::BufferUsageFlagBits::eShaderDeviceAddress
             },
             temp_buffer_aligned.data());
         m_pipeline.shader_binding_table = std::move(buffer_and_staged.result);
         staging = std::move(buffer_and_staged.staging);
-        scene.pipeline_dirty = false;
+        scene.shaders.pipeline_dirty = false;
 
         command_buffer.pipelineBarrier(
             vk::PipelineStageFlagBits::eTransfer,
@@ -54,7 +57,7 @@ void Renderer::start_recording(vk::CommandBuffer command_buffer, Scene& scene)
                 .buffer = m_pipeline.shader_binding_table.buffer,
                 .offset = 0u,
                 .size = VK_WHOLE_SIZE
-            }, {});
+            }, {});*/
     }
 }
 
@@ -85,8 +88,8 @@ void Renderer::barrier_vr_swapchain(vk::CommandBuffer command_buffer, vk::Image 
 
 void Renderer::trace(vk::CommandBuffer command_buffer, Scene& scene, size_t command_pool_id, vk::Extent2D extent)
 {
-    per_frame[command_pool_id].tlas.update(command_buffer, scene, false);
-    command_buffer.pipelineBarrier(
+    //per_frame[command_pool_id].tlas.update(command_buffer, scene, false);
+    /*command_buffer.pipelineBarrier(
         vk::PipelineStageFlagBits::eAccelerationStructureBuildKHR,
         vk::PipelineStageFlagBits::eRayTracingShaderKHR,
         {},
@@ -94,7 +97,7 @@ void Renderer::trace(vk::CommandBuffer command_buffer, Scene& scene, size_t comm
             .srcAccessMask = vk::AccessFlagBits::eAccelerationStructureWriteKHR,
             .dstAccessMask = vk::AccessFlagBits::eAccelerationStructureReadKHR,
         },
-        {}, {});
+        {}, {});*/
 
     vk::DeviceAddress table_address = m_device.getBufferAddress(vk::BufferDeviceAddressInfo{ .buffer = m_pipeline.shader_binding_table.buffer });
     vk::StridedDeviceAddressRegionKHR raygen_shader_entry{
@@ -212,8 +215,10 @@ void Renderer::end_recording(vk::CommandBuffer command_buffer, size_t command_po
 void Renderer::create_per_frame_data(Context& context, Scene& scene, vk::Extent2D extent, vk::Format format, size_t command_pool_size)
 {
     per_frame.reserve(command_pool_size);
-    One_time_command_buffer command_buffer(m_device, context.command_pool, context.graphics_queue);
-    for (size_t i = 0u; i < command_pool_size; i++) {
+    //One_time_command_buffer command_buffer(m_device, context.command_pool, context.graphics_queue);
+    for (size_t i = 0u; i < command_pool_size; i++)
+    {
+        One_time_command_buffer command_buffer(m_device, context.command_pool, context.graphics_queue);
         // Images
         Vma_image image(
             m_device, context.allocator,
@@ -286,16 +291,23 @@ void Renderer::create_per_frame_data(Context& context, Scene& scene, vk::Extent2
             .storage_image = std::move(image),
             .image_view = image_view
             });
+        command_buffer.submit_and_wait_idle();
     }
-    command_buffer.submit_and_wait_idle();
+    //command_buffer.submit_and_wait_idle();
+    for (size_t i = 0u; i < command_pool_size; i++) {
+        per_frame[i].materials.copy(scene.materials.data(), sizeof(Material) * scene.materials.size());
+        per_frame[i].lights.copy(scene.lights.data(), sizeof(Light) * scene.lights.size());
+        per_frame[i].materials.flush();
+        per_frame[i].lights.flush();
+    }
 }
 
-void Renderer::update_per_frame_data(Scene& scene, size_t command_pool_id)
+void Renderer::update_per_frame_data(Scene& /*scene*/, size_t /*command_pool_id*/)
 {
-    per_frame[command_pool_id].materials.copy(scene.materials.data(), sizeof(Material) * scene.materials.size());
+    /*per_frame[command_pool_id].materials.copy(scene.materials.data(), sizeof(Material) * scene.materials.size());
     per_frame[command_pool_id].lights.copy(scene.lights.data(), sizeof(Light) * scene.lights.size());
     per_frame[command_pool_id].materials.flush();
-    per_frame[command_pool_id].lights.flush();
+    per_frame[command_pool_id].lights.flush();*/
 }
 
 void Renderer::create_descriptor_sets(vk::DescriptorPool descriptor_pool, size_t command_pool_size)
@@ -310,7 +322,7 @@ void Renderer::create_descriptor_sets(vk::DescriptorPool descriptor_pool, size_t
     {
         vk::WriteDescriptorSetAccelerationStructureKHR descriptor_acceleration_structure_info{
             .accelerationStructureCount = 1u,
-            .pAccelerationStructures = &(per_frame[i].tlas.acceleration_structure) 
+            .pAccelerationStructures = &(per_frame[i].tlas.acceleration_structure)
         };
 
         vk::DescriptorImageInfo image_info{

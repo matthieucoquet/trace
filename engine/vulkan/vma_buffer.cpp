@@ -46,10 +46,7 @@ Vma_buffer::Vma_buffer(vk::Device device, VmaAllocator allocator, vk::BufferCrea
 
 Vma_buffer::~Vma_buffer()
 {
-    if (m_device) {
-        m_device.destroyBuffer(buffer);
-        vmaFreeMemory(m_allocator, m_allocation);
-    }
+    free();
 }
 
 Buffer_from_staged::Buffer_from_staged(vk::Device device, VmaAllocator allocator, vk::CommandBuffer command_buffer, vk::BufferCreateInfo buffer_info, const void* data)
