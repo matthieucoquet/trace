@@ -20,7 +20,7 @@ private:
     xr::ActionSet m_action_set;
     xr::Action m_select_action;
     xr::ActiveActionSet m_active_action_set;
-    xr::BilateralPaths m_hand_subaction_paths;
+    std::array<xr::Path, 2> m_hand_subaction_paths;
 
     size_t m_last_active_hand{};
 };

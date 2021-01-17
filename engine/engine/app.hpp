@@ -60,8 +60,8 @@ private:
     using Duration = std::chrono::duration<float>;
 
     vk::Extent2D m_window_extent{ 1400, 900 };
-    vk::Extent2D m_trace_extent{ 2800, 1800 };
-    //vk::Extent2D m_trace_extent{ 22400, 14400 };
+    //vk::Extent2D m_trace_extent{ 2800, 1800 };
+    vk::Extent2D m_trace_extent{ 11200, 7200 };
     Scene m_scene;
     Window m_window;
     vulkan::Context m_context;

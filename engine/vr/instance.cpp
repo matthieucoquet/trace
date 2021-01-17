@@ -1,7 +1,8 @@
 #include "instance.hpp"
 #include <fmt/core.h>
 
-OPENXR_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
+//OPENXR_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
+namespace xr { DispatchLoaderDynamic default_dispatch_loader_dynamic{}; }
 
 static XrBool32 debug_callback(
     XrDebugUtilsMessageSeverityFlagsEXT /*message_severity*/,
@@ -32,7 +33,7 @@ Instance::Instance()
     if constexpr (verbose) {
         {
             fmt::print("OpenXR API layers:\n");
-            auto properties = xr::enumerateApiLayerProperties(
+            auto properties = xr::enumerateApiLayerPropertiesToVector(
 #ifndef TRACE_USE_DYNAMIC_LOADER
                 xr::DispatchLoaderStatic()
 #endif
@@ -43,7 +44,7 @@ Instance::Instance()
         }
         {
             fmt::print("Available OpenXR instance extensions:\n");
-            auto properties = xr::enumerateInstanceExtensionProperties(nullptr
+            auto properties = xr::enumerateInstanceExtensionPropertiesToVector(nullptr
 #ifndef TRACE_USE_DYNAMIC_LOADER
                 , xr::DispatchLoaderStatic()
 #endif
@@ -78,7 +79,9 @@ Instance::Instance()
         , xr::DispatchLoaderStatic()
 #endif
     );
-    OPENXR_HPP_DEFAULT_DISPATCHER.populateFully(instance);
+    //OPENXR_HPP_DEFAULT_DISPATCHER.populateFully(instance);
+    xr::default_dispatch_loader_dynamic = xr::DispatchLoaderDynamic(instance);
+    xr::default_dispatch_loader_dynamic.populateFully();
 
     system_id = instance.getSystem(xr::SystemGetInfo{
         .formFactor = xr::FormFactor::HeadMountedDisplay
@@ -91,13 +94,13 @@ Instance::Instance()
         fmt::print("HMD: \n\t{}\n", system_properties.systemName);
     }
 
-    auto view_configurations = instance.enumerateViewConfigurations(system_id);
+    auto view_configurations = instance.enumerateViewConfigurationsToVector(system_id);
     if (std::none_of(view_configurations.cbegin(), view_configurations.cend(), [](const auto& config) {
         return config == xr::ViewConfigurationType::PrimaryStereo;
     })) {
         throw std::runtime_error("Failed to find a stereo HMD.");
     }
-    auto blend_modes = instance.enumerateEnvironmentBlendModes(system_id, xr::ViewConfigurationType::PrimaryStereo);
+    auto blend_modes = instance.enumerateEnvironmentBlendModesToVector(system_id, xr::ViewConfigurationType::PrimaryStereo);
     if (std::none_of(blend_modes.cbegin(), blend_modes.cend(), [](const auto& mode) {
         return mode == xr::EnvironmentBlendMode::Opaque;
     })) {
@@ -143,7 +146,7 @@ void Instance::split_and_append(char* new_extensions, std::vector<const char*>& 
 
 float Instance::mirror_recommended_ratio() const
 {
-    auto view_configuration_views = instance.enumerateViewConfigurationViews(system_id, xr::ViewConfigurationType::PrimaryStereo);
+    auto view_configuration_views = instance.enumerateViewConfigurationViewsToVector(system_id, xr::ViewConfigurationType::PrimaryStereo);
     return static_cast<float>(view_configuration_views[0].recommendedImageRectWidth) / view_configuration_views[0].recommendedImageRectHeight;
 }
 

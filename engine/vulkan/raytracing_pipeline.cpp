@@ -129,14 +129,14 @@ void Raytracing_pipeline::create_pipeline(Scene& scene)
             .stage = vk::ShaderStageFlagBits::eMissKHR,
             .module = scene.shaders.primary_miss.module,
             .pName = "main" },
-        /*vk::PipelineShaderStageCreateInfo{
+        vk::PipelineShaderStageCreateInfo{
             .stage = vk::ShaderStageFlagBits::eMissKHR,
             .module = scene.shaders.shadow_miss.module,
             .pName = "main" },
         vk::PipelineShaderStageCreateInfo{
             .stage = vk::ShaderStageFlagBits::eIntersectionKHR,
             .module = scene.shaders.shadow_intersection.module,
-            .pName = "main" }*/
+            .pName = "main" }
     };
     std::vector groups{
         // Raygens (0)

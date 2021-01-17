@@ -100,6 +100,7 @@ target_link_libraries(engine
 
 find_path(TINYGLTF_INCLUDE_DIRS "tiny_gltf.h")
 target_include_directories(engine PRIVATE ${TINYGLTF_INCLUDE_DIRS})
+target_include_directories(engine PUBLIC "C:\\code\\external\\OpenXR-Hpp\\include")
 
 if(USE_AFTERMATH)
 target_link_libraries(engine PUBLIC aftermath::aftermath)

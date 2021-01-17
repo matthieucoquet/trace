@@ -63,7 +63,7 @@ void main()
                         );
         }
         
-        color = ambient + hit_value.xyz;
+        //color = ambient + hit_value.xyz;
         color = ambient + shadow_payload * (spec + diffuse);
     }
     

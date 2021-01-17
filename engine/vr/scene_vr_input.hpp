@@ -24,7 +24,7 @@ private:
     xr::Action m_grab_action;
     xr::Action m_scale_action;
     xr::ActiveActionSet m_active_action_set;
-    xr::BilateralPaths m_hand_subaction_paths;
+    std::array<xr::Path, 2> m_hand_subaction_paths;
 
     std::array<xr::Space, 2> m_hand_space;
 

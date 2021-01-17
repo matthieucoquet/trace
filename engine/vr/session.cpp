@@ -23,14 +23,15 @@ Session::Session(xr::Session new_session, Instance& instance, vulkan::Context& c
     m_imgui_render(context, m_ui_swapchain.vk_view_extent(), m_ui_swapchain.size(), m_ui_swapchain.image_views)
 {
     if constexpr (verbose) {
-        auto reference_spaces = session.enumerateReferenceSpaces();
+        auto reference_spaces = session.enumerateReferenceSpacesToVector();
         fmt::print("XR runtime supported reference spaces:\n");
         for (auto reference_space : reference_spaces) {
             fmt::print("\t{}\n", xr::to_string_literal(reference_space));
         }
     }
     m_stage_space = session.createReferenceSpace(xr::ReferenceSpaceCreateInfo{
-        .referenceSpaceType = Scene::standing ? xr::ReferenceSpaceType::Stage : xr::ReferenceSpaceType::Local });
+        .referenceSpaceType = Scene::standing ? xr::ReferenceSpaceType::Stage : xr::ReferenceSpaceType::Local,
+        .poseInReferenceSpace = {.orientation = {0.0f, 0.0f, 0.0f, 1.0f} , .position = {0.0f, 0.0f, 0.0f} } });
 
     //uint32_t size_swapchain = m_ray_swapchain.size();
     auto extent = m_ray_swapchain.vk_view_extent();
@@ -54,29 +55,31 @@ Session::Session(xr::Session new_session, Instance& instance, vulkan::Context& c
         .x = m_ray_swapchain.view_extent.width,
         .y = 0
     };
-    composition_layer_front = xr::CompositionLayerProjection{
-        .layerFlags = xr::CompositionLayerFlagBits::BlendTextureSourceAlpha | xr::CompositionLayerFlagBits::UnpremultipliedAlpha,
-        .space = m_stage_space,
-        .viewCount = 2u,
-        .views = composition_layer_views.data()
-    };
-    composition_layer_back = xr::CompositionLayerProjection{
-        .space = m_stage_space,
-        .viewCount = 2u,
-        .views = composition_layer_views.data()
-    };
+    composition_layer_front = xr::CompositionLayerProjection(
+        /*.layerFlags =*/ xr::CompositionLayerFlagBits::BlendTextureSourceAlpha | xr::CompositionLayerFlagBits::UnpremultipliedAlpha,
+        /*.space =*/ m_stage_space,
+        /*.viewCount =*/ 2u,
+        /*.views = */composition_layer_views.data());
+    composition_layer_back = xr::CompositionLayerProjection(
+        /*.layerFlags =*/ xr::CompositionLayerFlagBits::None,
+        /*.space =*/ m_stage_space,
+        /*.viewCount =*/ 2u,
+        /*.views =*/ composition_layer_views.data()
+    );
 
-    composition_layer_ui = xr::CompositionLayerQuad{
-        .space = m_stage_space,
-        .eyeVisibility = xr::EyeVisibility::Both,
-        .subImage = {
+    composition_layer_ui = xr::CompositionLayerQuad(
+        xr::CompositionLayerFlagBits::None,
+        /*.space =*/ m_stage_space,
+        /*.eyeVisibility =*/ xr::EyeVisibility::Both,
+        /*.subImage =*/ {
                 .swapchain = m_ui_swapchain.swapchain,
                 .imageRect = {
                     .extent = m_ui_swapchain.view_extent
                 },
                 .imageArrayIndex = 0u
-            }
-    };
+            },
+        {}, {}
+    );
 
     m_input_systems.emplace_back(std::make_unique<Scene_vr_input>(instance.instance, session, m_action_sets));
     m_input_systems.emplace_back(std::make_unique<Ui_vr_input>(instance.instance, session, m_action_sets));
@@ -183,7 +186,7 @@ void Session::draw_frame(Scene& scene, std::vector<std::unique_ptr<System>>& sys
             session.beginFrame({});
             std::vector<xr::CompositionLayerBaseHeader*> layers_pointers;
             xr::ViewState view_state{};
-            auto views = session.locateViews(
+            auto views = session.locateViewsToVector(
                 xr::ViewLocateInfo{
                     .viewConfigurationType = xr::ViewConfigurationType::PrimaryStereo,
                     .displayTime = frame_state.predictedDisplayTime,

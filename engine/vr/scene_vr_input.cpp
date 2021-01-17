@@ -16,7 +16,7 @@ Scene_vr_input::Scene_vr_input(xr::Instance instance, xr::Session session, std::
         .actionSetName = "control", 
         .localizedActionSetName = "Control" });
 
-    m_hand_subaction_paths = xr::BilateralPaths {
+    m_hand_subaction_paths = std::array<xr::Path, 2> {
         instance.stringToPath("/user/hand/left"),
         instance.stringToPath("/user/hand/right")
     };
@@ -42,8 +42,13 @@ Scene_vr_input::Scene_vr_input(xr::Instance instance, xr::Session session, std::
         .subactionPaths = m_hand_subaction_paths.data(),
         .localizedActionName = "Scale object" });
 
-    m_hand_space[0] = session.createActionSpace(xr::ActionSpaceCreateInfo{ .action = m_pose_action, .subactionPath = m_hand_subaction_paths[0] });
-    m_hand_space[1] = session.createActionSpace(xr::ActionSpaceCreateInfo{ .action = m_pose_action, .subactionPath = m_hand_subaction_paths[1] });
+    m_hand_space[0] = session.createActionSpace(xr::ActionSpaceCreateInfo{
+        .action = m_pose_action,
+        .subactionPath = m_hand_subaction_paths[0],
+        .poseInActionSpace = {.orientation = {0.0f, 0.0f, 0.0f, 1.0f} , .position = {0.0f, 0.0f, 0.0f} } });
+    m_hand_space[1] = session.createActionSpace(xr::ActionSpaceCreateInfo{
+        .action = m_pose_action, .subactionPath = m_hand_subaction_paths[1],
+        .poseInActionSpace = {.orientation = {0.0f, 0.0f, 0.0f, 1.0f} , .position = {0.0f, 0.0f, 0.0f} } });
     action_sets.push_back(m_action_set);
 }
 

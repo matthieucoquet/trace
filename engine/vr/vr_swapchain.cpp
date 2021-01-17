@@ -14,7 +14,7 @@ namespace vr
 Swapchain::Swapchain(Instance& instance, xr::Session& session, vulkan::Context& context) :
     m_device(context.device)
 {
-    std::vector<int64_t> supported_formats = session.enumerateSwapchainFormats();
+    std::vector<int64_t> supported_formats = session.enumerateSwapchainFormatsToVector();
     if (std::none_of(supported_formats.cbegin(), supported_formats.cend(), [](const auto& format) {
         return static_cast<int64_t>(required_format) == format;
     })) {
@@ -27,7 +27,7 @@ Swapchain::Swapchain(Instance& instance, xr::Session& session, vulkan::Context& 
         }
     }
 
-    auto view_configuration_views = instance.instance.enumerateViewConfigurationViews(instance.system_id, xr::ViewConfigurationType::PrimaryStereo);
+    auto view_configuration_views = instance.instance.enumerateViewConfigurationViewsToVector(instance.system_id, xr::ViewConfigurationType::PrimaryStereo);
     xr::ViewConfigurationView view_configuration_view = view_configuration_views[0];
     assert(view_configuration_views[0].recommendedImageRectHeight == view_configuration_views[1].recommendedImageRectHeight);
     assert(view_configuration_views[0].recommendedImageRectWidth == view_configuration_views[1].recommendedImageRectWidth);
@@ -51,7 +51,7 @@ Swapchain::Swapchain(Instance& instance, xr::Session& session, vulkan::Context& 
         .faceCount = 1,
         .arraySize = 1,
         .mipCount = 1 });
-    images = swapchain.enumerateSwapchainImages<xr::SwapchainImageVulkanKHR>();
+    images = swapchain.enumerateSwapchainImagesToVector<xr::SwapchainImageVulkanKHR>();
     vk_images.reserve(images.size());
     for (const auto& image : images) {
         vk_images.push_back(image.image);
@@ -63,7 +63,7 @@ Swapchain::Swapchain(xr::Session session, vulkan::Context& context, xr::Extent2D
     view_extent(extent),
     m_device(context.device)
 {
-    std::vector<int64_t> supported_formats = session.enumerateSwapchainFormats();
+    std::vector<int64_t> supported_formats = session.enumerateSwapchainFormatsToVector();
     if (std::none_of(supported_formats.cbegin(), supported_formats.cend(), [](const auto& format) {
         return static_cast<int64_t>(required_format) == format;
     })) {
@@ -80,7 +80,7 @@ Swapchain::Swapchain(xr::Session session, vulkan::Context& context, xr::Extent2D
         .faceCount = 1,
         .arraySize = 1,
         .mipCount = 1 });
-    images = swapchain.enumerateSwapchainImages<xr::SwapchainImageVulkanKHR>();
+    images = swapchain.enumerateSwapchainImagesToVector<xr::SwapchainImageVulkanKHR>();
     vk_images.reserve(images.size());
     for (const auto& image : images) {
         vk_images.push_back(image.image);

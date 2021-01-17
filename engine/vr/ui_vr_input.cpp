@@ -14,7 +14,7 @@ Ui_vr_input::Ui_vr_input(xr::Instance instance, xr::Session /*session*/, std::ve
         .actionSetName = "ui", 
         .localizedActionSetName = "UI" });
 
-    m_hand_subaction_paths = xr::BilateralPaths {
+    m_hand_subaction_paths = std::array<xr::Path, 2> {
         instance.stringToPath("/user/hand/left"),
         instance.stringToPath("/user/hand/right")
     };
@@ -43,7 +43,7 @@ void Ui_vr_input::step(Scene& scene, xr::Session session, xr::Time /*display_tim
             .action = m_select_action.get(), 
             .subactionPath = m_hand_subaction_paths[i] });
         if (select_state.isActive) {
-            bool pressed = select_state.currentState;
+            bool pressed = bool(select_state.currentState);
             if (pressed) {
                 scene.mouse_control = false;
                 m_last_active_hand = i;

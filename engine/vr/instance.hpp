@@ -13,6 +13,7 @@ class Instance
 public:
     xr::Instance instance;
     xr::SystemId system_id;
+    //xr::DispatchLoaderDynamic dynamic_dispatch;
 
     Instance();
     Instance(const Instance& other) = delete;

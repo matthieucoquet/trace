@@ -139,7 +139,7 @@ Tlas::Tlas(vk::CommandBuffer command_buffer, Context& context, const Blas& blas,
             } },
             .instanceCustomIndex = i,
             .mask = 0xFF,
-            .instanceShaderBindingTableRecordOffset = /*2 */ static_cast<uint32_t>(scene.objects[i].group_id), // 2 for primary + shadow
+            .instanceShaderBindingTableRecordOffset = 2 * static_cast<uint32_t>(scene.objects[i].group_id), // 2 for primary + shadow
             .accelerationStructureReference = blas.structure_address
             });
     }
