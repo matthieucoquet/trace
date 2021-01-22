@@ -2,7 +2,8 @@
 #include "context.hpp"
 #include "command_buffer.hpp"
 #include <fmt/core.h>
-namespace vulkan
+
+namespace sdf_editor::vulkan
 {
 
 Desktop_mirror::Desktop_mirror(Context& context, size_t size, bool vr_mode) :

@@ -3,6 +3,9 @@
 
 struct GLFWwindow;
 
+namespace sdf_editor
+{
+
 class Input_glfw_system final : public System
 {
 public:
@@ -19,3 +22,5 @@ private:
 
     void update_mouse_pos_and_buttons(Scene& scene);
 };
+
+}

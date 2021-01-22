@@ -5,7 +5,7 @@
 #include <iostream>
 #undef MemoryBarrier
 
-namespace vulkan
+namespace sdf_editor::vulkan
 {
 
 Renderer::Renderer(Context& context, Scene& scene) :
@@ -302,12 +302,12 @@ void Renderer::create_per_frame_data(Context& context, Scene& scene, vk::Extent2
     }
 }
 
-void Renderer::update_per_frame_data(Scene& /*scene*/, size_t /*command_pool_id*/)
+void Renderer::update_per_frame_data(Scene& scene, size_t command_pool_id)
 {
-    /*per_frame[command_pool_id].materials.copy(scene.materials.data(), sizeof(Material) * scene.materials.size());
+    per_frame[command_pool_id].materials.copy(scene.materials.data(), sizeof(Material) * scene.materials.size());
     per_frame[command_pool_id].lights.copy(scene.lights.data(), sizeof(Light) * scene.lights.size());
     per_frame[command_pool_id].materials.flush();
-    per_frame[command_pool_id].lights.flush();*/
+    per_frame[command_pool_id].lights.flush();
 }
 
 void Renderer::create_descriptor_sets(vk::DescriptorPool descriptor_pool, size_t command_pool_size)

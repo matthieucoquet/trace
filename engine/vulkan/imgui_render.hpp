@@ -5,7 +5,7 @@
 #include <shaderc/shaderc.hpp>
 #include <imgui.h>
 
-namespace vulkan
+namespace sdf_editor::vulkan
 {
 class Context;
 

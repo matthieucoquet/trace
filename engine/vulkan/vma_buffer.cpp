@@ -1,7 +1,7 @@
 #include "vma_buffer.hpp"
 #include <utility>
 
-namespace vulkan
+namespace sdf_editor::vulkan
 {
 
 Vma_buffer::Vma_buffer(Vma_buffer&& other) noexcept :

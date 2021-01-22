@@ -2,7 +2,7 @@
 #include "vk_common.hpp"
 #include <array>
 
-namespace vulkan
+namespace sdf_editor::vulkan
 {
 
 class Context;

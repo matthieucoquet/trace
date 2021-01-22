@@ -8,7 +8,7 @@
 #include "texture.hpp"
 #include "core/scene.hpp"
 
-namespace vulkan
+namespace sdf_editor::vulkan
 {
 
 class Context;

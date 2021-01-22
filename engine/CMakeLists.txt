@@ -7,6 +7,7 @@ find_package(OpenXR CONFIG REQUIRED)
 find_package(imgui CONFIG REQUIRED)
 find_package(fmt CONFIG REQUIRED)
 find_package(marl CONFIG REQUIRED)
+find_package(nlohmann_json CONFIG REQUIRED)
 
 # import shaderc as a module
 # Should switch to a config when shaderc supports it
@@ -33,6 +34,7 @@ set(SOURCE_ENGINE
     engine/app.cpp engine/app.hpp
     engine/gltf_loader.cpp engine/gltf_loader.hpp
     engine/input_glfw_system.cpp engine/input_glfw_system.hpp
+    engine/json.cpp engine/json.hpp
     engine/shader_system.cpp engine/shader_system.hpp
     engine/ui_system.cpp engine/ui_system.hpp
     engine/window.cpp engine/window.hpp)
@@ -95,7 +97,7 @@ target_link_libraries(engine
     glm
     marl::marl
     fmt::fmt
-    #OpenXR::headers)
+    nlohmann_json::nlohmann_json
     OpenXR::openxr_loader)
 
 find_path(TINYGLTF_INCLUDE_DIRS "tiny_gltf.h")

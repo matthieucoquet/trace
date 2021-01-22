@@ -5,7 +5,7 @@
 #include <openxr/openxr_dynamic_loader.hpp>
 #endif
 
-namespace vr
+namespace sdf_editor::vr
 {
 
 class Instance

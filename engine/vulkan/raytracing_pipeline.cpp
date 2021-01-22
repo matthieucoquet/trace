@@ -4,7 +4,8 @@
 #include "command_buffer.hpp"
 #include <fstream>
 #include <fmt/core.h>
-namespace vulkan
+
+namespace sdf_editor::vulkan
 {
 
 Raytracing_pipeline::Raytracing_pipeline(Context& context, Scene& scene, vk::Sampler immutable_sampler) :

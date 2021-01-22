@@ -2,6 +2,9 @@
 
 #include <fmt/core.h>
 
+namespace sdf_editor
+{
+
 constexpr bool verbose = false;
 constexpr unsigned int initial_height = 900;
 
@@ -57,4 +60,6 @@ std::vector<const char*> Window::required_extensions() const
         }
     }
     return extensions;
+}
+
 }

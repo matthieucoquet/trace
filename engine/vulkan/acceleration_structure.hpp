@@ -2,9 +2,12 @@
 #include "vk_common.hpp"
 #include "vma_buffer.hpp"
 
-struct Scene; 
+namespace sdf_editor
+{
+struct Scene;
+}
 
-namespace vulkan
+namespace sdf_editor::vulkan
 {
 
 class Context;

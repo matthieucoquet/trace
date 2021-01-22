@@ -7,6 +7,9 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <fmt/core.h>
 
+namespace sdf_editor
+{
+
 Ui_system::Ui_system()
 {
     ImGuiStyle& style = ImGui::GetStyle();
@@ -219,5 +222,7 @@ void Ui_system::record_selected(Scene& scene)
     }
     }
     ImGui::EndChild();
+
+}
 
 }

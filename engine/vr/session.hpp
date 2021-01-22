@@ -12,11 +12,11 @@
 #include <memory>
 
 struct GLFWwindow;
-namespace vulkan {
+namespace sdf_editor::vulkan {
 class Context;
 }
 
-namespace vr
+namespace sdf_editor::vr
 {
 
 class Instance;

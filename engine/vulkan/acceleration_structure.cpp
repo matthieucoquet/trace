@@ -7,7 +7,7 @@
 #include <glm/gtx/string_cast.hpp>
 #include <fmt/core.h>
 
-namespace vulkan
+namespace sdf_editor::vulkan
 {
 
 Acceleration_structure::Acceleration_structure(Context& context) :

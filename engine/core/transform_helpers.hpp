@@ -2,6 +2,9 @@
 #include <glm/gtx/transform.hpp>
 #include <glm/gtx/quaternion.hpp>
 
+namespace sdf_editor
+{
+
 struct Transform
 {
     glm::vec3 position;
@@ -35,4 +38,6 @@ inline Transform compute_local_transform(glm::vec3 parent_pos, glm::quat parent_
         glm::inverse(parent_rot) * (global_child_pos - parent_pos),
         glm::inverse(parent_rot) * global_child_rot
     };
+}
+
 }

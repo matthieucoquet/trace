@@ -4,7 +4,7 @@
 namespace demo
 {
 
-using App = Desktop_app;
+using App = sdf_editor::Vr_app;
 
 class Demo : public App
 {

@@ -8,6 +8,7 @@
         "stb",
         "fmt",
         "marl",
-	"tinygltf"
+        "nlohmann-json",
+        "tinygltf"
     ]
 }

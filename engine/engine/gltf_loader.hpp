@@ -1,5 +1,8 @@
 #pragma once
 
+namespace sdf_editor
+{
+
 struct Scene;
 
 class Gltf_loader
@@ -14,3 +17,5 @@ public:
 private:
 
 };
+
+}

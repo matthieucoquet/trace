@@ -7,7 +7,7 @@
 #include <glm/gtx/quaternion.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-namespace vr
+namespace sdf_editor::vr
 {
 
 Scene_vr_input::Scene_vr_input(xr::Instance instance, xr::Session session, std::vector<xr::ActionSet>& action_sets)

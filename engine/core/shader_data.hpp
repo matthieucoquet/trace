@@ -3,6 +3,9 @@
 #include <vector>
 #include "vulkan/vk_common.hpp"
 
+namespace sdf_editor
+{
+
 struct Shader_file
 {
     bool dirty = false;
@@ -39,3 +42,5 @@ struct Shaders
     Shader shadow_intersection;
     std::vector<Shader_group> groups;
 };
+
+}

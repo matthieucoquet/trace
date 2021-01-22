@@ -1,7 +1,7 @@
 #pragma once
 #include "vr_input.hpp"
 
-namespace vr
+namespace sdf_editor::vr
 {
 
 class Ui_vr_input final : public Vr_input

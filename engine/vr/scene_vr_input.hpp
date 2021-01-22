@@ -3,7 +3,7 @@
 #include "vr_input.hpp"
 #include "core/scene.hpp"
 
-namespace vr
+namespace sdf_editor::vr
 {
 
 class Scene_vr_input final : public Vr_input

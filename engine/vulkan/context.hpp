@@ -5,6 +5,7 @@
 #include "aftermath_crash_tracker.hpp"
 #endif
 
+namespace sdf_editor {
 class Window;
 namespace vr {
 class Instance;
@@ -47,4 +48,5 @@ private:
     void init_descriptor_pool();
 };
 
+}
 }

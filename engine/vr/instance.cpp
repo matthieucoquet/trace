@@ -14,7 +14,7 @@ static XrBool32 debug_callback(
     return XR_TRUE;
 }
 
-namespace vr
+namespace sdf_editor::vr
 {
 constexpr bool verbose = true;
 

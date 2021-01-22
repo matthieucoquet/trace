@@ -3,7 +3,7 @@
 #include "vma_image.hpp"
 #include <string_view>
 
-namespace vulkan
+namespace sdf_editor::vulkan
 {
 class Context;
 

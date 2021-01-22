@@ -1,6 +1,9 @@
 #pragma once
 #include "vulkan/vk_common.hpp"
 
+namespace sdf_editor
+{
+
 class Window
 {
 public:
@@ -20,3 +23,5 @@ public:
     [[nodiscard]] std::vector<const char*> required_extensions() const;
     [[nodiscard]] bool step();
 };
+
+}

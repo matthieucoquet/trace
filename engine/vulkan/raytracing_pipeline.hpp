@@ -3,9 +3,11 @@
 #include "vma_buffer.hpp"
 #include <filesystem>
 
+namespace sdf_editor
+{
 struct Scene;
-
-namespace vulkan
+}
+namespace sdf_editor::vulkan
 {
 
 class Context;

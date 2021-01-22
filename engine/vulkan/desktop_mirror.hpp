@@ -2,7 +2,7 @@
 #include "vk_common.hpp"
 #include "desktop_swapchain.hpp"
 
-namespace vulkan
+namespace sdf_editor::vulkan
 {
 
 class Context;

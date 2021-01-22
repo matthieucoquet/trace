@@ -14,6 +14,9 @@
 #include <nlohmann/json.hpp>
 #include <tiny_gltf.h>
 
+namespace sdf_editor
+{
+
 constexpr bool verbose = true;
 
 static glm::vec3 to_vec3(std::vector<double> v) {
@@ -54,7 +57,7 @@ struct Gltf_character
             transforms.push_back(Transform{
                 .position = to_vec3(node.translation),
                 .rotation = to_quat(node.rotation)
-            });
+                });
             joints[gltf_child_id] = child_id;
             child_id = create(model.nodes[gltf_child_id], child_id);
         }
@@ -103,4 +106,6 @@ Gltf_loader::Gltf_loader(Scene& /*scene*/)
 
         }
     }*/
+}
+
 }

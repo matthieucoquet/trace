@@ -6,7 +6,7 @@
 #include <filesystem>
 #include <fstream>
 
-namespace vulkan
+namespace sdf_editor::vulkan
 {
 
 Imgui_render::Imgui_render(Context& context, vk::Extent2D extent, uint32_t command_pool_size, const std::vector<vk::ImageView>& image_views):
@@ -457,7 +457,13 @@ vk::ShaderModule Imgui_render::compile_glsl_file(const char* filename, shaderc_s
     content.read(buffer.data(), file_size);
     content.close();
 
-    auto compile_result = m_compiler.CompileGlslToSpv(buffer.data(), buffer.size(), shader_kind, filename, m_group_compile_options);
+    file_size--;
+    while (buffer[file_size] == '\0')
+    {
+            file_size--;
+    }
+
+    auto compile_result = m_compiler.CompileGlslToSpv(buffer.data(), file_size+1, shader_kind, filename, m_group_compile_options);
     if (compile_result.GetCompilationStatus() != shaderc_compilation_status_success) {
         fmt::print("{}\n", compile_result.GetErrorMessage());
         throw std::runtime_error("Imgui shader compilation error");

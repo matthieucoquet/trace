@@ -5,7 +5,7 @@
 #include <glm/gtx/transform.hpp>
 #include "core/transform_helpers.hpp"
 
-namespace vr
+namespace sdf_editor::vr
 {
 
 Ui_vr_input::Ui_vr_input(xr::Instance instance, xr::Session /*session*/, std::vector<xr::ActionSet>& action_sets)

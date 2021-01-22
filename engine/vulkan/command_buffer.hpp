@@ -2,7 +2,7 @@
 #include "vk_common.hpp"
 #include <fmt/core.h>
 
-namespace vulkan
+namespace sdf_editor::vulkan
 {
 
 class One_time_command_buffer

@@ -6,10 +6,10 @@
 #include <algorithm>
 #include <fmt/core.h>
 
-constexpr bool verbose = true;
-
-namespace vr
+namespace sdf_editor::vr
 {
+
+constexpr bool verbose = true;
 
 Swapchain::Swapchain(Instance& instance, xr::Session& session, vulkan::Context& context) :
     m_device(context.device)

@@ -1,12 +1,12 @@
 #pragma once
 #include "vr_common.hpp"
 
-namespace vulkan
+namespace sdf_editor::vulkan
 {
 class Context;
 }
 
-namespace vr
+namespace sdf_editor::vr
 {
 class Session;
 class Instance;

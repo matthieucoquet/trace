@@ -3,7 +3,7 @@
 
 #include <algorithm>
 
-namespace vulkan
+namespace sdf_editor::vulkan
 {
 
 Desktop_swapchain::Desktop_swapchain(Context& context, bool vr_mode) :

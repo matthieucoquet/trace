@@ -2,7 +2,7 @@
 #include "vk_common.hpp"
 #include "vma_buffer.hpp"
 
-namespace vulkan
+namespace sdf_editor::vulkan
 {
 
 class Vma_image

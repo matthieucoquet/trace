@@ -9,6 +9,8 @@
 #include "vulkan/aftermath_database.hpp"
 #endif
 
+namespace sdf_editor
+{
 namespace vulkan {
 class Context;
 }
@@ -16,7 +18,7 @@ class Context;
 class Shader_system final : public System
 {
 public:
-    Shader_system(vulkan::Context& context, Scene& scene, std::string_view scene_shader_path);
+    Shader_system(vulkan::Context& context, Scene& scene, std::filesystem::path scene_shader_path);
     Shader_system(const Shader_system& other) = delete;
     Shader_system(Shader_system&& other) = delete;
     Shader_system& operator=(const Shader_system& other) = delete;
@@ -60,3 +62,5 @@ private:
     void check_if_dirty(Shader& shader, shaderc_shader_kind shader_kind, const std::string& group_name = {});
 
 };
+
+}

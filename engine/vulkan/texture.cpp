@@ -6,7 +6,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
-namespace vulkan
+namespace sdf_editor::vulkan
 {
 
 Texture::Texture(Context& context, std::string_view filename) :

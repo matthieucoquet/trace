@@ -8,7 +8,7 @@
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
-namespace vulkan
+namespace sdf_editor::vulkan
 {
 
 constexpr bool verbose = false;

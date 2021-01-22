@@ -1,7 +1,7 @@
 #pragma once
 #include "vk_common.hpp"
 
-namespace vulkan
+namespace sdf_editor::vulkan
 {
 
 class Vma_buffer

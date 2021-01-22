@@ -6,8 +6,9 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 
-namespace vr
+namespace sdf_editor::vr
 {
+
 inline xr::Vector3f to_xr(glm::vec3 vec) {
     return { vec.x, vec.y, vec.z };
 }

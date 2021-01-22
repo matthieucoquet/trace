@@ -1,7 +1,7 @@
 #pragma once
 #include "vk_common.h"
 #include <fmt/core.h>
-namespace vulkan
+namespace sdf_editor::vulkan
 {
 
 void print_queue_checkpoint_properties(vk::PhysicalDevice physical_device)

@@ -8,7 +8,7 @@
 #include <fmt/core.h>
 #include <vector>
 
-namespace vr
+namespace sdf_editor::vr
 {
 constexpr bool verbose = false;
 constexpr size_t size_command_buffers = 4u;

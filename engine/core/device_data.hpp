@@ -6,6 +6,9 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 
+namespace sdf_editor
+{
+
 struct Eye
 {
     xr::Posef pose = {};
@@ -31,3 +34,5 @@ struct Light
     glm::vec3 position;
     glm::vec3 color;
 };
+
+}

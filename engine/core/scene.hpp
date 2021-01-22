@@ -5,6 +5,9 @@
 #include <vector>
 #include <chrono>
 
+namespace sdf_editor
+{
+
 struct Object
 {
     std::string name;
@@ -35,3 +38,5 @@ struct Scene
 
     Shaders shaders;
 };
+
+}

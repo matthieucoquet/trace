@@ -2,7 +2,7 @@
 #include "vma_buffer.hpp"
 #include <utility>
 
-namespace vulkan
+namespace sdf_editor::vulkan
 {
 
 Vma_image::Vma_image(Vma_image&& other) noexcept :

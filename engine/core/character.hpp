@@ -3,6 +3,9 @@
 #include "vulkan/vk_common.hpp"
 #include <vector>
 
+namespace sdf_editor
+{
+
 struct Body
 {
     Transform local{};
@@ -28,3 +31,5 @@ public:
 
 private:
 };
+
+}

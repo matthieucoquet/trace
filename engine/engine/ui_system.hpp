@@ -2,6 +2,9 @@
 #include "core/system.hpp"
 #include <limits>
 
+namespace sdf_editor
+{
+
 struct Shader;
 struct Shader_file;
 
@@ -32,3 +35,5 @@ private:
 
     void record_selected(Scene& scene);
 };
+
+}

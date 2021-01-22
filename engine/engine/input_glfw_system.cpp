@@ -10,6 +10,9 @@
 #include <GLFW/glfw3native.h>   // for glfwGetWin32Window
 #endif
 
+namespace sdf_editor
+{
+
 static bool mouse_just_pressed[ImGuiMouseButton_COUNT] = {};
 static bool installed_callbacks = false;
 
@@ -219,3 +222,5 @@ static void ImGui_ImplGlfw_UpdateGamepads()
     else
         io.BackendFlags &= ~ImGuiBackendFlags_HasGamepad;
 }*/
+
+}
