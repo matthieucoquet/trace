@@ -1,7 +1,7 @@
 #pragma once
 #include "core/scene.hpp"
 #include "core/system.hpp"
-#include "core/shader_data.hpp"
+#include "core/shader.hpp"
 #include <filesystem>
 #include <shaderc/shaderc.hpp>
 #include <marl/scheduler.h>

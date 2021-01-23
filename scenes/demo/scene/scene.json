@@ -1,4 +1,58 @@
 {
+    "entities": [
+        {
+            "children": [
+                {
+                    "children": null,
+                    "group_id": 1,
+                    "name": "cube_small",
+                    "position": [
+                        0.0,
+                        1.0,
+                        0.0
+                    ],
+                    "rotation": [
+                        1.0,
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "scale": 0.5
+                }
+            ],
+            "group_id": 2,
+            "name": "sphere",
+            "position": [
+                0.0,
+                2.0,
+                0.5
+            ],
+            "rotation": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": 1.0
+        },
+        {
+            "children": null,
+            "group_id": 2,
+            "name": "cube",
+            "position": [
+                -1.0,
+                1.0,
+                1.0
+            ],
+            "rotation": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": 1.0
+        }
+    ],
     "lights": [
         {
             "color": [
@@ -41,40 +95,6 @@
                 0.15000000596046448,
                 0.8500000238418579
             ]
-        }
-    ],
-    "objects": [
-        {
-            "group_id": 2,
-            "name": "sphere",
-            "position": [
-                1.0,
-                2.0,
-                1.0
-            ],
-            "rotation": [
-                1.0,
-                0.0,
-                0.0,
-                0.0
-            ],
-            "scale": 1.0
-        },
-        {
-            "group_id": 1,
-            "name": "cube",
-            "position": [
-                -1.0,
-                1.0,
-                1.0
-            ],
-            "rotation": [
-                1.0,
-                0.0,
-                0.0,
-                0.0
-            ],
-            "scale": 1.0
         }
     ]
 }

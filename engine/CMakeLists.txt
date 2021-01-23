@@ -24,18 +24,16 @@ endif()
 add_library(engine STATIC)
 
 set(SOURCE_CORE
-    core/character.cpp core/character.hpp
-    core/shader_data.hpp
     core/scene.hpp
-    core/device_data.hpp
+    core/shader.hpp
     core/system.hpp
-    core/transform_helpers.hpp)
+    core/transform.hpp)
 set(SOURCE_ENGINE
     engine/app.cpp engine/app.hpp
-    engine/gltf_loader.cpp engine/gltf_loader.hpp
     engine/input_glfw_system.cpp engine/input_glfw_system.hpp
     engine/json.cpp engine/json.hpp
     engine/shader_system.cpp engine/shader_system.hpp
+    engine/transform_system.cpp engine/transform_system.hpp
     engine/ui_system.cpp engine/ui_system.hpp
     engine/window.cpp engine/window.hpp)
 set(SOURCE_VR
@@ -52,7 +50,6 @@ set(SOURCE_VULKAN
     vulkan/aftermath_database.cpp vulkan/aftermath_database.hpp
     vulkan/acceleration_structure.cpp vulkan/acceleration_structure.hpp
     vulkan/command_buffer.hpp
-    vulkan/command_checkpoint.hpp
     vulkan/context.cpp vulkan/context.hpp
     vulkan/desktop_mirror.cpp vulkan/desktop_mirror.hpp
     vulkan/desktop_swapchain.cpp vulkan/desktop_swapchain.hpp

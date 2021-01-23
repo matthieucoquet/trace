@@ -47,10 +47,8 @@ private:
     vulkan::Reusable_command_pools m_command_pools;
     vulkan::Imgui_render m_imgui_render;
 
-    xr::CompositionLayerProjection composition_layer_front{};
-    xr::CompositionLayerProjection composition_layer_back{};
+    xr::CompositionLayerProjection composition_layer{};
     std::array<xr::CompositionLayerProjectionView, 2> composition_layer_views;
-    xr::CompositionLayerQuad composition_layer_ui{};
 
     std::vector<std::unique_ptr<Vr_input>> m_input_systems;
     std::vector<xr::ActionSet> m_action_sets;

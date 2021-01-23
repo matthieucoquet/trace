@@ -8,7 +8,7 @@
 
 layout(binding = 0, set = 0) uniform accelerationStructureEXT topLevelAS;
 
-layout(location = 0) rayPayloadInEXT vec4 hit_value;
+layout(location = 0) rayPayloadInEXT vec3 hit_value;
 layout(location = 1) rayPayloadEXT float shadow_payload;
 
 layout(binding = 3, set = 0, scalar) buffer Materials { Material m[]; } materials;
@@ -80,11 +80,10 @@ void main()
         }
         
         Material material = materials.m[nonuniformEXT(hit.material_id)];
-        float front = dot(position - scene_global.ui_position, scene_global.ui_normal) <= 0.0f ? 0.0f : 1.0f;
-        hit_value = vec4(color * material.color, front);
+        hit_value = vec3(color * material.color);
     }
     else
     {
-        hit_value = vec4(background_miss(ray.origin + ray.direction), 0.0);
+        hit_value = background_miss(ray.origin + ray.direction);
     }
 }

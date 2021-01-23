@@ -9,6 +9,7 @@ using json = nlohmann::json;
 namespace sdf_editor
 {
 
+// vec3 <-> json
 static json to_json(const glm::vec3& vec) {
 	return json({ vec.x, vec.y, vec.z });
 }
@@ -16,6 +17,7 @@ static glm::vec3 to_vec3(const json& j) {
 	return glm::vec3{ j[0], j[1], j[2] };
 }
 
+// quat <-> json
 static json to_json(const glm::quat& q) {
 	return json::array({ q.w, q.x, q.y, q.z });
 }
@@ -23,9 +25,51 @@ static glm::quat to_quat(const json& j) {
 	return glm::quat{ j[0], j[1], j[2], j[3] };
 }
 
-Json::Json(std::filesystem::path path):
+// entity <-> json
+static json to_json(const Entity& e) {
+	json j{
+			{ "name", e.name },
+			{ "position", to_json(e.local_transform.position) },
+			{ "rotation", to_json(e.local_transform.rotation) },
+			{ "scale", e.scale },
+			{ "group_id", e.group_id },
+	};
+	json children;
+	for (const auto& child : e.children)
+	{
+		children.push_back(to_json(child));
+	}
+	j["children"] = children;
+	return j;
+}
+
+static Entity to_entity(const json& j) {
+	Entity entity{
+			.name = j["name"].get<std::string>(),
+			.local_transform = Transform{
+				.position = to_vec3(j["position"]),
+				.rotation = to_quat(j["rotation"])
+			},
+			.scale = j["scale"].get<float>(),
+			.group_id = j["group_id"].get<size_t>()
+	};
+
+	const json& children = j["children"];
+	if (children.is_array()) {
+		entity.children.reserve(children.size());
+		for (const auto& child : children)
+		{
+			entity.children.push_back(to_entity(child));
+		}
+	}
+	return entity;
+}
+
+Json::Json(Scene& scene, std::filesystem::path path):
 	m_path(std::move(path))
-{}
+{
+	parse(scene);
+}
 
 void Json::parse(Scene& scene)
 {
@@ -33,17 +77,11 @@ void Json::parse(Scene& scene)
 	json j;
 	stream >> j;
 
-	const json& objects = j["objects"];
-	scene.objects.reserve(objects.size());
-	for (const auto& object : objects)
+	const json& entities = j["entities"];
+	scene.entities.reserve(entities.size());
+	for (const auto& entity : entities)
 	{
-		scene.objects.emplace_back(Object{
-			.name = object["name"].get<std::string>(),
-			.position = to_vec3(object["position"]),
-			.rotation = to_quat(object["rotation"]),
-			.scale = object["scale"].get<float>(),
-			.group_id = object["group_id"].get<size_t>()
-		});
+		scene.entities.emplace_back(to_entity(entity));
 	}
 
 	const json& materials = j["materials"];
@@ -59,28 +97,17 @@ void Json::parse(Scene& scene)
 	{
 		scene.lights.push_back(Light{ .position = to_vec3(light["position"]), .color = to_vec3(light["color"]) });
 	}
-
-	for (auto& object : scene.objects) {
-		glm::mat4 model_to_world = glm::translate(object.position) * glm::toMat4(object.rotation) * glm::scale(glm::vec3(object.scale));
-		scene.objects_transform.emplace_back(glm::inverse(model_to_world));
-	}
 }
 
 void Json::write_to_file(const Scene& scene)
 {
-	json objects;
-	for (const auto& object : scene.objects)
+	json entities;
+	for (const auto& entity : scene.entities)
 	{
-		if (object.group_id == 0) {
+		if (entity.group_id == 0) {
 			continue; // It's hands
 		}
-		objects.push_back(json{ 
-			{ "name", object.name },
-			{ "position", to_json(object.position) },
-			{ "rotation", to_json(object.rotation) },
-			{ "scale", object.scale },
-			{ "group_id", object.group_id },
-		});
+		entities.push_back(to_json(entity));
 	}
 
 	json materials;
@@ -96,7 +123,7 @@ void Json::write_to_file(const Scene& scene)
 	}
 
 	json j;
-	j["objects"] = objects;
+	j["entities"] = entities;
 	j["materials"] = materials;
 	j["lights"] = lights;
 

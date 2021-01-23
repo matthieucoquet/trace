@@ -44,7 +44,7 @@ public:
     Blas& operator=(Blas&& other) = delete;
     ~Blas() = default;
 
-    void build(vk::CommandBuffer command_buffer, bool dynamic);
+    void build(vk::CommandBuffer command_buffer);
 private:
     Vma_buffer m_aabbs_buffer;
 };
@@ -52,7 +52,7 @@ private:
 class Tlas : public Acceleration_structure
 {
 public:
-    Tlas(vk::CommandBuffer command_buffer, Context& context, const Blas& blas, const Scene& scene);
+    Tlas(vk::CommandBuffer command_buffer, Context& context, const Blas& blas, Scene& scene);
     Tlas(const Tlas& other) = delete;
     Tlas(Tlas&& other) = default;
     Tlas& operator=(const Tlas& other) = delete;
@@ -62,7 +62,7 @@ public:
     void update(vk::CommandBuffer command_buffer, const Scene& scene, bool first_build);
 protected:
     Vma_buffer m_instance_buffer;
-    std::vector<vk::AccelerationStructureInstanceKHR> m_instances{};
+    //std::vector<vk::AccelerationStructureInstanceKHR> m_instances{};
     vk::AccelerationStructureGeometryKHR m_acceleration_structure_geometry;
 };
 

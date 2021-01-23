@@ -11,6 +11,7 @@
 
 #include "engine/window.hpp"
 #include "engine/shader_system.hpp"
+#include "engine/transform_system.hpp"
 #include "engine/ui_system.hpp"
 #include "engine/input_glfw_system.hpp"
 #include "engine/json.hpp"
@@ -76,6 +77,7 @@ private:
     Time_point m_start_clock = Clock::now();
 
     Shader_system m_shader_system;
+    Transform_system m_transform_system;
 
     vulkan::Renderer m_renderer;
     vulkan::Desktop_mirror m_mirror;

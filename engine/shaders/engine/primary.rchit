@@ -9,7 +9,7 @@
 
 layout(binding = 0, set = 0) uniform accelerationStructureEXT topLevelAS;
 
-layout(location = 0) rayPayloadInEXT vec4 hit_value;
+layout(location = 0) rayPayloadInEXT vec3 hit_value;
 layout(location = 1) rayPayloadEXT float shadow_payload;
 
 layout(binding = 3, set = 0, scalar) buffer Materials { Material m[]; } materials;
@@ -18,7 +18,6 @@ layout(binding = 4, set = 0, scalar) buffer Lights { Light l[]; } lights;
 void main()
 {
     vec3 position = gl_WorldRayOriginEXT + gl_WorldRayDirectionEXT * gl_HitTEXT;
-    float front = dot(position - scene_global.ui_position, scene_global.ui_normal) <= 0.0f ? 0.0f : 1.0f;
 #ifdef DEBUG_SDF
     Hit hit = map(vec3(gl_WorldToObjectEXT * vec4(position, 1.0f)));
 
@@ -69,6 +68,6 @@ void main()
     
 
     Material material = materials.m[nonuniformEXT(gl_HitKindEXT)];
-    hit_value = vec4(color * material.color, front);
+    hit_value = color * material.color;
 #endif
 }

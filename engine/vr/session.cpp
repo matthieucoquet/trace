@@ -55,30 +55,11 @@ Session::Session(xr::Session new_session, Instance& instance, vulkan::Context& c
         .x = m_ray_swapchain.view_extent.width,
         .y = 0
     };
-    composition_layer_front = xr::CompositionLayerProjection(
-        /*.layerFlags =*/ xr::CompositionLayerFlagBits::BlendTextureSourceAlpha | xr::CompositionLayerFlagBits::UnpremultipliedAlpha,
-        /*.space =*/ m_stage_space,
-        /*.viewCount =*/ 2u,
-        /*.views = */composition_layer_views.data());
-    composition_layer_back = xr::CompositionLayerProjection(
+    composition_layer = xr::CompositionLayerProjection(
         /*.layerFlags =*/ xr::CompositionLayerFlagBits::None,
         /*.space =*/ m_stage_space,
         /*.viewCount =*/ 2u,
         /*.views =*/ composition_layer_views.data()
-    );
-
-    composition_layer_ui = xr::CompositionLayerQuad(
-        xr::CompositionLayerFlagBits::None,
-        /*.space =*/ m_stage_space,
-        /*.eyeVisibility =*/ xr::EyeVisibility::Both,
-        /*.subImage =*/ {
-                .swapchain = m_ui_swapchain.swapchain,
-                .imageRect = {
-                    .extent = m_ui_swapchain.view_extent
-                },
-                .imageArrayIndex = 0u
-            },
-        {}, {}
     );
 
     m_input_systems.emplace_back(std::make_unique<Scene_vr_input>(instance.instance, session, m_action_sets));
@@ -174,10 +155,6 @@ void Session::draw_frame(Scene& scene, std::vector<std::unique_ptr<System>>& sys
                 system->step(scene, session, frame_state.predictedDisplayTime, m_stage_space, Scene::vr_offset_y);
             }
             std::for_each(systems.begin(), systems.end(), [&scene](auto& system) { system->step(scene); });
-            composition_layer_ui.pose = to_xr(scene.ui_object.position, scene.ui_object.rotation);
-            composition_layer_ui.pose.position.y -= Scene::vr_offset_y;
-            composition_layer_ui.size.height = scene.ui_object.scale;
-            composition_layer_ui.size.width = scene.ui_object.scale;
         }
 
         if (frame_state.shouldRender &&
@@ -230,9 +207,7 @@ void Session::draw_frame(Scene& scene, std::vector<std::unique_ptr<System>>& sys
 
             m_ray_swapchain.swapchain.releaseSwapchainImage({});
             m_ui_swapchain.swapchain.releaseSwapchainImage({});
-            layers_pointers.push_back(reinterpret_cast<xr::CompositionLayerBaseHeader*>(&composition_layer_back));
-            layers_pointers.push_back(reinterpret_cast<xr::CompositionLayerBaseHeader*>(&composition_layer_ui));
-            layers_pointers.push_back(reinterpret_cast<xr::CompositionLayerBaseHeader*>(&composition_layer_front));
+            layers_pointers.push_back(reinterpret_cast<xr::CompositionLayerBaseHeader*>(&composition_layer));
             session.endFrame(xr::FrameEndInfo{
                 .displayTime = frame_state.predictedDisplayTime,
                 .environmentBlendMode = xr::EnvironmentBlendMode::Opaque,

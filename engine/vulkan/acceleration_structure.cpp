@@ -2,7 +2,6 @@
 #include "context.hpp"
 #include "command_buffer.hpp"
 #include "core/scene.hpp"
-#include "core/device_data.hpp"
 
 #include <glm/gtx/string_cast.hpp>
 #include <fmt/core.h>
@@ -47,7 +46,7 @@ Blas::Blas(Context& context) :
     Acceleration_structure(context)
 {}
 
-void Blas::build(vk::CommandBuffer command_buffer, bool /*dynamic*/)
+void Blas::build(vk::CommandBuffer command_buffer)
 {
     vk::AabbPositionsKHR aabb{ -0.5f, -0.5f, -0.5f, 0.5f, 0.5f, 0.5f };
 
@@ -123,25 +122,12 @@ void Blas::build(vk::CommandBuffer command_buffer, bool /*dynamic*/)
 }
 
 
-Tlas::Tlas(vk::CommandBuffer command_buffer, Context& context, const Blas& blas, const Scene& scene) :
+Tlas::Tlas(vk::CommandBuffer command_buffer, Context& context, const Blas& blas, Scene& scene) :
     Acceleration_structure(context)
 {
-    auto nb_instances = static_cast<uint32_t>(scene.objects.size());
-    for (uint32_t i = 0u; i < scene.objects.size(); i++)
-    {
-        glm::mat4 inv = glm::inverse(scene.objects_transform[i]);
-        m_instances.push_back(vk::AccelerationStructureInstanceKHR{
-            .transform = {
-                .matrix = std::array<std::array<float, 4>, 3>{
-                    std::array<float, 4>{ inv[0].x, inv[1].x, inv[2].x, inv[3].x },
-                    std::array<float, 4>{ inv[0].y, inv[1].y, inv[2].y, inv[3].y },
-                    std::array<float, 4>{ inv[0].z, inv[1].z, inv[2].z, inv[3].z }
-            } },
-            .instanceCustomIndex = i,
-            .mask = 0xFF,
-            .instanceShaderBindingTableRecordOffset = 2 * static_cast<uint32_t>(scene.objects[i].group_id), // 2 for primary + shadow
-            .accelerationStructureReference = blas.structure_address
-            });
+    auto nb_instances = static_cast<uint32_t>(scene.entities_instances.size());
+    for (auto& instance : scene.entities_instances) {
+        instance.accelerationStructureReference = blas.structure_address;
     }
 
     m_instance_buffer = Vma_buffer(
@@ -200,22 +186,13 @@ Tlas::Tlas(vk::CommandBuffer command_buffer, Context& context, const Blas& blas,
 void Tlas::update(vk::CommandBuffer command_buffer, const Scene& scene, bool first_build)
 {
     // Update instances
-    for (uint32_t i = 0u; i < scene.objects.size(); i++)
-    {
-        glm::mat4 inv = glm::inverse(scene.objects_transform[i]);
-        m_instances[i].transform.matrix = std::array<std::array<float, 4>, 3>{
-            std::array<float, 4>{ inv[0].x, inv[1].x, inv[2].x, inv[3].x },
-                std::array<float, 4>{ inv[0].y, inv[1].y, inv[2].y, inv[3].y },
-                std::array<float, 4>{ inv[0].z, inv[1].z, inv[2].z, inv[3].z }
-        };
-    }
-    m_instance_buffer.copy(reinterpret_cast<void*>(m_instances.data()), m_instances.size() * sizeof(vk::AccelerationStructureInstanceKHR));
+    m_instance_buffer.copy(reinterpret_cast<const void*>(scene.entities_instances.data()), scene.entities_instances.size() * sizeof(vk::AccelerationStructureInstanceKHR));
     m_instance_buffer.flush();
 
     vk::DeviceAddress scratch_address = m_device.getBufferAddress(vk::BufferDeviceAddressInfo{ .buffer = m_scratch_buffer.buffer });
 
     vk::AccelerationStructureBuildRangeInfoKHR build_range{
-            .primitiveCount = static_cast<uint32_t>(scene.objects.size()),
+            .primitiveCount = static_cast<uint32_t>(scene.entities.size()),
             .primitiveOffset = 0u,
             .firstVertex = 0u,
             .transformOffset = 0u

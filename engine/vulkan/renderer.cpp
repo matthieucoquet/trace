@@ -17,7 +17,7 @@ Renderer::Renderer(Context& context, Scene& scene) :
     m_blas(context)
 {
     One_time_command_buffer command_buffer(context.device, context.command_pool, context.graphics_queue);
-    m_blas.build(command_buffer.command_buffer, true);
+    m_blas.build(command_buffer.command_buffer);
     command_buffer.submit_and_wait_idle();
 }
 
@@ -88,8 +88,8 @@ void Renderer::barrier_vr_swapchain(vk::CommandBuffer command_buffer, vk::Image 
 
 void Renderer::trace(vk::CommandBuffer command_buffer, Scene& scene, size_t command_pool_id, vk::Extent2D extent)
 {
-    //per_frame[command_pool_id].tlas.update(command_buffer, scene, false);
-    /*command_buffer.pipelineBarrier(
+    per_frame[command_pool_id].tlas.update(command_buffer, scene, false);
+    command_buffer.pipelineBarrier(
         vk::PipelineStageFlagBits::eAccelerationStructureBuildKHR,
         vk::PipelineStageFlagBits::eRayTracingShaderKHR,
         {},
@@ -97,7 +97,7 @@ void Renderer::trace(vk::CommandBuffer command_buffer, Scene& scene, size_t comm
             .srcAccessMask = vk::AccessFlagBits::eAccelerationStructureWriteKHR,
             .dstAccessMask = vk::AccessFlagBits::eAccelerationStructureReadKHR,
         },
-        {}, {});*/
+        {}, {});
 
     vk::DeviceAddress table_address = m_device.getBufferAddress(vk::BufferDeviceAddressInfo{ .buffer = m_pipeline.shader_binding_table.buffer });
     vk::StridedDeviceAddressRegionKHR raygen_shader_entry{

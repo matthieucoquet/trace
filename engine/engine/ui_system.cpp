@@ -70,13 +70,13 @@ void Ui_system::step(Scene& scene)
     ImGui::Separator();
     if (ImGui::TreeNodeEx("Objects", ImGuiTreeNodeFlags_DefaultOpen))
     {
-        for (int id = 0; id < std::ssize(scene.objects); id++)
+        for (int id = 0; id < std::ssize(scene.entities); id++)
         {
             ImGuiTreeNodeFlags leaf_flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
             if (m_selected == Selected::object && m_selected_id == id) {
                 leaf_flags |= ImGuiTreeNodeFlags_Selected;
             }
-            ImGui::TreeNodeEx(scene.objects[id].name.c_str(), leaf_flags);
+            ImGui::TreeNodeEx(scene.entities[id].name.c_str(), leaf_flags);
             if (ImGui::IsItemClicked()) {
                 m_selected = Selected::object;
                 m_selected_id = id;
@@ -196,14 +196,13 @@ void Ui_system::record_selected(Scene& scene)
     }
     case Selected::object:
     {
-        Object& object = scene.objects[m_selected_id];
-        bool dirty = ImGui::InputFloat3("Position", glm::value_ptr(object.position));
-        dirty = !ImGui::InputFloat4("Rotation", glm::value_ptr(object.rotation));
-        dirty = !ImGui::SliderFloat("Scale", &object.scale, 0.03f, 5.0f, "%.3f");
+        Entity& entity = scene.entities[m_selected_id];
+        bool dirty = ImGui::InputFloat3("Position", glm::value_ptr(entity.local_transform.position));
+        dirty = !ImGui::InputFloat4("Rotation", glm::value_ptr(entity.local_transform.rotation));
+        dirty = !ImGui::SliderFloat("Scale", &entity.scale, 0.03f, 5.0f, "%.3f");
         if (dirty)
         {
-            glm::mat4 model_to_world = glm::translate(object.position) * glm::toMat4(object.rotation) * glm::scale(glm::vec3(object.scale));
-            scene.objects_transform[m_selected_id] = glm::inverse(model_to_world);
+            entity.dirty_global = true;
         }
         break;
     }

@@ -21,14 +21,15 @@ inline xr::Posef to_xr(glm::vec3 vec, glm::quat quat) {
     return { .orientation = to_xr(quat), .position = to_xr(vec) };
 }
 
-inline void to_glm(xr::Posef pose, Object& object) {
-    object.position.x = pose.position.x;
-    object.position.y = pose.position.y;
-    object.position.z = pose.position.z;
-    object.rotation.w = pose.orientation.w;
-    object.rotation.x = pose.orientation.x;
-    object.rotation.y = pose.orientation.y;
-    object.rotation.z = pose.orientation.z;
+inline void to_glm(xr::Posef pose, Entity& entity) {
+    entity.local_transform.position.x = pose.position.x;
+    entity.local_transform.position.y = pose.position.y;
+    entity.local_transform.position.z = pose.position.z;
+    entity.local_transform.rotation.w = pose.orientation.w;
+    entity.local_transform.rotation.x = pose.orientation.x;
+    entity.local_transform.rotation.y = pose.orientation.y;
+    entity.local_transform.rotation.z = pose.orientation.z;
+    entity.dirty_global = true;
 }
 
 }

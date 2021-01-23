@@ -3,7 +3,7 @@
 #include <imgui.h>
 #include <glm/gtx/quaternion.hpp>
 #include <glm/gtx/transform.hpp>
-#include "core/transform_helpers.hpp"
+#include "core/transform.hpp"
 
 namespace sdf_editor::vr
 {
@@ -57,8 +57,9 @@ void Ui_vr_input::step(Scene& scene, xr::Session session, xr::Time /*display_tim
 
     if (!scene.mouse_control)
     {
-        Object& ui = scene.ui_object;
-        Object& hand = scene.objects[m_last_active_hand];
+        //TODO
+        /*Entity& ui = scene.ui_object;
+        Entity& hand = scene.entities[m_last_active_hand];
 
         auto [pos, rot] = compute_local_transform(ui.position, ui.rotation, hand.position, hand.rotation);
         glm::vec3 ptr_direction = glm::rotate(rot, glm::vec3(0.0f, 0.0f, 1.0f));
@@ -70,7 +71,7 @@ void Ui_vr_input::step(Scene& scene, xr::Session session, xr::Time /*display_tim
         {
             ImGuiIO& io = ImGui::GetIO();
             io.MousePos = ImVec2(mouse.x * io.DisplaySize.x, (1.0f - mouse.y) * io.DisplaySize.y);
-        }
+        }*/
     }
 }
 

@@ -6,24 +6,23 @@
 #include <ranges>
 #include <algorithm>
 #include <imgui.h>
-#include "gltf_loader.hpp"
 
 namespace sdf_editor
 {
 
 Vr_app::Vr_app(Scene scene, std::filesystem::path scene_json_path, std::filesystem::path scene_shader_path):
     m_scene(std::move(scene)),
-    m_json(std::move(scene_json_path)),
+    m_json(m_scene, std::move(scene_json_path)),
     m_window(m_vr_instance.mirror_recommended_ratio()),
     m_context(m_window, &m_vr_instance)
 {
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
 
-    m_json.parse(m_scene);
     m_systems.push_back(std::make_unique<Input_glfw_system>(m_window.window));
     m_systems.push_back(std::make_unique<Shader_system>(m_context, m_scene, scene_shader_path));
     m_systems.push_back(std::make_unique<Ui_system>());
+    m_systems.push_back(std::make_unique<Transform_system>(m_scene));
 
     xr::GraphicsBindingVulkanKHR graphic_binding{
         .instance = m_context.instance,
@@ -64,16 +63,15 @@ static constexpr size_t size_command_buffers = 1u;
 
 Desktop_app::Desktop_app(Scene scene, std::filesystem::path scene_json_path, std::filesystem::path scene_shader_path) :
     m_scene(std::move(scene)),
-    m_json(std::move(scene_json_path)),
+    m_json(m_scene, std::move(scene_json_path)),
     m_window(m_window_extent.width, m_window_extent.height),
     m_context(m_window, nullptr),
     m_shader_system(m_context, m_scene, std::move(scene_shader_path)),
+    m_transform_system(m_scene),
     m_renderer(m_context, m_scene),
     m_mirror(m_context, size_command_buffers, false),
     m_command_pools(m_context.device, m_context.queue_family, size_command_buffers)
 {
-    //Gltf_loader gltf{};
-    m_json.parse(m_scene);
     m_renderer.create_per_frame_data(m_context, m_scene, m_trace_extent, vk::Format::eR8G8B8A8Unorm, size_command_buffers);
     m_renderer.create_descriptor_sets(m_context.descriptor_pool, size_command_buffers);
 }
@@ -107,8 +105,6 @@ void Desktop_app::run()
             m_scene.scene_global.eyes[eye_id].fov.angleRight = 0.78f;
             m_scene.scene_global.eyes[eye_id].fov.angleLeft = -0.78f;
         }
-        m_scene.scene_global.ui_position = glm::vec3(0.0f, 0.0f, 0.0f);
-        m_scene.scene_global.ui_normal = glm::vec3(0.0f, 0.0f, 1.0f);
 
         size_t command_pool_id = m_command_pools.find_next();
         auto& command_buffer = m_command_pools.command_buffers[command_pool_id];

@@ -8,7 +8,7 @@
 layout(binding = 0, set = 0) uniform accelerationStructureEXT topLevelAS;
 layout(binding = 1, set = 0, rgba8) uniform image2D image;
 
-layout(location = 0) rayPayloadEXT vec4 hit_value;
+layout(location = 0) rayPayloadEXT vec3 hit_value;
 
 vec3 get_direction(in vec2 center, in Eye eye, in bool is_right)
 {
@@ -28,7 +28,7 @@ void shoot_ray(in vec3 direction, in Eye eye)
     float tmin = 0.2;
     float tmax = 12.0;
 
-    hit_value = vec4(0.0, 0.2, 0.0, 0.0);
+    hit_value = vec3(0.0, 0.2, 0.0);
     traceRayEXT(topLevelAS, gl_RayFlagsOpaqueEXT, 0xFF, 0, 0, 0, eye.pose.position, tmin, direction.xyz, tmax, 0);
 }
 
@@ -44,6 +44,5 @@ void main()
 
     vec3 direction = get_direction(center, eye, is_right);
     shoot_ray(direction, eye);
-    vec4 color = hit_value;
-    imageStore(image, nonuniformEXT(ivec2(gl_LaunchIDEXT.xy)), color);
+    imageStore(image, nonuniformEXT(ivec2(gl_LaunchIDEXT.xy)), vec4(hit_value, 1.0));
 }

@@ -1,21 +1,59 @@
 #pragma once
-#include "device_data.hpp"
-#include "shader_data.hpp"
-#include "character.hpp"
+#include "vulkan/vk_common.hpp"
+#include "vr/vr_common.hpp"
+#include <array>
 #include <vector>
 #include <chrono>
+#define GLM_FORCE_RADIANS
+#include <glm/glm.hpp>
+#include <glm/gtc/quaternion.hpp>
+
+#include "shader.hpp"
+#include "transform.hpp"
 
 namespace sdf_editor
 {
 
-struct Object
+struct Eye
+{
+    xr::Posef pose = {};
+    xr::Fovf fov = {};
+};
+
+struct Scene_global
+{
+    std::array<Eye, 2> eyes;
+    float time = {};
+    int nb_lights = {};
+};
+
+struct Material
+{
+    glm::vec3 color;
+};
+
+struct Light
+{
+    glm::vec3 position;
+    glm::vec3 color;
+};
+
+struct Entity
 {
     std::string name;
-    // TODO use transform
-    glm::vec3 position;
-    glm::quat rotation;
+
+    Transform local_transform;
+    Transform global_transform;
+    //glm::mat4 global_mat;  // World to entity
+    //glm::mat4 global_inv_mat;  // Entity to World
+
     float scale;
     size_t group_id;
+
+    std::vector<Entity> children{};
+
+    bool dirty_global = false;
+    bool dirty_local = false;
 };
 
 struct Scene
@@ -27,11 +65,8 @@ struct Scene
 
     Scene_global scene_global = {};
 
-    Object ui_object;
-    std::vector<Object> objects;
-    std::vector<glm::mat4> objects_transform;
-
-    std::vector<Character> characters;
+    std::vector<Entity> entities;
+    std::vector<vk::AccelerationStructureInstanceKHR> entities_instances{};
 
     std::vector<Material> materials;
     std::vector<Light> lights;

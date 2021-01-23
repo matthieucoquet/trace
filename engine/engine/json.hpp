@@ -8,7 +8,7 @@ struct Scene;
 class Json
 {
 public:
-	Json(std::filesystem::path path);
+	Json(Scene& scene, std::filesystem::path path);
 	void parse(Scene& scene);
 	void write_to_file(const Scene& scene);
 private:
