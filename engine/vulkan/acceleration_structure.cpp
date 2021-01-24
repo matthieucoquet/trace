@@ -192,7 +192,7 @@ void Tlas::update(vk::CommandBuffer command_buffer, const Scene& scene, bool fir
     vk::DeviceAddress scratch_address = m_device.getBufferAddress(vk::BufferDeviceAddressInfo{ .buffer = m_scratch_buffer.buffer });
 
     vk::AccelerationStructureBuildRangeInfoKHR build_range{
-            .primitiveCount = static_cast<uint32_t>(scene.entities.size()),
+            .primitiveCount = static_cast<uint32_t>(scene.entities_instances.size()),
             .primitiveOffset = 0u,
             .firstVertex = 0u,
             .transformOffset = 0u

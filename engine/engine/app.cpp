@@ -45,7 +45,7 @@ Vr_app::~Vr_app()
     m_context.device.waitIdle();
     std::ranges::for_each(m_systems, [this](auto& system) { system->cleanup(m_scene); });
     ImGui::DestroyContext();
-    m_json.write_to_file(m_scene);
+    //m_json.write_to_file(m_scene);
 }
 
 void Vr_app::run()

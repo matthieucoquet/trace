@@ -18,15 +18,16 @@ struct Transform
     }
     Transform& operator*=(const Transform& rhs)
     {
-        position += rotation * rhs.position;
+        position += glm::rotate(rotation, rhs.position);
         rotation = rotation * rhs.rotation;
         return *this;
     }
 
     Transform inverse() const {
+        glm::quat conj = glm::conjugate(rotation);
         return Transform{
-            .position = - glm::inverse(rotation) * position,
-            .rotation = glm::inverse(rotation)
+            .position = glm::rotate(conj, - position),
+            .rotation = conj
         };
     }
 
