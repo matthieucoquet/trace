@@ -8,7 +8,7 @@
 namespace sdf_editor::vulkan
 {
 
-Raytracing_pipeline::Raytracing_pipeline(Context& context, Scene& scene, vk::Sampler immutable_sampler) :
+Raytracing_pipeline::Raytracing_pipeline(Context& context, Scene& scene, vk::Sampler immutable_sampler_noise, vk::Sampler immutable_sampler_ui) :
     m_device(context.device)
 {
     vk::PhysicalDeviceProperties2 properties{};
@@ -28,22 +28,28 @@ Raytracing_pipeline::Raytracing_pipeline(Context& context, Scene& scene, vk::Sam
             .descriptorType = vk::DescriptorType::eStorageImage,
             .descriptorCount = 1u,
             .stageFlags = vk::ShaderStageFlagBits::eRaygenKHR },
-        vk::DescriptorSetLayoutBinding{  // Noise texture
-            .binding = 2u,
-            .descriptorType = vk::DescriptorType::eCombinedImageSampler,
-            .descriptorCount = 1u,
-            .stageFlags = vk::ShaderStageFlagBits::eIntersectionKHR | vk::ShaderStageFlagBits::eAnyHitKHR | vk::ShaderStageFlagBits::eClosestHitKHR | vk::ShaderStageFlagBits::eMissKHR ,
-            .pImmutableSamplers = &immutable_sampler },
         vk::DescriptorSetLayoutBinding{  // Materials
-            .binding = 3u,
+            .binding = 2u,
             .descriptorType = vk::DescriptorType::eStorageBuffer,
             .descriptorCount = 1u,
             .stageFlags = vk::ShaderStageFlagBits::eClosestHitKHR | vk::ShaderStageFlagBits::eMissKHR },
         vk::DescriptorSetLayoutBinding{  // Lights
-            .binding = 4u,
+            .binding = 3u,
             .descriptorType = vk::DescriptorType::eStorageBuffer,
             .descriptorCount = 1u,
-            .stageFlags = vk::ShaderStageFlagBits::eClosestHitKHR | vk::ShaderStageFlagBits::eMissKHR }
+            .stageFlags = vk::ShaderStageFlagBits::eClosestHitKHR | vk::ShaderStageFlagBits::eMissKHR },
+        vk::DescriptorSetLayoutBinding{  // Noise texture TODO merge all texture to an array
+            .binding = 4u,
+            .descriptorType = vk::DescriptorType::eCombinedImageSampler,
+            .descriptorCount = 1u,
+            .stageFlags = vk::ShaderStageFlagBits::eIntersectionKHR | vk::ShaderStageFlagBits::eAnyHitKHR | vk::ShaderStageFlagBits::eClosestHitKHR | vk::ShaderStageFlagBits::eMissKHR ,
+            .pImmutableSamplers = &immutable_sampler_noise },
+        vk::DescriptorSetLayoutBinding{  // UI texture
+            .binding = 5u,
+            .descriptorType = vk::DescriptorType::eCombinedImageSampler,
+            .descriptorCount = 1u,
+            .stageFlags = vk::ShaderStageFlagBits::eIntersectionKHR | vk::ShaderStageFlagBits::eClosestHitKHR,
+            .pImmutableSamplers = &immutable_sampler_ui }
     };
     descriptor_set_layout = m_device.createDescriptorSetLayout(vk::DescriptorSetLayoutCreateInfo{
         .bindingCount = static_cast<uint32_t>(array_bindings.size()),

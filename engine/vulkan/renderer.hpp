@@ -6,6 +6,7 @@
 #include "vma_buffer.hpp"
 #include "vma_image.hpp"
 #include "texture.hpp"
+#include "imgui_render.hpp"
 #include "core/scene.hpp"
 
 namespace sdf_editor::vulkan
@@ -28,7 +29,7 @@ class Renderer
 public:
     std::vector<Per_frame> per_frame;
 
-    Renderer(Context& context, Scene& scene);
+    Renderer(Context& context, Scene& scene, size_t command_pool_size);
     Renderer(const Renderer& other) = delete;
     Renderer(Renderer&& other) = delete;
     Renderer& operator=(const Renderer& other) = delete;
@@ -50,7 +51,9 @@ private:
     vk::Device m_device;
     VmaAllocator m_allocator;
     vk::Queue m_queue;
+    Imgui_render m_imgui_render;
     Texture m_noise_texture;
+    Sampler m_sampler;
     Raytracing_pipeline m_pipeline;
     Blas m_blas;
 

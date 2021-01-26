@@ -9,6 +9,26 @@
 namespace sdf_editor::vulkan
 {
 
+Texture::Texture(Texture&& other) noexcept :
+    height(other.height),
+    width(other.width),
+    image(std::move(other.image)),
+    image_view(other.image_view),
+    m_device(other.m_device)
+{
+    other.m_device = nullptr;
+}
+
+Texture& Texture::operator=(Texture&& other) noexcept
+{
+    std::swap(m_device, other.m_device);
+    height = other.height;
+    width = other.width;
+    image = std::move(other.image);
+    std::swap(image_view, other.image_view);
+    return *this;
+}
+
 Texture::Texture(Context& context, std::string_view filename) :
     m_device(context.device)
 {
@@ -51,7 +71,73 @@ Texture::Texture(Context& context, std::string_view filename) :
             .layerCount = 1u
         }
     });
+}
 
+
+Texture::Texture(Context& context, vk::Extent2D extent) :
+    height(extent.height),
+    width(extent.width),
+    m_device(context.device)
+{
+    vk::Format format = vk::Format::eR8G8B8A8Unorm;
+    vk::ImageUsageFlags usage = vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst;
+    image = Vma_image(
+        m_device, context.allocator,
+        vk::ImageCreateInfo{
+            .imageType = vk::ImageType::e2D,
+            .format = format,
+            .extent = {extent.width, extent.height, 1},
+            .mipLevels = 1u,
+            .arrayLayers = 1u,
+            .samples = vk::SampleCountFlagBits::e1,
+            .tiling = vk::ImageTiling::eOptimal,
+            .usage = usage,
+            .sharingMode = vk::SharingMode::eExclusive,
+            .initialLayout = vk::ImageLayout::eUndefined
+        },
+        VMA_MEMORY_USAGE_GPU_ONLY);
+    image_view = m_device.createImageView(
+        vk::ImageViewCreateInfo{
+           .image = image.image,
+           .viewType = vk::ImageViewType::e2D,
+           .format = format,
+           .subresourceRange = {
+               .aspectMask = vk::ImageAspectFlagBits::eColor,
+               .baseMipLevel = 0u,
+               .levelCount = 1u,
+               .baseArrayLayer = 0u,
+               .layerCount = 1u} });
+    /*command_buffer.command_buffer.pipelineBarrier(
+        vk::PipelineStageFlagBits::eTopOfPipe,
+        vk::PipelineStageFlagBits::eRayTracingShaderKHR,
+        {}, {}, {},
+        vk::ImageMemoryBarrier{
+            .srcAccessMask = {},
+            .dstAccessMask = {},
+            .oldLayout = vk::ImageLayout::eUndefined,
+            .newLayout = vk::ImageLayout::eGeneral,
+            .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .image = image.image,
+            .subresourceRange = {
+                .aspectMask = vk::ImageAspectFlagBits::eColor,
+                .baseMipLevel = 0,
+                .levelCount = 1u,
+                .baseArrayLayer = 0,
+                .layerCount = 1
+            } });*/
+}
+
+Texture::~Texture()
+{
+    if (m_device) {
+        m_device.destroyImageView(image_view);
+    }
+}
+
+Sampler::Sampler(Context& context) :
+    m_device(context.device)
+{
     sampler = m_device.createSampler(vk::SamplerCreateInfo{
         .magFilter = vk::Filter::eLinear,
         .minFilter = vk::Filter::eLinear,
@@ -67,13 +153,12 @@ Texture::Texture(Context& context, std::string_view filename) :
         .minLod = 0.0f,
         .maxLod = 1.0f,
         .unnormalizedCoordinates = false
-    });
+        });
 }
 
-Texture::~Texture()
+Sampler::~Sampler()
 {
     m_device.destroySampler(sampler);
-    m_device.destroyImageView(image_view);
 }
 
 }

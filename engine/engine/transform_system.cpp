@@ -30,9 +30,6 @@ static size_t update_entity(Scene& scene, Entity& entity, size_t id = 0, const E
         }
         entity.dirty_global = false;
     }
-    for (auto& child : entity.children) {
-        id = update_entity(scene, child, id + 1, &entity);
-    }
 
     glm::mat4 inv = glm::translate(entity.global_transform.position) * glm::toMat4(entity.global_transform.rotation) * glm::scale(glm::vec3(entity.scale));
     if (scene.entities_instances.size() > id) {
@@ -56,6 +53,9 @@ static size_t update_entity(Scene& scene, Entity& entity, size_t id = 0, const E
             });
     }
 
+    for (auto& child : entity.children) {
+        id = update_entity(scene, child, id + 1, &entity);
+    }
     return id;
 }
 

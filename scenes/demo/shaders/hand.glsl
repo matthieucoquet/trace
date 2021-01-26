@@ -23,7 +23,7 @@ float op_union(float d1, float d2, float k)
 
 Hit map(in vec3 position)
 {
-    /*vec3 ring_pos = position;
+    vec3 ring_pos = position;
     ring_pos.y -= 0.2;
     ring_pos.yz = rotate(ring_pos.yz, -0.6);
     float outer = length(ring_pos) - 0.3;
@@ -38,7 +38,10 @@ Hit map(in vec3 position)
 
     uint material_id = hold - 0.01 < ring ? BLACK_ID : RED_ID;
     float d = op_union(hold, ring, 0.08);
-    return Hit(d, material_id);*/
-    float d = length(position) - 0.2;
-    return Hit(d, BLACK_ID);
+    return Hit(d, material_id);
+}
+
+vec3 get_color(in vec3 position)
+{
+    return vec3(0.0);
 }

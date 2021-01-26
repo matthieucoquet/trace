@@ -4,7 +4,7 @@
       "children": [
         {
           "children": null,
-          "group_id": 1,
+          "group_id": 2,
           "name": "cube_small",
           "position": [
             0.0,
@@ -20,7 +20,7 @@
           "scale": 0.5
         }
       ],
-      "group_id": 2,
+      "group_id": 3,
       "name": "sphere",
       "position": [
         0.0,
@@ -37,7 +37,7 @@
     },
     {
       "children": null,
-      "group_id": 2,
+      "group_id": 3,
       "name": "cube",
       "position": [
         1.0,
@@ -54,12 +54,12 @@
     },
     {
       "children": null,
-      "group_id": 2,
-      "name": "cubeaa",
+      "group_id": 1,
+      "name": "ui",
       "position": [
-        1.0,
-        1.0,
-        0.5
+        -0.5,
+        2.0,
+        -0.5
       ],
       "rotation": [
         1.0,

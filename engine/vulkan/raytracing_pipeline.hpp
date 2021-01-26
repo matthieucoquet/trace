@@ -27,7 +27,7 @@ public:
     size_t nb_group_miss;
     size_t nb_group_primary;
 
-    Raytracing_pipeline(Context& context, Scene& scene, vk::Sampler immutable_sampler);
+    Raytracing_pipeline(Context& context, Scene& scene, vk::Sampler immutable_sampler_noise, vk::Sampler immutable_sampler_ui);
     Raytracing_pipeline(const Raytracing_pipeline& other) = delete;
     Raytracing_pipeline(Raytracing_pipeline&& other) = delete;
     Raytracing_pipeline& operator=(const Raytracing_pipeline& other) = delete;

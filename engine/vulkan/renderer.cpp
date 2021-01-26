@@ -8,12 +8,14 @@
 namespace sdf_editor::vulkan
 {
 
-Renderer::Renderer(Context& context, Scene& scene) :
+Renderer::Renderer(Context& context, Scene& scene, size_t command_pool_size) :
     m_device(context.device),
     m_allocator(context.allocator),
     m_queue(context.graphics_queue),
+    m_imgui_render(context, vk::Extent2D{ .width = 1000, .height = 1000 }, command_pool_size),
     m_noise_texture(context, "textures/lut_noise.png"),
-    m_pipeline(context, scene, m_noise_texture.sampler),
+    m_sampler(context),
+    m_pipeline(context, scene, m_sampler.sampler, m_imgui_render.result_sampler.sampler),
     m_blas(context)
 {
     One_time_command_buffer command_buffer(context.device, context.command_pool, context.graphics_queue);
@@ -31,6 +33,7 @@ Renderer::~Renderer()
 void Renderer::start_recording(vk::CommandBuffer command_buffer, Scene& scene)
 {
     command_buffer.begin({ .flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit });
+
     if (scene.shaders.pipeline_dirty) {
         /*m_queue.waitIdle();
         m_device.destroyPipeline(m_pipeline.pipeline);
@@ -88,6 +91,9 @@ void Renderer::barrier_vr_swapchain(vk::CommandBuffer command_buffer, vk::Image 
 
 void Renderer::trace(vk::CommandBuffer command_buffer, Scene& scene, size_t command_pool_id, vk::Extent2D extent)
 {
+    ImDrawData* draw_data = ImGui::GetDrawData();
+    m_imgui_render.draw(draw_data, command_buffer, command_pool_id);
+
     per_frame[command_pool_id].tlas.update(command_buffer, scene, false);
     command_buffer.pipelineBarrier(
         vk::PipelineStageFlagBits::eAccelerationStructureBuildKHR,
@@ -96,6 +102,15 @@ void Renderer::trace(vk::CommandBuffer command_buffer, Scene& scene, size_t comm
         vk::MemoryBarrier{
             .srcAccessMask = vk::AccessFlagBits::eAccelerationStructureWriteKHR,
             .dstAccessMask = vk::AccessFlagBits::eAccelerationStructureReadKHR,
+        },
+        {}, {});
+    command_buffer.pipelineBarrier(
+        vk::PipelineStageFlagBits::eColorAttachmentOutput,
+        vk::PipelineStageFlagBits::eRayTracingShaderKHR,
+        {},
+        vk::MemoryBarrier{
+            .srcAccessMask = vk::AccessFlagBits::eColorAttachmentWrite,
+            .dstAccessMask = vk::AccessFlagBits::eShaderRead,
         },
         {}, {});
 
@@ -220,6 +235,7 @@ void Renderer::create_per_frame_data(Context& context, Scene& scene, vk::Extent2
     {
         One_time_command_buffer command_buffer(m_device, context.command_pool, context.graphics_queue);
         // Images
+        // TODO Change to Texture ?
         Vma_image image(
             m_device, context.allocator,
             vk::ImageCreateInfo{
@@ -341,8 +357,12 @@ void Renderer::create_descriptor_sets(vk::DescriptorPool descriptor_pool, size_t
             .range = VK_WHOLE_SIZE
         };
         vk::DescriptorImageInfo noise_info{
-            .sampler = m_noise_texture.sampler,
+            .sampler = m_sampler.sampler,
             .imageView = m_noise_texture.image_view,
+            .imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal };
+        vk::DescriptorImageInfo ui_info{
+            .sampler = m_imgui_render.result_sampler.sampler,
+            .imageView = m_imgui_render.result_textures[i].image_view,
             .imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal };
 
         m_device.updateDescriptorSets(std::array{
@@ -365,22 +385,29 @@ void Renderer::create_descriptor_sets(vk::DescriptorPool descriptor_pool, size_t
                 .dstBinding = 2,
                 .dstArrayElement = 0,
                 .descriptorCount = 1,
-                .descriptorType = vk::DescriptorType::eCombinedImageSampler,
-                .pImageInfo = &noise_info},
+                .descriptorType = vk::DescriptorType::eStorageBuffer,
+                .pBufferInfo = &material_info},
             vk::WriteDescriptorSet{
                 .dstSet = m_descriptor_sets[i],
                 .dstBinding = 3,
                 .dstArrayElement = 0,
                 .descriptorCount = 1,
                 .descriptorType = vk::DescriptorType::eStorageBuffer,
-                .pBufferInfo = &material_info},
+                .pBufferInfo = &light_info},
             vk::WriteDescriptorSet{
                 .dstSet = m_descriptor_sets[i],
                 .dstBinding = 4,
                 .dstArrayElement = 0,
                 .descriptorCount = 1,
-                .descriptorType = vk::DescriptorType::eStorageBuffer,
-                .pBufferInfo = &light_info},
+                .descriptorType = vk::DescriptorType::eCombinedImageSampler,
+                .pImageInfo = &noise_info},
+            vk::WriteDescriptorSet{
+                .dstSet = m_descriptor_sets[i],
+                .dstBinding = 5,
+                .dstArrayElement = 0,
+                .descriptorCount = 1,
+                .descriptorType = vk::DescriptorType::eCombinedImageSampler,
+                .pImageInfo = &ui_info}
             }, {});
     }
 }

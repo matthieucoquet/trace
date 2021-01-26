@@ -12,8 +12,8 @@ layout(binding = 0, set = 0) uniform accelerationStructureEXT topLevelAS;
 layout(location = 0) rayPayloadInEXT vec3 hit_value;
 layout(location = 1) rayPayloadEXT float shadow_payload;
 
-layout(binding = 3, set = 0, scalar) buffer Materials { Material m[]; } materials;
-layout(binding = 4, set = 0, scalar) buffer Lights { Light l[]; } lights;
+layout(binding = 2, set = 0, scalar) buffer Materials { Material m[]; } materials;
+layout(binding = 3, set = 0, scalar) buffer Lights { Light l[]; } lights;
 
 void main()
 {
@@ -66,8 +66,12 @@ void main()
         color = ambient + shadow_payload * (spec + diffuse);
     }
     
-
-    Material material = materials.m[nonuniformEXT(gl_HitKindEXT)];
-    hit_value = color * material.color;
+    if (gl_HitKindEXT < UNKNOW) {
+        Material material = materials.m[nonuniformEXT(gl_HitKindEXT)];
+        hit_value = color * material.color;
+    }
+    else {
+        hit_value = get_color(model_position);
+    }
 #endif
 }

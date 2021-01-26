@@ -8,7 +8,6 @@
 #include "vulkan/renderer.hpp"
 #include "vulkan/desktop_mirror.hpp"
 #include "vulkan/command_buffer.hpp"
-#include "vulkan/imgui_render.hpp"
 #include <memory>
 
 struct GLFWwindow;
@@ -39,13 +38,11 @@ private:
     xr::Space m_stage_space;
     xr::SessionState m_session_state;
 
-    Swapchain m_ray_swapchain;
-    Swapchain m_ui_swapchain;
+    Swapchain m_swapchain;
 
     vulkan::Renderer m_renderer;
     vulkan::Desktop_mirror m_mirror;
     vulkan::Reusable_command_pools m_command_pools;
-    vulkan::Imgui_render m_imgui_render;
 
     xr::CompositionLayerProjection composition_layer{};
     std::array<xr::CompositionLayerProjectionView, 2> composition_layer_views;

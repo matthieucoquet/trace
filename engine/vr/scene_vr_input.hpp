@@ -29,8 +29,6 @@ private:
     std::array<xr::Space, 2> m_hand_space;
 
     std::array<bool, 2> m_was_grabing;
-
-    std::array<size_t, 2> m_grabed_id;
     std::array<Transform, 2> m_diff;
 
 };

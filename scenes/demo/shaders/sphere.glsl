@@ -15,3 +15,8 @@ Hit map(in vec3 position)
     //d -= 0.01 * sin(10 * (2*scene_global.time + position.x + position.y));
     return Hit(d, RED_ID);
 }
+
+vec3 get_color(in vec3 position)
+{
+    return vec3(0.0);
+}

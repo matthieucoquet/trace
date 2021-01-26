@@ -64,7 +64,7 @@ void Scene_vr_input::suggest_interaction_profile(xr::Instance instance, Suggeste
 
 void Scene_vr_input::step(Scene& scene, xr::Session session, xr::Time display_time, xr::Space base_space, float offset_space_y)
 {
-    for (size_t i = 0u; i < 2u; i++)
+    for (int i = 0; i < 2; i++)
     {
         auto space_location = m_hand_space[i].locateSpace(base_space, display_time);
         xr::SpaceLocationFlags required_flags = 
@@ -100,11 +100,17 @@ void Scene_vr_input::step(Scene& scene, xr::Session session, xr::Time display_ti
                     scene.scene_global.ui_normal = glm::rotate(rot, glm::vec3(0.0f, 0.0f, 1.0f));
                 }
                 else {*/
-                    Entity& entity = scene.entities[m_grabed_id[i]];
-                    // TODO synchronise with local ?
-                    entity.global_transform = hand.global_transform * m_diff[i];
-                    entity.scale = std::clamp(scale * entity.scale, 0.03f, 5.0f);
-                    entity.dirty_local = true;
+                for (size_t p_id = 2u; p_id < scene.entities.size(); p_id++) {
+                    Entity& entity = scene.entities[p_id];
+                    entity.visit([this, &hand, scale, i](Entity& entity) {
+                        if (entity.hand_grabbing == i) {
+                            // TODO synchronise with local ?
+                            entity.global_transform = hand.global_transform * m_diff[i];
+                            entity.scale = std::clamp(scale * entity.scale, 0.03f, 5.0f);
+                            entity.dirty_local = true;
+                        }
+                        });
+                }
                 //}
             }
             else
@@ -124,12 +130,16 @@ void Scene_vr_input::step(Scene& scene, xr::Session session, xr::Time display_ti
                 else {*/
                 for (size_t p_id = 2u; p_id < scene.entities.size(); p_id++) {
                     auto& entity = scene.entities[p_id];
-                    if (glm::length2(entity.global_transform.position - hand.global_transform.position) <= (0.25 * entity.scale * entity.scale)) {
-                        m_grabed_id[i] = p_id;
-                        m_diff[i] = hand.global_transform.inverse() * entity.global_transform;
-                        m_was_grabing[i] = true;
-                        break;
-                    }
+                    entity.visit([this, &hand, i](Entity& entity) {
+                        if (glm::length2(entity.global_transform.position - hand.global_transform.position) <= (0.25 * entity.scale * entity.scale)) {
+                            entity.hand_grabbing = i;
+                            m_diff[i] = hand.global_transform.inverse() * entity.global_transform;
+                            m_was_grabing[i] = true;
+                        }
+                        else {
+                            entity.hand_grabbing = -1;
+                        }
+                        });
                 }
                 //}
             }

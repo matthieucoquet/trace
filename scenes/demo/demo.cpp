@@ -12,12 +12,14 @@ Scene make_scene()
 {
     Scene scene{};
     scene.shaders.groups.push_back(Shader_group{ .name = "hand" });
+    scene.shaders.groups.push_back(Shader_group{ .name = "ui" });
     scene.shaders.groups.push_back(Shader_group{ .name = "cube" });
     scene.shaders.groups.push_back(Shader_group{ .name = "sphere" });
 
     size_t hand_id = 0u;
-    size_t cube_id = 1u;
-    size_t sphere_id = 2u;
+    size_t ui_id = 1u;
+    size_t cube_id = 2u;
+    size_t sphere_id = 3u;
 
     for (unsigned int i = 0u; i < 2u; i++) {
         scene.entities.emplace_back(Entity{

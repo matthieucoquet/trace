@@ -52,8 +52,18 @@ struct Entity
 
     std::vector<Entity> children{};
 
+    int hand_grabbing = -1;
     bool dirty_global = false;
     bool dirty_local = false;
+
+    template<typename F>
+    void visit(F func) {
+        func(*this);
+        for (auto& child : children) {
+            child.visit(func);
+        }
+    }
+
 };
 
 struct Scene

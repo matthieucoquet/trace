@@ -24,7 +24,7 @@ public:
 
     Swapchain() = delete;
     Swapchain(Instance& instance, xr::Session& session, vulkan::Context& context);
-    Swapchain(xr::Session session, vulkan::Context& context, xr::Extent2Di extent);
+    //Swapchain(xr::Session session, vulkan::Context& context, xr::Extent2Di extent);
     Swapchain(const Swapchain& other) = delete;
     Swapchain(Swapchain&& other) = delete;
     Swapchain& operator=(const Swapchain& other) = delete;

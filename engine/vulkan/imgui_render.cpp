@@ -9,11 +9,18 @@
 namespace sdf_editor::vulkan
 {
 
-Imgui_render::Imgui_render(Context& context, vk::Extent2D extent, uint32_t command_pool_size, const std::vector<vk::ImageView>& image_views):
+Imgui_render::Imgui_render(Context& context, vk::Extent2D extent, size_t command_pool_size):
+    result_sampler(context),
     m_device(context.device),
     m_allocator(context.allocator),
     m_extent(extent)
 {
+    result_textures.reserve(command_pool_size);
+    for (uint32_t i = 0; i < command_pool_size; i++)
+    {
+        result_textures.emplace_back(context, extent);
+    }
+
     ImGuiIO& io = ImGui::GetIO();
     io.BackendRendererName = "imgui_impl_vulkan_hpp";
     io.BackendFlags |= ImGuiBackendFlags_RendererHasVtxOffset;
@@ -28,13 +35,13 @@ Imgui_render::Imgui_render(Context& context, vk::Extent2D extent, uint32_t comma
     m_size_vertex_buffer.resize(command_pool_size, 0u);
     m_vertex_buffer.resize(command_pool_size);
 
-    m_framebuffers.reserve(image_views.size());
-    for (vk::ImageView image_view : image_views)
+    m_framebuffers.reserve(command_pool_size);
+    for (const auto& texture : result_textures)
     {
         m_framebuffers.push_back(m_device.createFramebuffer(vk::FramebufferCreateInfo{
             .renderPass = m_render_pass,
             .attachmentCount = 1u,
-            .pAttachments = &image_view,
+            .pAttachments = &texture.image_view,
             .width = extent.width,
             .height = extent.height,
             .layers = 1 }));
@@ -64,7 +71,7 @@ void Imgui_render::create_render_pass(vk::Format swapchain_format)
         .stencilLoadOp = vk::AttachmentLoadOp::eDontCare,
         .stencilStoreOp = vk::AttachmentStoreOp::eDontCare,
         .initialLayout = vk::ImageLayout::eUndefined,
-        .finalLayout = vk::ImageLayout::eColorAttachmentOptimal };
+        .finalLayout = vk::ImageLayout::eShaderReadOnlyOptimal };
 
     vk::AttachmentReference color_attachment_ref{
         .attachment = 0,
@@ -75,7 +82,6 @@ void Imgui_render::create_render_pass(vk::Format swapchain_format)
         .colorAttachmentCount = 1,
         .pColorAttachments = &color_attachment_ref };
 
-    // I don't think i need this with openxr swapchain...
     vk::SubpassDependency dependency{
         .srcSubpass = VK_SUBPASS_EXTERNAL,
         .dstSubpass = 0,
@@ -238,13 +244,13 @@ void Imgui_render::create_pipeline(Context& context)
     m_device.destroyShaderModule(fragment_module);
 }
 
-void Imgui_render::draw(ImDrawData* draw_data, vk::CommandBuffer command_buffer, size_t command_pool_id, size_t frame_id)
+void Imgui_render::draw(ImDrawData* draw_data, vk::CommandBuffer command_buffer, size_t command_pool_id)
 {
     auto clear_value = vk::ClearValue().setColor(std::array<float,4>{ 0.03f, 0.03f, 0.03f, 1.0f });
     command_buffer.beginRenderPass(
         vk::RenderPassBeginInfo{
             .renderPass = m_render_pass,
-            .framebuffer = m_framebuffers[frame_id],
+            .framebuffer = m_framebuffers[command_pool_id],
             .renderArea = { .offset = {}, .extent = m_extent },
             .clearValueCount = 1u,
             .pClearValues = &clear_value 

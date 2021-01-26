@@ -68,7 +68,7 @@ Desktop_app::Desktop_app(Scene scene, std::filesystem::path scene_json_path, std
     m_context(m_window, nullptr),
     m_shader_system(m_context, m_scene, std::move(scene_shader_path)),
     m_transform_system(m_scene),
-    m_renderer(m_context, m_scene),
+    m_renderer(m_context, m_scene, size_command_buffers),
     m_mirror(m_context, size_command_buffers, false),
     m_command_pools(m_context.device, m_context.queue_family, size_command_buffers)
 {

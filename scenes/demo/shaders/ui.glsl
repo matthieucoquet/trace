@@ -1,6 +1,6 @@
 #define ADVANCE_RATIO 1.0
 
-#define BLUE_ID 3
+layout(binding = 5, set = 0) uniform sampler2D ui;
 
 float sdbox(in vec3 position, in vec3 half_sides)
 {
@@ -10,13 +10,14 @@ float sdbox(in vec3 position, in vec3 half_sides)
 
 Hit map(in vec3 position)
 {
-    //float coeff = sin(2 * (position.y  + scene_global.time));
-    //float soft = 0.1 + 0.02 * coeff * coeff;
-    float d = sdbox(position, vec3(0.3));// - soft;
-    return Hit(d, BLUE_ID);
+    float d = sdbox(position, vec3(0.5, 0.5, 0.01));
+    return Hit(d, UNKNOW);
 }
 
 vec3 get_color(in vec3 position)
 {
-    return vec3(0.0);
+    vec2 uv = position.xy;
+    uv = uv + 0.5;
+    uv.y *= -1;
+    return textureLod(ui, nonuniformEXT(uv), 0.0).xyz;
 }

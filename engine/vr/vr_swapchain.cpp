@@ -59,7 +59,7 @@ Swapchain::Swapchain(Instance& instance, xr::Session& session, vulkan::Context& 
     create_image_views();
 }
 
-Swapchain::Swapchain(xr::Session session, vulkan::Context& context, xr::Extent2Di extent) :
+/*Swapchain::Swapchain(xr::Session session, vulkan::Context& context, xr::Extent2Di extent) :
     view_extent(extent),
     m_device(context.device)
 {
@@ -75,7 +75,7 @@ Swapchain::Swapchain(xr::Session session, vulkan::Context& context, xr::Extent2D
         .usageFlags = xr::SwapchainUsageFlagBits::ColorAttachment, // OpenXR doesn't expose Storage bit so we have to first render to another image and copy
         .format = static_cast<int64_t>(required_format),
         .sampleCount = 1u, //3u,
-        .width = static_cast<uint32_t>(extent.width),  // One swapchain of double width
+        .width = static_cast<uint32_t>(extent.width),
         .height = static_cast<uint32_t>(extent.height),
         .faceCount = 1,
         .arraySize = 1,
@@ -86,7 +86,7 @@ Swapchain::Swapchain(xr::Session session, vulkan::Context& context, xr::Extent2D
         vk_images.push_back(image.image);
     }
     create_image_views();
-}
+}*/
 
 Swapchain::~Swapchain()
 {

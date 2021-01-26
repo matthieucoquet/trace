@@ -2,6 +2,7 @@
 #include "vk_common.hpp"
 #include "vma_buffer.hpp"
 #include "vma_image.hpp"
+#include "texture.hpp"
 #include <shaderc/shaderc.hpp>
 #include <imgui.h>
 
@@ -12,14 +13,17 @@ class Context;
 class Imgui_render
 {
 public:
-    Imgui_render(Context& context, vk::Extent2D extent, uint32_t command_pool_size, const std::vector<vk::ImageView>& image_views);
+    std::vector<Texture> result_textures;
+    Sampler result_sampler;
+
+    Imgui_render(Context& context, vk::Extent2D extent, size_t command_pool_size);
     Imgui_render(const Imgui_render& other) = delete;
     Imgui_render(Imgui_render&& other) = delete;
     Imgui_render& operator=(const Imgui_render& other) = delete;
     Imgui_render& operator=(Imgui_render&& other) = delete;
     ~Imgui_render();
 
-    void draw(ImDrawData* draw_data, vk::CommandBuffer command_buffer, size_t command_pool_id, size_t frame_id);
+    void draw(ImDrawData* draw_data, vk::CommandBuffer command_buffer, size_t command_pool_id);
 private:
     vk::Device m_device;
     VmaAllocator m_allocator;

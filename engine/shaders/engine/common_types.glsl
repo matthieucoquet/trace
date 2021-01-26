@@ -52,3 +52,5 @@ struct Hit
     float dist;
     uint material_id;
 };
+
+#define UNKNOW 10
