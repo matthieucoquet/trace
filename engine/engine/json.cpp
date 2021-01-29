@@ -31,7 +31,7 @@ static json to_json(const Entity& e) {
 			{ "name", e.name },
 			{ "position", to_json(e.local_transform.position) },
 			{ "rotation", to_json(e.local_transform.rotation) },
-			{ "scale", e.scale },
+			{ "scale", e.local_transform.scale },
 			{ "group_id", e.group_id },
 	};
 	json children;
@@ -48,9 +48,9 @@ static Entity to_entity(const json& j) {
 			.name = j["name"].get<std::string>(),
 			.local_transform = Transform{
 				.position = to_vec3(j["position"]),
-				.rotation = to_quat(j["rotation"])
+				.rotation = to_quat(j["rotation"]),
+				.scale = j["scale"].get<float>()
 			},
-			.scale = j["scale"].get<float>(),
 			.group_id = j["group_id"].get<size_t>()
 	};
 
@@ -78,10 +78,10 @@ void Json::parse(Scene& scene)
 	stream >> j;
 
 	const json& entities = j["entities"];
-	scene.entities.reserve(entities.size());
+	scene.root.entities.reserve(entities.size());
 	for (const auto& entity : entities)
 	{
-		scene.entities.emplace_back(to_entity(entity));
+		scene.root.entities.emplace_back(to_entity(entity));
 	}
 
 	const json& materials = j["materials"];
@@ -102,7 +102,7 @@ void Json::parse(Scene& scene)
 void Json::write_to_file(const Scene& scene)
 {
 	json entities;
-	for (const auto& entity : scene.entities)
+	for (const auto& entity : scene.root.entities)
 	{
 		if (entity.group_id == 0) {
 			continue; // It's hands

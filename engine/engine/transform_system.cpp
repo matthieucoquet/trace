@@ -8,9 +8,11 @@ static size_t update_entity(Scene& scene, Entity& entity, size_t id = 0, const E
 {
     if (entity.dirty_local) {
         if (parent) {
+            entity.global_transform.scale = parent->global_transform.scale * entity.local_transform.scale;
             entity.local_transform = parent->global_transform.inverse() * entity.global_transform;
         }
         else {
+            entity.global_transform.scale = entity.local_transform.scale;
             entity.local_transform = entity.global_transform;
         }
         for (auto& child : entity.children) {
@@ -31,7 +33,7 @@ static size_t update_entity(Scene& scene, Entity& entity, size_t id = 0, const E
         entity.dirty_global = false;
     }
 
-    glm::mat4 inv = glm::translate(entity.global_transform.position) * glm::toMat4(entity.global_transform.rotation) * glm::scale(glm::vec3(entity.scale));
+    glm::mat4 inv = glm::translate(entity.global_transform.position) * glm::toMat4(entity.global_transform.rotation) * glm::scale(glm::vec3(entity.global_transform.scale));
     if (scene.entities_instances.size() > id) {
         scene.entities_instances[id].transform.matrix = std::array<std::array<float, 4>, 3>{
             std::array<float, 4>{ inv[0].x, inv[1].x, inv[2].x, inv[3].x },
@@ -61,7 +63,7 @@ static size_t update_entity(Scene& scene, Entity& entity, size_t id = 0, const E
 
 Transform_system::Transform_system(Scene& scene)
 {
-    for (auto& entity : scene.entities) {
+    for (auto& entity : scene.root.entities) {
         entity.dirty_global = true;
     }
     step(scene);
@@ -70,7 +72,7 @@ Transform_system::Transform_system(Scene& scene)
 void Transform_system::step(Scene& scene)
 {
     size_t id = 0;
-    for (auto& entity : scene.entities)
+    for (auto& entity : scene.root.entities)
     {
         id = update_entity(scene, entity, id);
         id++;

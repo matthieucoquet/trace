@@ -44,10 +44,7 @@ struct Entity
 
     Transform local_transform;
     Transform global_transform;
-    //glm::mat4 global_mat;  // World to entity
-    //glm::mat4 global_inv_mat;  // Entity to World
 
-    float scale;
     size_t group_id;
 
     std::vector<Entity> children{};
@@ -63,7 +60,13 @@ struct Entity
             child.visit(func);
         }
     }
+};
 
+struct Node
+{
+    Transform local_transform;
+
+    std::vector<Entity> entities{};
 };
 
 struct Scene
@@ -75,7 +78,7 @@ struct Scene
 
     Scene_global scene_global = {};
 
-    std::vector<Entity> entities;
+    Node root;
     std::vector<vk::AccelerationStructureInstanceKHR> entities_instances{};
 
     std::vector<Material> materials;

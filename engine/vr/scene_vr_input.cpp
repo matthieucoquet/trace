@@ -72,7 +72,7 @@ void Scene_vr_input::step(Scene& scene, xr::Session session, xr::Time display_ti
             xr::SpaceLocationFlags{ xr::SpaceLocationFlagBits::OrientationValid };
         if ((space_location.locationFlags & required_flags) == required_flags) {
             space_location.pose.position.y += offset_space_y;
-            auto& entity = scene.entities[i];
+            auto& entity = scene.root.entities[i];
             to_glm(space_location.pose, entity);
         }
 
@@ -86,53 +86,29 @@ void Scene_vr_input::step(Scene& scene, xr::Session session, xr::Time display_ti
         float scale = (scale_state.isActive && std::abs(scale_state.currentState) > 0.3) ? (1.0f + 0.02f * scale_state.currentState) : 1.0f;
 
         if (grab_state.isActive && grab_state.currentState) {
-            const auto& hand = scene.entities[i];
+            const auto& hand = scene.root.entities[i];
             if (m_was_grabing[i])
             {
-                // TODO
-                /*if (m_grabed_ui[i]) {
-                    Entity& entity = scene.ui_object;
-                    auto [pos, rot] = transform(hand.position, hand.rotation, m_diff_pos[i], m_diff_rot[i]);
-                    obj.position = pos;
-                    obj.rotation = rot;
-                    obj.scale = std::clamp(scale * obj.scale, 0.5f, 5.0f);
-                    scene.scene_global.ui_position = pos;
-                    scene.scene_global.ui_normal = glm::rotate(rot, glm::vec3(0.0f, 0.0f, 1.0f));
-                }
-                else {*/
-                for (size_t p_id = 2u; p_id < scene.entities.size(); p_id++) {
-                    Entity& entity = scene.entities[p_id];
+                for (size_t p_id = 2u; p_id < scene.root.entities.size(); p_id++) {
+                    Entity& entity = scene.root.entities[p_id];
                     entity.visit([this, &hand, scale, i](Entity& entity) {
                         if (entity.hand_grabbing == i) {
-                            // TODO synchronise with local ?
                             entity.global_transform = hand.global_transform * m_diff[i];
-                            entity.scale = std::clamp(scale * entity.scale, 0.03f, 5.0f);
+                            entity.local_transform.scale = std::clamp(scale * entity.local_transform.scale, 0.03f, 5.0f);
                             entity.dirty_local = true;
                         }
                         });
                 }
-                //}
             }
             else
             {
-                // TODO can i delete that ?
-                // Check UI first
-                /*Entity& ui = scene.ui_object;
-                glm::vec3 ui_normal = glm::rotate(ui.rotation, glm::vec3(0.0f, 0.0f, 1.0f));
-                float z_dist = std::abs(glm::dot(ui_normal, ui.position - hand.position));
-                m_grabed_ui[i] = z_dist < 0.1f && glm::length2(ui.position - hand.position) <= (0.25 * ui.scale * ui.scale);
-                if (m_grabed_ui[i]) {
-                    auto [pos, rot] = compute_local_transform(hand.position, hand.rotation, ui.position, ui.rotation);
-                    m_diff_rot[i] = rot;
-                    m_diff_pos[i] = pos;
-                    m_was_grabing[i] = true;
-                }
-                else {*/
-                for (size_t p_id = 2u; p_id < scene.entities.size(); p_id++) {
-                    auto& entity = scene.entities[p_id];
+                for (size_t p_id = 2u; p_id < scene.root.entities.size(); p_id++) {
+                    auto& entity = scene.root.entities[p_id];
                     entity.visit([this, &hand, i](Entity& entity) {
-                        if (glm::length2(entity.global_transform.position - hand.global_transform.position) <= (0.25 * entity.scale * entity.scale)) {
+                        if (glm::length2(entity.global_transform.position - hand.global_transform.position) <= (0.25 * entity.global_transform.scale * entity.global_transform.scale)) {
                             entity.hand_grabbing = i;
+                            //auto hand_transform = hand.global_transform;
+                            //hand_transform.scale = 1.0f;
                             m_diff[i] = hand.global_transform.inverse() * entity.global_transform;
                             m_was_grabing[i] = true;
                         }
@@ -141,7 +117,6 @@ void Scene_vr_input::step(Scene& scene, xr::Session session, xr::Time display_ti
                         }
                         });
                 }
-                //}
             }
         } 
         else {
