@@ -7,6 +7,7 @@ namespace sdf_editor
 
 struct Shader;
 struct Shader_file;
+struct Entity;
 
 class Ui_system final : public System
 {
@@ -23,7 +24,7 @@ private:
     {
         engine_shader,
         scenes_shader,
-        object,
+        entity,
         material,
         light
     };
@@ -31,6 +32,7 @@ private:
     Selected m_selected{ Selected::engine_shader };
     int m_selected_id{ 0 };
 
+    int entity_node(Entity& entity, int id = 0);
     void shader_text(Shader_file& shader_file);
 
     void record_selected(Scene& scene);

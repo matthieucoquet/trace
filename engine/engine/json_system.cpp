@@ -1,4 +1,4 @@
-#include "json.hpp"
+#include "json_system.hpp"
 #include "core/scene.hpp"
 #include <nlohmann/json.hpp>
 #include <fstream>
@@ -65,26 +65,29 @@ static Entity to_entity(const json& j) {
 	return entity;
 }
 
-Json::Json(Scene& scene, std::filesystem::path path):
+Json_system::Json_system(Scene& scene, std::filesystem::path path):
 	m_path(std::move(path))
 {
 	parse(scene);
 }
 
-void Json::parse(Scene& scene)
+void Json_system::parse(Scene& scene)
 {
 	std::ifstream stream(m_path);
 	json j;
 	stream >> j;
 
 	const json& entities = j["entities"];
-	scene.root.entities.reserve(entities.size());
+	Entity& root = scene.entities.back();
+	root.children.clear();
+	root.children.reserve(entities.size());
 	for (const auto& entity : entities)
 	{
-		scene.root.entities.emplace_back(to_entity(entity));
+		root.children.emplace_back(to_entity(entity));
 	}
 
 	const json& materials = j["materials"];
+	scene.materials.clear();
 	scene.materials.reserve(materials.size());
 	for (const auto& material : materials)
 	{
@@ -92,21 +95,24 @@ void Json::parse(Scene& scene)
 	}
 
 	const json& lights = j["lights"];
+	scene.lights.clear();
 	scene.lights.reserve(lights.size());
 	for (const auto& light : lights)
 	{
 		scene.lights.push_back(Light{ .position = to_vec3(light["position"]), .color = to_vec3(light["color"]) });
 	}
+
+	for (auto& entity : scene.entities) {
+		entity.dirty_global = true;
+	}
 }
 
-void Json::write_to_file(const Scene& scene)
+void Json_system::write_to_file(const Scene& scene)
 {
 	json entities;
-	for (const auto& entity : scene.root.entities)
+	const Entity& subscene = scene.entities.back();
+	for (const auto& entity : subscene.children)
 	{
-		if (entity.group_id == 0) {
-			continue; // It's hands
-		}
 		entities.push_back(to_json(entity));
 	}
 
@@ -129,6 +135,17 @@ void Json::write_to_file(const Scene& scene)
 
 	std::ofstream ouput(m_path);
 	ouput << std::setw(4) << j << std::endl;
+}
+
+
+void Json_system::step(Scene& scene)
+{
+	if (scene.saving) {
+		write_to_file(scene);
+	}
+	if (scene.resetting) {
+		parse(scene);
+	}
 }
 
 }

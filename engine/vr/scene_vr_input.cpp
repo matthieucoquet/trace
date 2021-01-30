@@ -72,7 +72,7 @@ void Scene_vr_input::step(Scene& scene, xr::Session session, xr::Time display_ti
             xr::SpaceLocationFlags{ xr::SpaceLocationFlagBits::OrientationValid };
         if ((space_location.locationFlags & required_flags) == required_flags) {
             space_location.pose.position.y += offset_space_y;
-            auto& entity = scene.root.entities[i];
+            auto& entity = scene.entities[i];
             to_glm(space_location.pose, entity);
         }
 
@@ -86,15 +86,21 @@ void Scene_vr_input::step(Scene& scene, xr::Session session, xr::Time display_ti
         float scale = (scale_state.isActive && std::abs(scale_state.currentState) > 0.3) ? (1.0f + 0.02f * scale_state.currentState) : 1.0f;
 
         if (grab_state.isActive && grab_state.currentState) {
-            const auto& hand = scene.root.entities[i];
+            const auto& hand = scene.entities[i];
             if (m_was_grabing[i])
             {
-                for (size_t p_id = 2u; p_id < scene.root.entities.size(); p_id++) {
-                    Entity& entity = scene.root.entities[p_id];
+                for (size_t p_id = 2u; p_id < scene.entities.size(); p_id++) {
+                    Entity& entity = scene.entities[p_id];
                     entity.visit([this, &hand, scale, i](Entity& entity) {
                         if (entity.hand_grabbing == i) {
-                            entity.global_transform = hand.global_transform * m_diff[i];
-                            entity.local_transform.scale = std::clamp(scale * entity.local_transform.scale, 0.03f, 5.0f);
+                            auto global_scale = entity.global_transform.scale;
+                            if (entity.group_id == std::numeric_limits<size_t>::max()) {
+                                entity.global_transform = Transform{ .position = hand.global_transform.position } * m_diff[i];
+                            }
+                            else {
+                                entity.global_transform = hand.global_transform * m_diff[i];
+                            }
+                            entity.global_transform.scale = std::clamp(scale * global_scale, 0.03f, 10.0f);
                             entity.dirty_local = true;
                         }
                         });
@@ -102,20 +108,31 @@ void Scene_vr_input::step(Scene& scene, xr::Session session, xr::Time display_ti
             }
             else
             {
-                for (size_t p_id = 2u; p_id < scene.root.entities.size(); p_id++) {
-                    auto& entity = scene.root.entities[p_id];
-                    entity.visit([this, &hand, i](Entity& entity) {
-                        if (glm::length2(entity.global_transform.position - hand.global_transform.position) <= (0.25 * entity.global_transform.scale * entity.global_transform.scale)) {
-                            entity.hand_grabbing = i;
-                            //auto hand_transform = hand.global_transform;
-                            //hand_transform.scale = 1.0f;
-                            m_diff[i] = hand.global_transform.inverse() * entity.global_transform;
-                            m_was_grabing[i] = true;
+                Entity* candidate = nullptr; // To make sure only one is selected
+                for (size_t p_id = 2u; p_id < scene.entities.size(); p_id++) {
+                    auto& entity = scene.entities[p_id];
+                    entity.visit([this, &hand, &candidate](Entity& entity) {
+                        entity.hand_grabbing = -1;
+                        if (entity.group_id == std::numeric_limits<size_t>::max()) {
+                            if (candidate) {
+                                return;
+                            }
                         }
-                        else {
-                            entity.hand_grabbing = -1;
+
+                        if (glm::length2(entity.global_transform.position - hand.global_transform.position) <= (0.25 * entity.global_transform.scale * entity.global_transform.scale)) {
+                            candidate = &entity;
                         }
                         });
+                }
+                if (candidate) {
+                    candidate->hand_grabbing = i;
+                    if (candidate->group_id == std::numeric_limits<size_t>::max()) {
+                        m_diff[i] = Transform{ .position = hand.global_transform.position }.inverse() * candidate->global_transform;
+                    }
+                    else {
+                        m_diff[i] = hand.global_transform.inverse() * candidate->global_transform;
+                    }
+                    m_was_grabing[i] = true;
                 }
             }
         } 

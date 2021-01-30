@@ -7,9 +7,9 @@ namespace sdf_editor
 
 struct Transform
 {
-    glm::vec3 position;
-    glm::quat rotation;
-    float scale;
+    glm::vec3 position{};
+    glm::quat rotation{1.0, 0.0, 0.0, 0.0};
+    float scale{ 1.0f };
 
     Transform operator*(const Transform& rhs) const
     {

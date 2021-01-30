@@ -1,4 +1,5 @@
 #include "demo.hpp"
+#include <limits>
 #include <glm/gtx/transform.hpp>
 #include <glm/gtx/quaternion.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -20,9 +21,10 @@ Scene make_scene()
     size_t ui_id = 1u;
     size_t cube_id = 2u;
     size_t sphere_id = 3u;
+    size_t no_shader_id = std::numeric_limits<size_t>::max();
 
     for (unsigned int i = 0u; i < 2u; i++) {
-        scene.root.entities.emplace_back(Entity{
+        scene.entities.emplace_back(Entity{
             .name = i == 0 ? "left_hand" : "right_hand",
             .local_transform = Transform{
                 .position = glm::vec3(0.0f, 1.0f, 0.0f),
@@ -32,10 +34,20 @@ Scene make_scene()
             .group_id = hand_id });
     }
     
-    // TODO rewrite with normal entity
-    //scene.ui_object = Object{ .position = glm::vec3(0.f, 1.5f, -0.5f), .rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f), .scale = 0.4f };
-    //scene.scene_global.ui_position = scene.ui_object.position;
-    //scene.scene_global.ui_normal = glm::rotate(scene.ui_object.rotation, glm::vec3(0.0f, 0.0f, 1.0f));
+    scene.entities.emplace_back(Entity{
+            .name = "ui",
+            .local_transform = Transform{
+                .position = glm::vec3(0.0f, 2.0f, -0.1f),
+                .rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f),
+                .scale = 1.0f
+            },
+            .group_id = ui_id });
+
+    scene.entities.emplace_back(Entity{
+        .name = "demo",
+        .group_id = std::numeric_limits<size_t>::max()
+     });
+    scene.entities.back().local_transform.scale = 10.0f;
 
     return scene;
 }

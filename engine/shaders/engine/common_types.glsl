@@ -19,6 +19,7 @@ struct Eye
 };
 
 layout(push_constant, scalar) uniform Scene_global {
+    mat4 transform;
     Eye left;
     Eye right;
     float time;
@@ -29,11 +30,6 @@ struct Ray
 {
     vec3 origin;
     vec3 direction;
-};
-
-struct Object
-{
-    mat4 world_to_model;
 };
 
 struct Light

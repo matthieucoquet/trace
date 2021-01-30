@@ -16,6 +16,7 @@ layout(binding = 3, set = 0, scalar) buffer Lights { Light l[]; } lights;
 
 Hit raymarch_miss(in Ray ray)
 {
+    float len = length(ray.direction);
     float t = 0.0f;
     for (int i = 0; i < 512 && t < 500.0; i++)
     {
@@ -23,7 +24,7 @@ Hit raymarch_miss(in Ray ray)
         if(hit.dist < 0.01) {
             return Hit(t, hit.material_id);
         }
-        t += ADVANCE_RATIO_MISS * hit.dist;
+        t += ADVANCE_RATIO_MISS * hit.dist / len;
     }
     return Hit(-1.0, 0);
 }
@@ -41,26 +42,35 @@ vec3 normal(in vec3 position)
 
 void main()
 {
-    Ray ray = Ray(gl_WorldRayOriginEXT, gl_WorldRayDirectionEXT);
+    Ray ray = Ray(vec3(scene_global.transform * vec4(gl_WorldRayOriginEXT, 1.0)),
+                  vec3(scene_global.transform * vec4(gl_WorldRayDirectionEXT, 0.0)));
 
     Hit hit = raymarch_miss(ray);
     if (hit.dist > 0.0)
     {
-        vec3 position = gl_WorldRayOriginEXT + gl_WorldRayDirectionEXT * hit.dist;
-
-        vec3 normal = normal(position);
+        vec3 model_position = ray.origin + hit.dist * ray.direction;
+        vec3 normal = normal(model_position);
+        vec3 view_dir = normalize(vec3(scene_global.transform * vec4(gl_WorldRayOriginEXT, 1.0f)) - model_position);
         vec3 color  = vec3(0.0);        
         for (int i = 0; i < scene_global.nb_lights; i++)
         {
             Light light = lights.l[nonuniformEXT(i)];  // nonuniformEXT shouldnt be needed
-            vec3 light_dir = normalize(light.position - position);
+            vec3 light_dir = normalize(vec3(scene_global.transform * vec4(light.position, 1.0f)) - model_position);
+            //vec3 light_dir = normalize(light.position - position);
             vec3 diffuse = max(dot(normal, light_dir), 0.0) * light.color;
             vec3 ambient = 0.1 * light.color;
 
-            vec3 reflection = reflect(gl_WorldRayDirectionEXT, normal);
+            //vec3 reflection = reflect(gl_WorldRayDirectionEXT, normal);
+
+            vec3 halfway = normalize(light_dir + view_dir);
+            vec3 spec = pow(max(dot(normal, halfway), 0.0), 32.0) * light.color;
+
             shadow_payload = 0.0;
             if (dot(normal, light_dir) > 0)
             {
+                // TODO put inverse in uniform
+                vec3 position = gl_WorldRayOriginEXT + gl_WorldRayDirectionEXT * hit.dist;
+                light_dir = vec3(inverse(scene_global.transform) * vec4(light_dir, 0.0f));
                 shadow_payload = 1.0;
                 traceRayEXT(topLevelAS,  // acceleration structure
                             gl_RayFlagsSkipClosestHitShaderEXT,
@@ -75,7 +85,7 @@ void main()
                             1            // payload (location = 1)
                             );
             }
-            vec3 spec = vec3(max(dot(normal, reflection), 0.0));
+            //vec3 spec = vec3(max(dot(normal, reflection), 0.0));
             color = ambient + shadow_payload * (spec + diffuse);
         }
         

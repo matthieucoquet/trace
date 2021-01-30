@@ -18,6 +18,8 @@ Ui_system::Ui_system()
 
 void Ui_system::step(Scene& scene)
 {
+    scene.saving = false;
+    scene.resetting = false;
     // imgui input should be done before this call
     ImGui::NewFrame();
 
@@ -68,19 +70,12 @@ void Ui_system::step(Scene& scene)
         ImGui::TreePop();
     }
     ImGui::Separator();
-    if (ImGui::TreeNodeEx("Objects", ImGuiTreeNodeFlags_DefaultOpen))
+    if (ImGui::TreeNodeEx("Entities", ImGuiTreeNodeFlags_DefaultOpen))
     {
-        for (int id = 0; id < std::ssize(scene.root.entities); id++)
+        int id = -1;
+        for (auto& entity : scene.entities)
         {
-            ImGuiTreeNodeFlags leaf_flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
-            if (m_selected == Selected::object && m_selected_id == id) {
-                leaf_flags |= ImGuiTreeNodeFlags_Selected;
-            }
-            ImGui::TreeNodeEx(scene.root.entities[id].name.c_str(), leaf_flags);
-            if (ImGui::IsItemClicked()) {
-                m_selected = Selected::object;
-                m_selected_id = id;
-            }
+            id = entity_node(entity, id + 1);
         }
         ImGui::TreePop();
     }
@@ -116,12 +111,45 @@ void Ui_system::step(Scene& scene)
         }
         ImGui::TreePop();
     }
+    ImGui::Separator();
+    if (ImGui::Button("Save")) {
+        scene.saving = true;
+    }
+    ImGui::SameLine();;
+    if (ImGui::Button("Reset")) {
+        scene.resetting = true;
+    }
     ImGui::EndChild();
 
     ImGui::SameLine();
     record_selected(scene);
     ImGui::End();
     ImGui::Render();
+}
+
+int Ui_system::entity_node(Entity& entity, int id)
+{
+    //ImGuiTreeNodeFlags leaf_flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+    ImGuiTreeNodeFlags flags = entity.children.empty() ? ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen : ImGuiTreeNodeFlags_DefaultOpen;
+    if (m_selected == Selected::entity && m_selected_id == id) {
+        flags |= ImGuiTreeNodeFlags_Selected;
+    }
+    if (ImGui::TreeNodeEx(entity.name.c_str(), flags))
+    {
+        if (ImGui::IsItemClicked()) {
+            m_selected = Selected::entity;
+            m_selected_id = id;
+        }
+
+        for (auto& child : entity.children)
+        {
+            id = entity_node(child, id + 1);
+        }
+        if (!entity.children.empty()) {
+            ImGui::TreePop();
+        }
+    }
+    return id;
 }
 
 void Ui_system::shader_text(Shader_file& shader_file)
@@ -194,15 +222,27 @@ void Ui_system::record_selected(Scene& scene)
         }
         break;
     }
-    case Selected::object:
+    case Selected::entity:
     {
-        Entity& entity = scene.root.entities[m_selected_id];
-        bool dirty = ImGui::InputFloat3("Position", glm::value_ptr(entity.local_transform.position));
-        dirty = !ImGui::InputFloat4("Rotation", glm::value_ptr(entity.local_transform.rotation));
-        dirty = !ImGui::SliderFloat("Scale", &entity.local_transform.scale, 0.03f, 5.0f, "%.3f");
-        if (dirty)
+        Entity* selected = nullptr;
+        int id = 0;
+        for (auto& entity : scene.entities)
         {
-            entity.dirty_global = true;
+            entity.visit([this, &id, &selected](Entity& entity) {
+                if (m_selected_id == id) {
+                    selected = &entity;
+                }
+                id++;
+            });
+        }
+        if (selected) {
+            bool dirty = ImGui::InputFloat3("Position", glm::value_ptr(selected->local_transform.position));
+            dirty = !ImGui::InputFloat4("Rotation", glm::value_ptr(selected->local_transform.rotation));
+            dirty = !ImGui::SliderFloat("Scale", &selected->local_transform.scale, 0.03f, 5.0f, "%.3f");
+            if (dirty)
+            {
+                selected->dirty_global = true;
+            }
         }
         break;
     }

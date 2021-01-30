@@ -9,11 +9,11 @@ float sd_box(in vec3 position, in vec3 half_sides)
 
 Hit map_miss(in vec3 position)
 {
-    vec3 c = vec3(2.0, 0.1, 2.0);
+    vec3 c = vec3(0.2, 0.01, 0.2);
     vec3 q = position - c * clamp(round(position / c), vec3(-3, 0, -3), vec3(3, 0, 3));
-    float d = sd_box(q, vec3(0.9, 0.0, 0.9)) - 0.1;
+    float d = sd_box(q, vec3(0.09, 0.01, 0.09)) - 0.0;
     return Hit(d, WHITE_ID);
-    //return Hit(sd_box(position, vec3(0.9, 0.0, 0.9)), WHITE_ID);
+    //return Hit(sd_box(position, vec3(0.9, 0.01, 0.9)), WHITE_ID);
 }
 
 vec3 background_miss(in vec3 position)

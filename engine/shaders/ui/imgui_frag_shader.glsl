@@ -5,5 +5,4 @@ layout(location = 0) in struct { vec4 Color; vec2 UV; } In;
 void main()
 {
     fColor = In.Color * texture(sTexture, In.UV.st);
-    //fColor = vec4(1.0, 0.0, 0.0, 1.0);
 }

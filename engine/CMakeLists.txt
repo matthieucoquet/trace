@@ -31,7 +31,7 @@ set(SOURCE_CORE
 set(SOURCE_ENGINE
     engine/app.cpp engine/app.hpp
     engine/input_glfw_system.cpp engine/input_glfw_system.hpp
-    engine/json.cpp engine/json.hpp
+    engine/json_system.cpp engine/json_system.hpp
     engine/shader_system.cpp engine/shader_system.hpp
     engine/transform_system.cpp engine/transform_system.hpp
     engine/ui_system.cpp engine/ui_system.hpp

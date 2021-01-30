@@ -14,7 +14,7 @@
 #include "engine/transform_system.hpp"
 #include "engine/ui_system.hpp"
 #include "engine/input_glfw_system.hpp"
-#include "engine/json.hpp"
+#include "engine/json_system.hpp"
 
 #include <memory>
 #include <optional>
@@ -39,7 +39,6 @@ private:
     using Duration = std::chrono::duration<float>;
 
     Scene m_scene;
-    Json m_json;
     vr::Instance m_vr_instance;
     Window m_window;
     vulkan::Context m_context;
@@ -70,7 +69,7 @@ private:
     //vk::Extent2D m_trace_extent{ 2800, 1800 };
     vk::Extent2D m_trace_extent{ 11200, 7200 };
     Scene m_scene;
-    Json m_json;
+    Json_system m_json_system;
     Window m_window;
     vulkan::Context m_context;
 

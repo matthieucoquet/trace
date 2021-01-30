@@ -22,6 +22,7 @@ struct Eye
 
 struct Scene_global
 {
+    glm::mat4 transform;
     std::array<Eye, 2> eyes;
     float time = {};
     int nb_lights = {};
@@ -42,8 +43,8 @@ struct Entity
 {
     std::string name;
 
-    Transform local_transform;
-    Transform global_transform;
+    Transform local_transform{};
+    Transform global_transform{};
 
     size_t group_id;
 
@@ -62,13 +63,6 @@ struct Entity
     }
 };
 
-struct Node
-{
-    Transform local_transform;
-
-    std::vector<Entity> entities{};
-};
-
 struct Scene
 {
     // Should probably be a runtime setting in the future
@@ -78,13 +72,16 @@ struct Scene
 
     Scene_global scene_global = {};
 
-    Node root;
+    std::vector<Entity> entities{};
     std::vector<vk::AccelerationStructureInstanceKHR> entities_instances{};
 
     std::vector<Material> materials;
     std::vector<Light> lights;
 
     Shaders shaders;
+
+    bool saving{ false };
+    bool resetting{ false };
 };
 
 }

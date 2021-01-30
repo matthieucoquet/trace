@@ -1,75 +1,58 @@
 {
-  "entities": [
-    {
-      "children": [
+    "entities": [
         {
-          "children": null,
-          "group_id": 2,
-          "name": "cube_small",
-          "position": [
-            0.0,
-            1.0,
-            0.0
-          ],
-          "rotation": [
-            1.0,
-            0.0,
-            0.0,
-            0.0
-          ],
-          "scale": 0.5
+            "children": [
+                {
+                    "children": null,
+                    "group_id": 2,
+                    "name": "cube_small",
+                    "position": [
+                        0.0,
+                        1.0,
+                        0.0
+                    ],
+                    "rotation": [
+                        1.0,
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "scale": 0.05000000074505806
+                }
+            ],
+            "group_id": 3,
+            "name": "sphere",
+            "position": [
+                -0.06557027995586395,
+                0.101420097053051,
+                -0.050255872309207916
+            ],
+            "rotation": [
+                -0.787470817565918,
+                -0.032319605350494385,
+                0.6150137186050415,
+                -0.02456510066986084
+            ],
+            "scale": 0.04865368455648422
+        },
+        {
+            "children": null,
+            "group_id": 3,
+            "name": "cube",
+            "position": [
+                0.10000000149011612,
+                0.20000000298023224,
+                0.05000000074505806
+            ],
+            "rotation": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": 0.10000000149011612
         }
-      ],
-      "group_id": 3,
-      "name": "sphere",
-      "position": [
-        0.0,
-        2.0,
-        0.5
-      ],
-      "rotation": [
-        1.0,
-        0.0,
-        0.0,
-        0.0
-      ],
-      "scale": 1.0
-    },
-    {
-      "children": null,
-      "group_id": 3,
-      "name": "cube",
-      "position": [
-        1.0,
-        2.0,
-        0.5
-      ],
-      "rotation": [
-        1.0,
-        0.0,
-        0.0,
-        0.0
-      ],
-      "scale": 1.0
-    },
-    {
-      "children": null,
-      "group_id": 1,
-      "name": "ui",
-      "position": [
-        -0.5,
-        2.0,
-        -0.5
-      ],
-      "rotation": [
-        1.0,
-        0.0,
-        0.0,
-        0.0
-      ],
-      "scale": 1.0
-    }
-  ],
+    ],
     "lights": [
         {
             "color": [

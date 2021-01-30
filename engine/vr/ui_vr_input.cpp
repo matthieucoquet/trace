@@ -57,16 +57,16 @@ void Ui_vr_input::step(Scene& scene, xr::Session session, xr::Time /*display_tim
 
     if (!scene.mouse_control)
     {
-        for (const auto& entity : scene.root.entities) {
+        for (const auto& entity : scene.entities) {
             if (entity.group_id == 1)
             {
-                Entity& hand = scene.root.entities[m_last_active_hand];
+                Entity& hand = scene.entities[m_last_active_hand];
 
                 Transform transf = entity.global_transform.inverse() * hand.global_transform;
                 glm::vec3 ptr_direction = glm::rotate(transf.rotation, glm::vec3(0.0f, 0.0f, 1.0f));
                 float t = -transf.position.z / ptr_direction.z;
                 glm::vec3 mouse = transf.position + t * ptr_direction;
-                mouse = (mouse + 0.5f * entity.local_transform.scale) / entity.local_transform.scale;
+                mouse = mouse + 0.5f;
 
                 if (mouse.x >= 0.0f && mouse.x <= 1.0f && mouse.y >= 0.0f && mouse.y <= 1.0f)
                 {

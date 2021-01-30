@@ -12,7 +12,6 @@ namespace sdf_editor
 
 Vr_app::Vr_app(Scene scene, std::filesystem::path scene_json_path, std::filesystem::path scene_shader_path):
     m_scene(std::move(scene)),
-    m_json(m_scene, std::move(scene_json_path)),
     m_window(m_vr_instance.mirror_recommended_ratio()),
     m_context(m_window, &m_vr_instance)
 {
@@ -20,6 +19,7 @@ Vr_app::Vr_app(Scene scene, std::filesystem::path scene_json_path, std::filesyst
     ImGui::CreateContext();
 
     m_systems.push_back(std::make_unique<Input_glfw_system>(m_window.window));
+    m_systems.push_back(std::make_unique<Json_system>(m_scene, std::move(scene_json_path)));
     m_systems.push_back(std::make_unique<Shader_system>(m_context, m_scene, scene_shader_path));
     m_systems.push_back(std::make_unique<Ui_system>());
     m_systems.push_back(std::make_unique<Transform_system>(m_scene));
@@ -63,7 +63,7 @@ static constexpr size_t size_command_buffers = 1u;
 
 Desktop_app::Desktop_app(Scene scene, std::filesystem::path scene_json_path, std::filesystem::path scene_shader_path) :
     m_scene(std::move(scene)),
-    m_json(m_scene, std::move(scene_json_path)),
+    m_json_system(m_scene, std::move(scene_json_path)),
     m_window(m_window_extent.width, m_window_extent.height),
     m_context(m_window, nullptr),
     m_shader_system(m_context, m_scene, std::move(scene_shader_path)),
@@ -92,6 +92,7 @@ void Desktop_app::run()
         m_scene.scene_global.time = time_since_start.count();
         m_scene.scene_global.nb_lights = static_cast<int>(std::ssize(m_scene.lights));
 
+        m_json_system.step(m_scene);
         m_shader_system.step(m_scene);
 
         for (size_t eye_id = 0u; eye_id < 2u; eye_id++)
