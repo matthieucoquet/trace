@@ -91,11 +91,14 @@ void Scene_vr_input::step(Scene& scene, xr::Session session, xr::Time display_ti
             {
                 for (size_t p_id = 2u; p_id < scene.entities.size(); p_id++) {
                     Entity& entity = scene.entities[p_id];
-                    entity.visit([this, &hand, scale, i](Entity& entity) {
+                    entity.visit([this, &scene, &hand, scale, i](Entity& entity) {
                         if (entity.hand_grabbing == i) {
                             auto global_scale = entity.global_transform.scale;
                             if (entity.group_id == std::numeric_limits<size_t>::max()) {
                                 entity.global_transform = Transform{ .position = hand.global_transform.position } * m_diff[i];
+                                for (auto& light : scene.lights) {
+                                    light.update(entity.global_transform);
+                                }
                             }
                             else {
                                 entity.global_transform = hand.global_transform * m_diff[i];
@@ -114,13 +117,14 @@ void Scene_vr_input::step(Scene& scene, xr::Session session, xr::Time display_ti
                     entity.visit([this, &hand, &candidate](Entity& entity) {
                         entity.hand_grabbing = -1;
                         if (entity.group_id == std::numeric_limits<size_t>::max()) {
-                            if (candidate) {
-                                return;
+                            if (!candidate) {
+                                candidate = &entity;
                             }
                         }
-
-                        if (glm::length2(entity.global_transform.position - hand.global_transform.position) <= (0.25 * entity.global_transform.scale * entity.global_transform.scale)) {
-                            candidate = &entity;
+                        else {
+                            if (glm::length2(entity.global_transform.position - hand.global_transform.position) <= (0.25 * entity.global_transform.scale * entity.global_transform.scale)) {
+                                candidate = &entity;
+                            }
                         }
                         });
                 }

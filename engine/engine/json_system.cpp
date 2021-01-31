@@ -99,11 +99,14 @@ void Json_system::parse(Scene& scene)
 	scene.lights.reserve(lights.size());
 	for (const auto& light : lights)
 	{
-		scene.lights.push_back(Light{ .position = to_vec3(light["position"]), .color = to_vec3(light["color"]) });
+		scene.lights.push_back(Light{ .local = to_vec3(light["position"]), .color = to_vec3(light["color"]) });
 	}
 
 	for (auto& entity : scene.entities) {
 		entity.dirty_global = true;
+	}
+	for (auto& light : scene.lights) {
+		light.update(root.global_transform);
 	}
 }
 
@@ -125,7 +128,7 @@ void Json_system::write_to_file(const Scene& scene)
 	json lights;
 	for (const auto& light : scene.lights)
 	{
-		lights.push_back(json{ { "position", to_json(light.position) }, { "color", to_json(light.color) } });
+		lights.push_back(json{ { "position", to_json(light.local) }, { "color", to_json(light.color) } });
 	}
 
 	json j;

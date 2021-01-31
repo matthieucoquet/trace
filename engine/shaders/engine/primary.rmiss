@@ -51,7 +51,7 @@ void main()
         vec3 model_position = ray.origin + hit.dist * ray.direction;
         vec3 normal = normal(model_position);
         vec3 view_dir = normalize(vec3(scene_global.transform * vec4(gl_WorldRayOriginEXT, 1.0f)) - model_position);
-        vec3 color  = vec3(0.0);        
+        vec3 color = vec3(0.0);        
         for (int i = 0; i < scene_global.nb_lights; i++)
         {
             Light light = lights.l[nonuniformEXT(i)];  // nonuniformEXT shouldnt be needed
@@ -86,7 +86,7 @@ void main()
                             );
             }
             //vec3 spec = vec3(max(dot(normal, reflection), 0.0));
-            color = ambient + shadow_payload * (spec + diffuse);
+            color = color + ambient + shadow_payload * (spec + diffuse);
         }
         
         Material material = materials.m[nonuniformEXT(hit.material_id)];

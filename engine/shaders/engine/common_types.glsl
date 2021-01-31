@@ -34,6 +34,7 @@ struct Ray
 
 struct Light
 {
+    vec3 local;
     vec3 position;
     vec3 color;
 };

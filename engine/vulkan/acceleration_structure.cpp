@@ -125,7 +125,6 @@ void Blas::build(vk::CommandBuffer command_buffer)
 Tlas::Tlas(vk::CommandBuffer command_buffer, Context& context, const Blas& blas, Scene& scene) :
     Acceleration_structure(context)
 {
-    auto nb_instances = static_cast<uint32_t>(scene.entities_instances.size());
     for (auto& instance : scene.entities_instances) {
         instance.accelerationStructureReference = blas.structure_address;
     }
@@ -133,7 +132,7 @@ Tlas::Tlas(vk::CommandBuffer command_buffer, Context& context, const Blas& blas,
     m_instance_buffer = Vma_buffer(
         context.device, context.allocator,
         vk::BufferCreateInfo{
-            .size = sizeof(vk::AccelerationStructureInstanceKHR) * nb_instances,
+            .size = sizeof(vk::AccelerationStructureInstanceKHR) * Scene::max_entities,
             .usage = vk::BufferUsageFlagBits::eAccelerationStructureBuildInputReadOnlyKHR | vk::BufferUsageFlagBits::eShaderDeviceAddress
         },
         VmaAllocationCreateInfo{
@@ -157,7 +156,7 @@ Tlas::Tlas(vk::CommandBuffer command_buffer, Context& context, const Blas& blas,
         .pGeometries = &m_acceleration_structure_geometry
     };
     vk::AccelerationStructureBuildSizesInfoKHR build_size = m_device.getAccelerationStructureBuildSizesKHR(
-        vk::AccelerationStructureBuildTypeKHR::eDevice, geom_info, nb_instances);
+        vk::AccelerationStructureBuildTypeKHR::eDevice, geom_info, Scene::max_entities);
     m_structure_buffer = Vma_buffer(
         m_device, m_allocator,
         vk::BufferCreateInfo{

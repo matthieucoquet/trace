@@ -35,8 +35,13 @@ struct Material
 
 struct Light
 {
-    glm::vec3 position;
+    glm::vec3 local;
+    glm::vec3 global;
     glm::vec3 color;
+
+    void update(const Transform& parent) {
+        global = parent.position + glm::rotate(parent.rotation, parent.scale * local);
+    }
 };
 
 struct Entity
@@ -68,6 +73,8 @@ struct Scene
     // Should probably be a runtime setting in the future
     static constexpr bool standing = false;
     static constexpr float vr_offset_y = standing ? 0.0f : 1.7f;
+    static constexpr unsigned int max_entities = 20u;
+    static constexpr unsigned int max_lights = 10u;
     bool mouse_control{ true }; // Mouse and controller can alternate for ui control
 
     Scene_global scene_global = {};
@@ -76,6 +83,7 @@ struct Scene
     std::vector<vk::AccelerationStructureInstanceKHR> entities_instances{};
 
     std::vector<Material> materials;
+    // bool dirty_lights;
     std::vector<Light> lights;
 
     Shaders shaders;

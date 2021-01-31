@@ -47,7 +47,7 @@ Scene make_scene()
         .name = "demo",
         .group_id = std::numeric_limits<size_t>::max()
      });
-    scene.entities.back().local_transform.scale = 10.0f;
+    //scene.entities.back().local_transform.scale = 1.0f;
 
     return scene;
 }

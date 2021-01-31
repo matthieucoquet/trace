@@ -237,11 +237,37 @@ void Ui_system::record_selected(Scene& scene)
         }
         if (selected) {
             bool dirty = ImGui::InputFloat3("Position", glm::value_ptr(selected->local_transform.position));
-            dirty = !ImGui::InputFloat4("Rotation", glm::value_ptr(selected->local_transform.rotation));
-            dirty = !ImGui::SliderFloat("Scale", &selected->local_transform.scale, 0.03f, 5.0f, "%.3f");
+            dirty = dirty | ImGui::InputFloat4("Rotation", glm::value_ptr(selected->local_transform.rotation));
+            dirty = dirty | ImGui::SliderFloat("Scale", &selected->local_transform.scale, 0.03f, 5.0f, "%.3f");
             if (dirty)
             {
                 selected->dirty_global = true;
+            }
+            if (ImGui::Button("Remove")) {
+                for (auto& entity : scene.entities)
+                {
+                    entity.visit([this, &scene, &selected](Entity& entity) {
+                        bool found = false;
+                        for (int i = 0; i < entity.children.size(); i++) {
+                            if (&entity.children[i] == selected) {
+                                found = true;
+                            }
+                            if (found && (i + 1 < entity.children.size())) {
+                                std::swap(entity.children[i], entity.children[i + 1]);
+                            }
+                        }
+                        if (found) {
+                            entity.children.pop_back();
+                            scene.entities_instances.pop_back();
+                        }
+                     });
+                }
+                scene.entities[3].dirty_global = true;
+            }
+            if (ImGui::Button("Add new")) {
+                selected->children.emplace_back(Entity{
+                    .dirty_global = true
+                });
             }
         }
         break;
@@ -255,8 +281,26 @@ void Ui_system::record_selected(Scene& scene)
     case Selected::light:
     {
         Light& light = scene.lights[m_selected_id];
-        ImGui::InputFloat3("Position", glm::value_ptr(light.position));
-        ImGui::InputFloat3("Color", glm::value_ptr(light.color));
+        bool dirty = ImGui::InputFloat3("Position", glm::value_ptr(light.local));
+        dirty = dirty | ImGui::InputFloat3("Color", glm::value_ptr(light.color));
+        if (dirty) {
+            light.update(scene.entities[3].global_transform);
+        }
+        if (ImGui::Button("Remove")) {
+            for (int i = m_selected_id; i + 1 < scene.lights.size(); i++) {
+                std::swap(scene.lights[i], scene.lights[i + 1]);
+            }
+            scene.lights.pop_back();
+            m_selected_id = std::min(m_selected_id, static_cast<int>(std::ssize(scene.lights) - 1));
+        }
+        if (ImGui::Button("Add new")) {
+            auto& added = scene.lights.emplace_back(Light{
+                .local = glm::vec3(),
+                .global = glm::vec3(),
+                .color = glm::vec3(1.0f, 1.0f, 1.0f),
+            });
+            added.update(scene.entities[3].global_transform);
+        }
         break;
     }
     }

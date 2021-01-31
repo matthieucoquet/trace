@@ -35,7 +35,7 @@ void Renderer::start_recording(vk::CommandBuffer command_buffer, Scene& scene)
     command_buffer.begin({ .flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit });
 
     if (scene.shaders.pipeline_dirty) {
-        /*m_queue.waitIdle();
+        m_queue.waitIdle();
         m_device.destroyPipeline(m_pipeline.pipeline);
         m_pipeline.create_pipeline(scene);
         auto temp_buffer_aligned = m_pipeline.create_shader_binding_table();
@@ -60,7 +60,7 @@ void Renderer::start_recording(vk::CommandBuffer command_buffer, Scene& scene)
                 .buffer = m_pipeline.shader_binding_table.buffer,
                 .offset = 0u,
                 .size = VK_WHOLE_SIZE
-            }, {});*/
+            }, {});
     }
 }
 
@@ -294,7 +294,7 @@ void Renderer::create_per_frame_data(Context& context, Scene& scene, vk::Extent2
         Vma_buffer lights_buffer = Vma_buffer(
             context.device, context.allocator,
             vk::BufferCreateInfo{
-                .size = sizeof(Light) * scene.lights.size(),
+                .size = sizeof(Light) * Scene::max_lights,
                 .usage = vk::BufferUsageFlagBits::eStorageBuffer },
                 VmaAllocationCreateInfo{
                     .flags = VMA_ALLOCATION_CREATE_MAPPED_BIT,
