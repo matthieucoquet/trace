@@ -15,7 +15,6 @@ target_sources(demo
 target_link_libraries(demo
     PRIVATE
     sdf_editor::engine)
-# target_link_libraries(demo PRIVATE glm glfw OpenXR::headers shaderc::shaderc_combined imgui::imgui)
 target_compile_features(demo PRIVATE cxx_std_20)
 
 get_filename_component(shader_locations shaders ABSOLUTE)

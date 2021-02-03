@@ -291,7 +291,13 @@ void Ui_system::record_selected(Scene& scene)
                 std::swap(scene.lights[i], scene.lights[i + 1]);
             }
             scene.lights.pop_back();
-            m_selected_id = std::min(m_selected_id, static_cast<int>(std::ssize(scene.lights) - 1));
+            if (scene.lights.empty()) {
+                m_selected = Selected::engine_shader;
+                m_selected_id = 0;
+            }
+            else {
+                m_selected_id = std::min(m_selected_id, static_cast<int>(std::ssize(scene.lights) - 1));
+            }
         }
         if (ImGui::Button("Add new")) {
             auto& added = scene.lights.emplace_back(Light{

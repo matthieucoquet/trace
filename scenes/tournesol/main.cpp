@@ -1,4 +1,4 @@
-#include "ingenuity.hpp"
+#include "tournesol.hpp"
 
 #include <iostream>
 #include <stdexcept>
@@ -6,9 +6,9 @@
 #include <cstdlib>
 
 int main() {
-    ingenuity::Ingenuity ingenuity{};
+    tournesol::Tournesol tournesol{};
     try {
-        ingenuity.run();
+        tournesol.run();
     }
     catch (const std::exception& e) {
         std::cerr << e.what() << std::endl;

@@ -21,7 +21,8 @@ void main()
     Hit hit = raymarch(ray);
     if (hit.dist > 0.0)
     {
-        if (map_miss(gl_WorldRayOriginEXT + gl_WorldRayDirectionEXT * hit.dist).dist > 0.0) {
+        vec3 miss_position = vec3(scene_global.transform * vec4(gl_WorldRayOriginEXT + gl_WorldRayDirectionEXT * hit.dist, 1.0));
+        if (map_miss(miss_position).dist > 0.0) {
             reportIntersectionEXT(hit.dist, hit.material_id);
         }
     }

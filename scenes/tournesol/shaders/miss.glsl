@@ -1,12 +1,11 @@
 #define ADVANCE_RATIO_MISS 1.0
 
 #define ROCK_ID 3
-#define SAND_ID 4
 
-layout(binding = 2, set = 0) uniform sampler2D noise_lut;
+/*layout(binding = 2, set = 0) uniform sampler2D noise_lut;
 
 // See https://www.shadertoy.com/view/4sfGzS and iq website for more info about noise
-/*float noise(in vec3 x)
+float noise(in vec3 x)
 {
     vec3 i = floor(x);
     vec3 f = fract(x);
@@ -14,8 +13,8 @@ layout(binding = 2, set = 0) uniform sampler2D noise_lut;
     vec2 uv = (i.xy + vec2(37.0, 17.0) * i.z) + f.xy;
     vec2 rg = textureLod(noise_lut, (uv + 0.5) / 512.0, 0.0).yx;
     return mix(rg.x, rg.y, f.z);
-}*/
-/*vec3 noised(in vec2 x)
+}
+vec3 noised(in vec2 x)
 {
     vec2 f = fract(x);
     vec2 u = f*f*(3.0-2.0*f);
@@ -28,7 +27,7 @@ layout(binding = 2, set = 0) uniform sampler2D noise_lut;
 
     return vec3(a+(b-a)*u.x+(c-a)*u.y+(a-b-c+d)*u.x*u.y,
                 6.0*f*(1.0-f)*(vec2(b-a,c-a)+(a-b-c+d)*u.yx));
-}*/
+}
 float noise(in vec2 x)
 {
     vec2 f = fract(x);
@@ -42,7 +41,7 @@ float noise(in vec2 x)
 
     return a+(b-a)*u.x+(c-a)*u.y+(a-b-c+d)*u.x*u.y;
 }
-/*
+
 const mat2 m2 = mat2(  0.80,  0.60,
                       -0.60,  0.80 );
 float fbm(in vec2 pos)
@@ -60,7 +59,7 @@ float fbm(in vec2 pos)
     }
     return ampl;
 }
-*/
+
 Hit map_miss(in vec3 position)
 {
     vec2 pos = position.xz;
@@ -76,7 +75,18 @@ Hit map_miss(in vec3 position)
     return Hit(d, material_id);
 }
 
+
+*/
+
+Hit map_miss(in vec3 position)
+{
+    float radius = 1737100.0;
+    position.y += radius;
+    float d = length(position) - radius;
+    return Hit(d, ROCK_ID);
+}
+
 vec3 background_miss(in vec3 position)
 {
-    return vec3(0.992,0.788,0.647);
+    return vec3(0.0,0.0,0.0);
 }

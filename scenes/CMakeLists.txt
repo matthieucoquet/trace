@@ -1,2 +1,2 @@
 add_subdirectory(demo)
-#add_subdirectory(ingenuity)
+add_subdirectory(tournesol)

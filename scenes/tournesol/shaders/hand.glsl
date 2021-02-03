@@ -40,3 +40,8 @@ Hit map(in vec3 position)
     float d = op_union(hold, ring, 0.08);
     return Hit(d, material_id);
 }
+
+vec3 get_color(in vec3 position)
+{
+    return vec3(0.0);
+}
