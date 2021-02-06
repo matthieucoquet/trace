@@ -24,7 +24,7 @@ void main()
     vec3 color = hit.dist > 0 ? vec3(0.4, 0.8, 0.4) : vec3(0.4, 0.4, 0.8);
     color = (0.5 + 0.5 * cos (10.0 * 6.283 * hit.dist)) * color;
 
-    hit_value = vec4(color, front);
+    hit_value = color;
 #else
     vec3 color  = vec3(0.0);
     
@@ -55,7 +55,7 @@ void main()
                         0,           // sbtRecordStride
                         1,           // missIndex
                         position,    // ray origin
-                        0.001,       // ray min range
+                        0.01,       // ray min range
                         light_dir,   // ray direction
                         100.0,       // ray max range
                         1            // payload (location = 1)
@@ -71,7 +71,7 @@ void main()
         hit_value = color * material.color;
     }
     else {
-        hit_value = get_color(model_position);
+        hit_value = color * get_color(model_position);
     }
 #endif
 }
