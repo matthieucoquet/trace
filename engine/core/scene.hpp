@@ -4,6 +4,7 @@
 #include <array>
 #include <vector>
 #include <chrono>
+#include <filesystem>
 #define GLM_FORCE_RADIANS
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
@@ -83,8 +84,9 @@ struct Scene
     std::vector<vk::AccelerationStructureInstanceKHR> entities_instances{};
 
     std::vector<Material> materials;
-    // bool dirty_lights;
     std::vector<Light> lights;
+
+    std::filesystem::path texture_path{};
 
     Shaders shaders;
 

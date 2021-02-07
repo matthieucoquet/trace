@@ -19,7 +19,7 @@ target_compile_features(tournesol PRIVATE cxx_std_20)
 
 get_filename_component(shader_locations shaders ABSOLUTE)
 get_filename_component(scene_locations scene ABSOLUTE)
-set_source_files_properties(tournesol.cpp PROPERTIES COMPILE_DEFINITIONS "SHADER_SOURCE=\"${shader_locations}\";SCENE_JSON=\"${scene_locations}/scene.json\"")
+set_source_files_properties(tournesol.cpp PROPERTIES COMPILE_DEFINITIONS "SHADER_SOURCE=\"${shader_locations}\";SCENE_JSON=\"${scene_locations}/scene.json\";TEXTURE=\"${scene_locations}/earth.png\"")
 
 if(MSVC)
     set_target_properties(tournesol PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY $<TARGET_FILE_DIR:tournesol>)

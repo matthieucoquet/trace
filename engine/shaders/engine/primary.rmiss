@@ -3,6 +3,7 @@
 #extension GL_EXT_nonuniform_qualifier : enable
 #extension GL_EXT_scalar_block_layout : enable
 #extension GL_GOOGLE_include_directive : enable
+
 #include "common_types.glsl"
 #include "miss.glsl"
 
@@ -12,7 +13,6 @@ layout(location = 0) rayPayloadInEXT vec3 hit_value;
 layout(location = 1) rayPayloadEXT float shadow_payload;
 
 layout(binding = 2, set = 0, scalar) buffer Materials { Material m[]; } materials;
-layout(binding = 3, set = 0, scalar) buffer Lights { Light l[]; } lights;
 
 Hit raymarch_miss(in Ray ray)
 {
@@ -38,6 +38,22 @@ vec3 normal(in vec3 position)
         e.yyx * map_miss(position + e.yyx * eps).dist +
         e.yxy * map_miss(position + e.yxy * eps).dist +
         e.xxx * map_miss(position + e.xxx * eps).dist);
+}
+
+float soft_shadow(in Ray ray, in float factor)
+{
+    float res = 1.0;
+    float t = 0.05;
+    for (int i = 0; i < 16; i++)
+    {
+        float distance = map_miss(ray.origin + t * ray.direction).dist;
+        if(distance < 0.001) {
+            return 0.0;
+        }
+        res = min(res, factor * distance / t);
+        t += ADVANCE_RATIO_MISS * distance;
+    }
+    return res;
 }
 
 void main()
@@ -68,10 +84,11 @@ void main()
             shadow_payload = 0.0;
             if (dot(normal, light_dir) > 0)
             {
+                shadow_payload = soft_shadow(Ray(model_position, light_dir), 128.0);
                 // TODO put inverse in uniform
                 vec3 position = gl_WorldRayOriginEXT + gl_WorldRayDirectionEXT * hit.dist;
                 light_dir = vec3(inverse(scene_global.transform) * vec4(light_dir, 0.0f));
-                shadow_payload = 1.0;
+                //shadow_payload = 1.0;
                 traceRayEXT(topLevelAS,  // acceleration structure
                             gl_RayFlagsSkipClosestHitShaderEXT,
                             0xFF,        // cullMask
@@ -79,9 +96,9 @@ void main()
                             0,           // sbtRecordStride
                             1,           // missIndex
                             position,    // ray origin
-                            0.5,         // ray min range
+                            0.05,         // ray min range
                             light_dir,   // ray direction
-                            10.0,       // ray max range
+                            100.0,        // ray max range
                             1            // payload (location = 1)
                             );
             }
@@ -89,11 +106,17 @@ void main()
             color = color + ambient + shadow_payload * (spec + diffuse);
         }
         
-        Material material = materials.m[nonuniformEXT(hit.material_id)];
-        hit_value = vec3(color * material.color);
+        if (hit.material_id < UNKNOW) {
+            Material material = materials.m[nonuniformEXT(hit.material_id)];
+            hit_value = vec3(color * material.color);
+        }
+        else {
+            hit_value = color * get_color_miss(model_position);
+        }
+
     }
     else
     {
-        hit_value = background_miss(ray.origin + ray.direction);
+        hit_value = background_miss(ray.direction);
     }
 }

@@ -49,7 +49,13 @@ Raytracing_pipeline::Raytracing_pipeline(Context& context, Scene& scene, vk::Sam
             .descriptorType = vk::DescriptorType::eCombinedImageSampler,
             .descriptorCount = 1u,
             .stageFlags = vk::ShaderStageFlagBits::eIntersectionKHR | vk::ShaderStageFlagBits::eClosestHitKHR,
-            .pImmutableSamplers = &immutable_sampler_ui }
+            .pImmutableSamplers = &immutable_sampler_ui },
+        vk::DescriptorSetLayoutBinding{  // Scene texture
+            .binding = 6u,
+            .descriptorType = vk::DescriptorType::eCombinedImageSampler,
+            .descriptorCount = 1u,
+            .stageFlags = vk::ShaderStageFlagBits::eMissKHR,
+            .pImmutableSamplers = &immutable_sampler_noise }
     };
     descriptor_set_layout = m_device.createDescriptorSetLayout(vk::DescriptorSetLayoutCreateInfo{
         .bindingCount = static_cast<uint32_t>(array_bindings.size()),

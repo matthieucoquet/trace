@@ -53,6 +53,7 @@ private:
     vk::Queue m_queue;
     Imgui_render m_imgui_render;
     Texture m_noise_texture;
+    Texture m_scene_texture;
     Sampler m_sampler;
     Raytracing_pipeline m_pipeline;
     Blas m_blas;

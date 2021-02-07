@@ -46,6 +46,8 @@ Scene make_scene()
         .group_id = std::numeric_limits<size_t>::max()
         });
 
+    scene.texture_path = TEXTURE;
+
     return scene;
 }
 

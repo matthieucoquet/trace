@@ -14,6 +14,7 @@ Renderer::Renderer(Context& context, Scene& scene, size_t command_pool_size) :
     m_queue(context.graphics_queue),
     m_imgui_render(context, vk::Extent2D{ .width = 1000, .height = 1000 }, command_pool_size),
     m_noise_texture(context, "textures/lut_noise.png"),
+    m_scene_texture(context, scene.texture_path.generic_string()),
     m_sampler(context),
     m_pipeline(context, scene, m_sampler.sampler, m_imgui_render.result_sampler.sampler),
     m_blas(context)
@@ -364,6 +365,10 @@ void Renderer::create_descriptor_sets(vk::DescriptorPool descriptor_pool, size_t
             .sampler = m_imgui_render.result_sampler.sampler,
             .imageView = m_imgui_render.result_textures[i].image_view,
             .imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal };
+        vk::DescriptorImageInfo scene_texture_info{
+            .sampler = m_sampler.sampler,
+            .imageView = m_scene_texture.image_view,
+            .imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal };
 
         m_device.updateDescriptorSets(std::array{
             vk::WriteDescriptorSet{
@@ -407,7 +412,14 @@ void Renderer::create_descriptor_sets(vk::DescriptorPool descriptor_pool, size_t
                 .dstArrayElement = 0,
                 .descriptorCount = 1,
                 .descriptorType = vk::DescriptorType::eCombinedImageSampler,
-                .pImageInfo = &ui_info}
+                .pImageInfo = &ui_info},
+            vk::WriteDescriptorSet{
+                .dstSet = m_descriptor_sets[i],
+                .dstBinding = 6,
+                .dstArrayElement = 0,
+                .descriptorCount = 1,
+                .descriptorType = vk::DescriptorType::eCombinedImageSampler,
+                .pImageInfo = &scene_texture_info}
             }, {});
     }
 }
