@@ -1,40 +1,57 @@
 {
-    "entities": [
-        {
-            "children": null,
-            "group_id": 2,
-            "name": "rocket",
-            "position": [
-                -10.0,
-                36.0,
-                -30.0
-            ],
-            "rotation": [
-                1.0,
-                0.0,
-                0.0,
-                0.0
-            ],
-            "scale": 80.0
-        },
-        {
-            "children": null,
-            "group_id": 2,
-            "name": "model_rocket",
-            "position": [
-                -0.5,
-                1.5,
-                -0.30000001192092896
-            ],
-            "rotation": [
-                1.0,
-                0.0,
-                0.0,
-                0.0
-            ],
-            "scale": 1.0
-        }
-    ],
+  "entities": [
+    {
+      "children": null,
+      "group_id": 2,
+      "name": "rocket",
+      "position": [
+        -10.0,
+        36.0,
+        -30.0
+      ],
+      "rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": 80.0
+    },
+    {
+      "children": null,
+      "group_id": 3,
+      "name": "milou",
+      "position": [
+        -3.0,
+        0.2,
+        -1.0
+      ],
+      "rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": 0.5
+    },
+    {
+      "children": null,
+      "group_id": 3,
+      "name": "milou2",
+      "position": [
+        3.0,
+        0.2,
+        -1.0
+      ],
+      "rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": 1.5
+    }
+  ],
     "lights": [
         {
             "color": [

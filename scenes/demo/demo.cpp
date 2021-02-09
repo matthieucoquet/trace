@@ -21,7 +21,6 @@ Scene make_scene()
     size_t ui_id = 1u;
     size_t cube_id = 2u;
     size_t sphere_id = 3u;
-    size_t no_shader_id = std::numeric_limits<size_t>::max();
 
     for (unsigned int i = 0u; i < 2u; i++) {
         scene.entities.emplace_back(Entity{
@@ -45,7 +44,7 @@ Scene make_scene()
 
     scene.entities.emplace_back(Entity{
         .name = "demo",
-        .group_id = std::numeric_limits<size_t>::max()
+        .group_id = Entity::scene_id
      });
     //scene.entities.back().local_transform.scale = 1.0f;
 

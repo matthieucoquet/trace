@@ -15,11 +15,10 @@ Scene make_scene()
     scene.shaders.groups.push_back(Shader_group{ .name = "hand" });
     scene.shaders.groups.push_back(Shader_group{ .name = "ui" });
     scene.shaders.groups.push_back(Shader_group{ .name = "rocket" });
+    scene.shaders.groups.push_back(Shader_group{ .name = "milou" });
 
     size_t hand_id = 0u;
     size_t ui_id = 1u;
-    size_t rocket_id = 2u;
-    size_t no_shader_id = std::numeric_limits<size_t>::max();
 
     for (unsigned int i = 0u; i < 2u; i++) {
         scene.entities.emplace_back(Entity{
@@ -32,18 +31,27 @@ Scene make_scene()
             .group_id = hand_id });
     }
 
-    scene.entities.emplace_back(Entity{
+    auto& ui = scene.entities.emplace_back(Entity{
             .name = "ui",
             .local_transform = Transform{
-                .position = glm::vec3(0.0f, 1.8f, -0.5f),
+                .position = glm::vec3(0.0f, 1.7f, -0.5f),
                 .rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f),
                 .scale = 0.7f
             },
             .group_id = ui_id });
+    ui.children.emplace_back(Entity{
+            .name = "model",
+            .local_transform = Transform{
+                .position = glm::vec3(-1.0f, 0.0f, 0.1f),
+                .rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f),
+                .scale = 1.0f
+            },
+            .group_id = Entity::empty_id });
+
 
     scene.entities.emplace_back(Entity{
         .name = "tournesol",
-        .group_id = std::numeric_limits<size_t>::max()
+        .group_id = Entity::scene_id
         });
 
     scene.texture_path = TEXTURE;

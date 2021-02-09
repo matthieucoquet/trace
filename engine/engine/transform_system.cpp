@@ -31,11 +31,13 @@ static size_t update_entity(Scene& scene, Entity& entity, size_t id = 0, const E
         entity.dirty_global = false;
     }
 
-    if (entity.group_id == std::numeric_limits<size_t>::max())
+    if (entity.group_id >= Entity::empty_id)
     {
         id = id - 1;
-        scene.scene_global.transform = glm::translate(entity.global_transform.position) * glm::toMat4(entity.global_transform.rotation) * glm::scale(glm::vec3(entity.global_transform.scale));
-        scene.scene_global.transform = glm::inverse(scene.scene_global.transform);
+        if (entity.group_id == Entity::scene_id) {
+            scene.scene_global.transform = glm::translate(entity.global_transform.position) * glm::toMat4(entity.global_transform.rotation) * glm::scale(glm::vec3(entity.global_transform.scale));
+            scene.scene_global.transform = glm::inverse(scene.scene_global.transform);
+        }
     }
     else
     {
@@ -49,6 +51,7 @@ static size_t update_entity(Scene& scene, Entity& entity, size_t id = 0, const E
             scene.entities_instances[id].instanceShaderBindingTableRecordOffset = 2 * static_cast<uint32_t>(entity.group_id); // 2 for primary + shadow
         }
         else {
+            uint64_t blas = scene.entities_instances.empty() ? 0 : scene.entities_instances.front().accelerationStructureReference;
             scene.entities_instances.push_back(vk::AccelerationStructureInstanceKHR{
                 .transform = {
                     .matrix = std::array<std::array<float, 4>, 3>{
@@ -59,6 +62,7 @@ static size_t update_entity(Scene& scene, Entity& entity, size_t id = 0, const E
                 .instanceCustomIndex = static_cast<uint32_t>(id),
                 .mask = 0xFF,
                 .instanceShaderBindingTableRecordOffset = 2 * static_cast<uint32_t>(entity.group_id), // 2 for primary + shadow
+                .accelerationStructureReference = blas
                 });
         }
     }

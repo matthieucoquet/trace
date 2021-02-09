@@ -37,23 +37,23 @@ vec2 hash(vec2 p)
 
 float voronoi(in vec2 p){
     
-	vec2 g = floor(p);
-	p = fract(p);
+	vec2 id = floor(p);
+	vec2 pos = fract(p);
 
-	vec3 d = vec3(1.2); // 1.4, etc. "d.z" holds the distance comparison value.
-    
+	vec2 min_dist = vec2(100.0);
+    float dist = 100.0;
 	for(int y = -1; y <= 1; y++){
 		for(int x = -1; x <= 1; x++){
             
-			vec2 o = vec2(x, y);
-            o += hash(g + o) - p;            
-			d.z = dot(o, o);            
-            d.y = max(d.x, min(d.y, d.z));
-            d.x = min(d.x, d.z);                       
+			vec2 off = vec2(x, y);
+            off += hash(id + off) - pos;            
+			dist = length(off);
+            min_dist.y = max(min_dist.x, min(min_dist.y, dist));
+            min_dist.x = min(min_dist.x, dist);                       
 		}
 	}
 	
-    return d.y - d.x;
+    return min_dist.y - min_dist.x;
     // return d.x;
     //return max(d.y - d.x*1.1, 0.)/.91;
     //return sqrt(d.y) - sqrt(d.x); // etc.
@@ -73,10 +73,10 @@ Hit map_miss(in vec3 pos)
     float height = (0.0005 * length(pos.xz));
     height = height * height + 5.3;
 
-	height -= noise(pos.xz * 0.01) * 12.1045;
+	height -= noise(pos.xz * 0.01) * 13.1045;
 	height += noise(pos.xz * 0.03) * 1.20;
 	height += noise(pos.xz * 0.3) * 0.6045;
-	height += noise(pos.xz * 4.0) * 0.015;
+	height += noise(pos.xz * 3.0) * 0.01;
 
     {
         vec2 q = pos.xz * 0.08;
@@ -88,8 +88,10 @@ Hit map_miss(in vec3 pos)
     }
 
     {
-        float rock = voronoi(2.0 * pos.xz);
-        height += max(0, 0.1 * rock - 0.095); 
+        float rock = voronoi(6.0 * pos.xz);
+        height += max(0, 0.1 * rock - 0.095);
+		rock = voronoi(0.8 * pos.xz);
+        height += max(0, 0.8 * rock - 0.8);
     }
 
     return Hit(pos.y - height, UNKNOW);
@@ -97,7 +99,7 @@ Hit map_miss(in vec3 pos)
 
 vec3 get_color_miss(in vec3 pos)
 {
-	vec3 color = vec3(0.5 + noise(pos.xz * 105.0) * 0.1);
+	vec3 color = vec3(0.35 + noise(pos.xz * 105.0) * 0.1);
 	return color;
 }
 

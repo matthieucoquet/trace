@@ -64,6 +64,7 @@ protected:
     Vma_buffer m_instance_buffer;
     //std::vector<vk::AccelerationStructureInstanceKHR> m_instances{};
     vk::AccelerationStructureGeometryKHR m_acceleration_structure_geometry;
+    size_t m_primitive_count = 0u;
 };
 
 }

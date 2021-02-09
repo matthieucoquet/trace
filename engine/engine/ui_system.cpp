@@ -46,6 +46,7 @@ void Ui_system::step(Scene& scene)
             if (ImGui::IsItemClicked()) {
                 m_selected = Selected::engine_shader;
                 m_selected_id = id;
+                m_selected_scene_group = Entity::empty_id;
             }
             id++;
         }
@@ -64,6 +65,17 @@ void Ui_system::step(Scene& scene)
             if (ImGui::IsItemClicked()) {
                 m_selected = Selected::scenes_shader;
                 m_selected_id = id;
+
+                size_t i = 0u;
+                m_selected_scene_group = Entity::empty_id;
+                for (const auto& group : scene.shaders.groups)
+                {
+                    if (shader_file.name == group.name + ".glsl") {
+                        m_selected_scene_group = i;
+                        break;
+                    }
+                    i++;
+                }
             }
             id++;
         }
@@ -91,6 +103,7 @@ void Ui_system::step(Scene& scene)
             if (ImGui::IsItemClicked()) {
                 m_selected = Selected::material;
                 m_selected_id = id;
+                m_selected_scene_group = Entity::empty_id;
             }
         }
         ImGui::TreePop();
@@ -107,6 +120,7 @@ void Ui_system::step(Scene& scene)
             if (ImGui::IsItemClicked()) {
                 m_selected = Selected::light;
                 m_selected_id = id;
+                m_selected_scene_group = Entity::empty_id;
             }
         }
         ImGui::TreePop();
@@ -125,6 +139,9 @@ void Ui_system::step(Scene& scene)
     record_selected(scene);
     ImGui::End();
     ImGui::Render();
+
+    // Child of UI
+    scene.entities[2].children[0].group_id = m_selected_scene_group;
 }
 
 int Ui_system::entity_node(Entity& entity, int id)
@@ -139,6 +156,7 @@ int Ui_system::entity_node(Entity& entity, int id)
         if (ImGui::IsItemClicked()) {
             m_selected = Selected::entity;
             m_selected_id = id;
+            m_selected_scene_group = Entity::empty_id;
         }
 
         for (auto& child : entity.children)

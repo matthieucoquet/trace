@@ -94,7 +94,7 @@ void Scene_vr_input::step(Scene& scene, xr::Session session, xr::Time display_ti
                     entity.visit([this, &scene, &hand, scale, i](Entity& entity) {
                         if (entity.hand_grabbing == i) {
                             auto global_scale = entity.global_transform.scale;
-                            if (entity.group_id == std::numeric_limits<size_t>::max()) {
+                            if (entity.group_id == Entity::scene_id) {
                                 entity.global_transform = Transform{ .position = hand.global_transform.position } * m_diff[i];
                                 for (auto& light : scene.lights) {
                                     light.update(entity.global_transform);
@@ -116,8 +116,8 @@ void Scene_vr_input::step(Scene& scene, xr::Session session, xr::Time display_ti
                     auto& entity = scene.entities[p_id];
                     entity.visit([this, &hand, &candidate](Entity& entity) {
                         entity.hand_grabbing = -1;
-                        if (entity.group_id == std::numeric_limits<size_t>::max()) {
-                            if (!candidate) {
+                        if (entity.group_id >= Entity::empty_id) {
+                            if (!candidate && entity.group_id == Entity::scene_id) {
                                 candidate = &entity;
                             }
                         }
@@ -130,7 +130,7 @@ void Scene_vr_input::step(Scene& scene, xr::Session session, xr::Time display_ti
                 }
                 if (candidate) {
                     candidate->hand_grabbing = i;
-                    if (candidate->group_id == std::numeric_limits<size_t>::max()) {
+                    if (candidate->group_id == Entity::scene_id) {
                         m_diff[i] = Transform{ .position = hand.global_transform.position }.inverse() * candidate->global_transform;
                     }
                     else {

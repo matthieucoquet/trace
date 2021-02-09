@@ -47,6 +47,9 @@ struct Light
 
 struct Entity
 {
+    static constexpr size_t scene_id = std::numeric_limits<size_t>::max();
+    static constexpr  size_t empty_id = scene_id - 1u;
+
     std::string name;
 
     Transform local_transform{};

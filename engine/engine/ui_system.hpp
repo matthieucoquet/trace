@@ -1,13 +1,10 @@
 #pragma once
 #include "core/system.hpp"
+#include "core/scene.hpp"
 #include <limits>
 
 namespace sdf_editor
 {
-
-struct Shader;
-struct Shader_file;
-struct Entity;
 
 class Ui_system final : public System
 {
@@ -31,6 +28,7 @@ private:
 
     Selected m_selected{ Selected::engine_shader };
     int m_selected_id{ 0 };
+    size_t m_selected_scene_group = Entity::empty_id;
 
     int entity_node(Entity& entity, int id = 0);
     void shader_text(Shader_file& shader_file);
