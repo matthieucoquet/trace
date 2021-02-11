@@ -21,6 +21,16 @@ if (USE_AFTERMATH)
 find_package(aftermath MODULE REQUIRED)
 endif()
 
+
+add_library(imgui_editor STATIC)
+target_sources(imgui_editor
+    PRIVATE
+    ${PROJECT_SOURCE_DIR}/external/ImGuiColorTextEdit/TextEditor.cpp
+    ${PROJECT_SOURCE_DIR}/external/ImGuiColorTextEdit/TextEditor.h)
+target_include_directories(imgui_editor SYSTEM PUBLIC ${PROJECT_SOURCE_DIR}/external/ImGuiColorTextEdit)
+target_link_libraries(imgui_editor PUBLIC imgui::imgui)
+
+
 add_library(engine STATIC)
 
 set(SOURCE_CORE
@@ -95,7 +105,8 @@ target_link_libraries(engine
     marl::marl
     fmt::fmt
     nlohmann_json::nlohmann_json
-    OpenXR::openxr_loader)
+    OpenXR::openxr_loader
+    imgui_editor)
 
 find_path(TINYGLTF_INCLUDE_DIRS "tiny_gltf.h")
 target_include_directories(engine PRIVATE ${TINYGLTF_INCLUDE_DIRS})
@@ -119,7 +130,10 @@ if(MSVC)
     target_compile_options(engine PRIVATE /W4 /WX /permissive- /w15038)
     target_compile_options(engine PRIVATE /EHsc)
     target_compile_options(engine PRIVATE /Zc:preprocessor)
+
+    set_source_files_properties(${PROJECT_SOURCE_DIR}/external/ImGuiColorTextEdit/TextEditor.cpp PROPERTIES COMPILE_FLAGS /WX-)
 endif()
+
 
 ### Create empty target for shaders ###
 file(GLOB_RECURSE shader_list shaders/*)

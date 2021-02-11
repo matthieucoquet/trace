@@ -1,6 +1,9 @@
 #pragma once
 #include "core/system.hpp"
 #include "core/scene.hpp"
+
+#include <TextEditor.h>
+
 #include <limits>
 
 namespace sdf_editor
@@ -25,6 +28,9 @@ private:
         material,
         light
     };
+
+    TextEditor m_editor;
+    bool m_editor_init = false;
 
     Selected m_selected{ Selected::engine_shader };
     int m_selected_id{ 0 };

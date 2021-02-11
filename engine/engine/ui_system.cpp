@@ -14,10 +14,20 @@ Ui_system::Ui_system()
 {
     ImGuiStyle& style = ImGui::GetStyle();
     style.WindowRounding = 0.0f;
+
+
+    auto lang = TextEditor::LanguageDefinition::GLSL();
+    m_editor.SetLanguageDefinition(lang);
+    m_editor.SetShowWhitespaces(false);
 }
 
 void Ui_system::step(Scene& scene)
 {
+    if (!m_editor_init) {
+        m_editor_init = true;
+        m_editor.SetText(scene.shaders.engine_files.front().data);
+    }
+
     scene.saving = false;
     scene.resetting = false;
     // imgui input should be done before this call
@@ -47,6 +57,8 @@ void Ui_system::step(Scene& scene)
                 m_selected = Selected::engine_shader;
                 m_selected_id = id;
                 m_selected_scene_group = Entity::empty_id;
+
+                m_editor.SetText(shader_file.data);
             }
             id++;
         }
@@ -65,6 +77,7 @@ void Ui_system::step(Scene& scene)
             if (ImGui::IsItemClicked()) {
                 m_selected = Selected::scenes_shader;
                 m_selected_id = id;
+                m_editor.SetText(shader_file.data);
 
                 size_t i = 0u;
                 m_selected_scene_group = Entity::empty_id;
@@ -172,27 +185,12 @@ int Ui_system::entity_node(Entity& entity, int id)
 
 void Ui_system::shader_text(Shader_file& shader_file)
 {
-    ImGuiInputTextFlags flags = ImGuiInputTextFlags_AllowTabInput | ImGuiInputTextFlags_CallbackResize;
-    ImGui::Text(shader_file.name.c_str());
-    if (ImGui::InputTextMultiline(
-        shader_file.name.c_str(), shader_file.data.data(), shader_file.data.size() + 1, // +1 for null terminated char
-        ImVec2(-FLT_MIN, -FLT_MIN),
-        flags, [](ImGuiInputTextCallbackData* data)
-        {
-            if (data->EventFlag == ImGuiInputTextFlags_CallbackResize)
-            {
-                auto* string = static_cast<std::string*>(data->UserData);
-                string->resize(data->BufTextLen);
-                data->Buf = string->data();
-            }
-            return 0;
-        }, (void*)&shader_file.data))
-    {
+    m_editor.Render("TextEditor");
+    if (m_editor.IsTextChanged()) {
         shader_file.dirty = true;
-        char* ptr_to_end = strchr(shader_file.data.data(), '\0');
-        shader_file.size = static_cast<int>(ptr_to_end - shader_file.data.data());
+        shader_file.data = m_editor.GetText();
+        shader_file.size = static_cast<int>(shader_file.data.size());
     }
-
 }
 
 void Ui_system::record_selected(Scene& scene)
