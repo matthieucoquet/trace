@@ -6,72 +6,37 @@
 #include "common_types.glsl"
 #include "map_function"
 #include "raymarch.glsl"
-
-layout(binding = 0, set = 0) uniform accelerationStructureEXT topLevelAS;
+#include "lighting.glsl"
 
 layout(location = 0) rayPayloadInEXT vec3 hit_value;
-layout(location = 1) rayPayloadEXT float shadow_payload;
 
 layout(binding = 2, set = 0, scalar) buffer Materials { Material m[]; } materials;
-layout(binding = 3, set = 0, scalar) buffer Lights { Light l[]; } lights;
 
 void main()
 {
-    vec3 position = gl_WorldRayOriginEXT + gl_WorldRayDirectionEXT * gl_HitTEXT;
+    vec3 global_position = gl_WorldRayOriginEXT + gl_WorldRayDirectionEXT * gl_HitTEXT;
 #ifdef DEBUG_SDF
-    Hit hit = map(vec3(gl_WorldToObjectEXT * vec4(position, 1.0f)));
+    Hit hit = map(vec3(gl_WorldToObjectEXT * vec4(global_position, 1.0f)));
 
     vec3 color = hit.dist > 0 ? vec3(0.4, 0.8, 0.4) : vec3(0.4, 0.4, 0.8);
     color = (0.5 + 0.5 * cos (10.0 * 6.283 * hit.dist)) * color;
 
     hit_value = color;
 #else
-    vec3 color  = vec3(0.0);
-    
-    vec3 model_position = vec3(gl_WorldToObjectEXT * vec4(position, 1.0f));
-    vec3 normal = normal(model_position);
-    vec3 view_dir = normalize(gl_WorldToObjectEXT * vec4(gl_WorldRayOriginEXT, 1.0f) - model_position);
-
-    for (int i = 0; i < scene_global.nb_lights; i++)
-    {
-        Light light = lights.l[nonuniformEXT(i)];  // nonuniformEXT shouldnt be needed
-        vec3 light_dir = normalize(gl_WorldToObjectEXT * vec4(light.position, 1.0f) - model_position);
-
-        vec3 diffuse = max(dot(normal, light_dir), 0.0) * light.color;
-        vec3 ambient = 0.1 * light.color;
-
-        vec3 halfway = normalize(light_dir + view_dir);
-        vec3 spec = pow(max(dot(normal, halfway), 0.0), 32.0) * light.color;
-
-        shadow_payload = 0.0;
-        if (dot(normal, light_dir) > 0)
-        {
-            light_dir =  gl_ObjectToWorldEXT * vec4(light_dir, 0.0f);
-            shadow_payload = 1.0;
-            traceRayEXT(topLevelAS,  // acceleration structure
-                        gl_RayFlagsSkipClosestHitShaderEXT,
-                        0xFF,        // cullMask
-                        1,           // sbtRecordOffset
-                        0,           // sbtRecordStride
-                        1,           // missIndex
-                        position,    // ray origin
-                        0.01,       // ray min range
-                        light_dir,   // ray direction
-                        100.0,       // ray max range
-                        1            // payload (location = 1)
-                        );
-        }
-        
-        //color = ambient + hit_value.xyz;
-        color = color + ambient + shadow_payload * (spec + diffuse);
-    }
+    float scale = 1 / length(gl_WorldToObjectEXT * vec4(1.0, 0.0, 0.0, 0.0));
+    vec3 local_position = vec3(gl_WorldToObjectEXT * vec4(global_position, 1.0f));
+    vec3 normal = normal(local_position);
+    vec3 color = lighting(global_position, local_position, vec3(scene_global.transform * vec4(global_position, 1.0)), normal, gl_WorldToObjectEXT, scale);
     
     if (gl_HitKindEXT < UNKNOW) {
         Material material = materials.m[nonuniformEXT(gl_HitKindEXT)];
         hit_value = color * material.color;
     }
     else {
-        hit_value = color * get_color(model_position);
+        hit_value = color * get_color(local_position);
     }
 #endif
 }
+
+
+

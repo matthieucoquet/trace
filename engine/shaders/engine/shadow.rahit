@@ -7,7 +7,7 @@
 #include "map_function"
 #include "raymarch.glsl"
 
-layout(location = 1) rayPayloadInEXT float shadow_payload;
+layout(location = 0) rayPayloadInEXT float shadow_payload;
 
 float soft_shadow(in Ray ray, in float factor)
 {
@@ -37,3 +37,4 @@ void main()
         terminateRayEXT;
     }
 }
+
