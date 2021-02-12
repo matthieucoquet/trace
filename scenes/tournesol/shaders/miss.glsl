@@ -71,9 +71,9 @@ float crater(vec2 p, float r)
 Hit map_miss(in vec3 pos)
 {
     float height = (0.0005 * length(pos.xz));
-    height = height * height + 5.3;
+    height = height * height + 1.;
 
-	height -= noise(pos.xz * 0.01) * 13.1045;
+	height -= noise((pos.xz - vec2(100.0, -20.0)) * 0.011) * 12.1045;
 	height += noise(pos.xz * 0.03) * 1.20;
 	height += noise(pos.xz * 0.3) * 0.6045;
 	height += noise(pos.xz * 3.0) * 0.01;
@@ -122,3 +122,5 @@ vec3 background_miss(in vec3 direction)
     }
     return col;
 }
+
+

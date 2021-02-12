@@ -56,7 +56,7 @@ void Ui_system::step(Scene& scene)
             if (ImGui::IsItemClicked()) {
                 m_selected = Selected::engine_shader;
                 m_selected_id = id;
-                m_selected_scene_group = Entity::empty_id;
+                //m_selected_scene_group = Entity::empty_id;
 
                 m_editor.SetText(shader_file.data);
             }
@@ -231,6 +231,7 @@ void Ui_system::record_selected(Scene& scene)
                     print_error(shader_group.primary_intersection);
                     print_error(shader_group.primary_closest_hit);
                     print_error(shader_group.shadow_any_hit);
+                    print_error(shader_group.ao_any_hit);
                 }
                 ImGui::EndTabItem();
             }

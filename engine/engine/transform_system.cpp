@@ -48,7 +48,7 @@ static size_t update_entity(Scene& scene, Entity& entity, size_t id = 0, const E
                     std::array<float, 4>{ inv[0].y, inv[1].y, inv[2].y, inv[3].y },
                     std::array<float, 4>{ inv[0].z, inv[1].z, inv[2].z, inv[3].z }
             };
-            scene.entities_instances[id].instanceShaderBindingTableRecordOffset = 2 * static_cast<uint32_t>(entity.group_id); // 2 for primary + shadow
+            scene.entities_instances[id].instanceShaderBindingTableRecordOffset = 3 * static_cast<uint32_t>(entity.group_id); // 2 for primary + shadow
         }
         else {
             uint64_t blas = scene.entities_instances.empty() ? 0 : scene.entities_instances.front().accelerationStructureReference;
@@ -61,7 +61,7 @@ static size_t update_entity(Scene& scene, Entity& entity, size_t id = 0, const E
                 } },
                 .instanceCustomIndex = static_cast<uint32_t>(id),
                 .mask = 0xFF,
-                .instanceShaderBindingTableRecordOffset = 2 * static_cast<uint32_t>(entity.group_id), // 2 for primary + shadow
+                .instanceShaderBindingTableRecordOffset = 3 * static_cast<uint32_t>(entity.group_id), // 2 for primary + shadow
                 .accelerationStructureReference = blas
                 });
         }

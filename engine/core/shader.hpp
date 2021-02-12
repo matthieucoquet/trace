@@ -29,6 +29,7 @@ struct Shader_group
     Shader primary_intersection;
     Shader primary_closest_hit;
     Shader shadow_any_hit;
+    Shader ao_any_hit;    
 };
 
 struct Shaders

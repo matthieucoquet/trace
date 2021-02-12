@@ -123,6 +123,7 @@ Shader_system::Shader_system(vulkan::Context& context, Scene& scene, std::filesy
         shader_group.primary_intersection.file_id = find_file("primary.rint");
         shader_group.primary_closest_hit.file_id = find_file("primary.rchit");
         shader_group.shadow_any_hit.file_id = find_file("shadow.rahit");
+        shader_group.ao_any_hit.file_id = find_file("ambient_occlusion.rahit");
     }
 
     marl::WaitGroup compile_shaders(static_cast<unsigned int>(scene.shaders.groups.size()));
@@ -132,6 +133,7 @@ Shader_system::Shader_system(vulkan::Context& context, Scene& scene, std::filesy
                 compile(scene.shaders.engine_files, scene.shaders.scene_files, shader_group.primary_intersection, shaderc_intersection_shader, shader_group.name);
                 compile(scene.shaders.engine_files, scene.shaders.scene_files, shader_group.primary_closest_hit, shaderc_closesthit_shader, shader_group.name);
                 compile(scene.shaders.engine_files, scene.shaders.scene_files, shader_group.shadow_any_hit, shaderc_anyhit_shader, shader_group.name);
+                compile(scene.shaders.engine_files, scene.shaders.scene_files, shader_group.ao_any_hit, shaderc_anyhit_shader, shader_group.name);
                 compile_shaders.done();
             });
     }
@@ -195,6 +197,7 @@ void Shader_system::step(Scene& scene)
                         check_if_dirty(shader_group.primary_intersection, shaderc_intersection_shader, shader_group.name);
                         check_if_dirty(shader_group.primary_closest_hit, shaderc_closesthit_shader, shader_group.name);
                         check_if_dirty(shader_group.shadow_any_hit, shaderc_anyhit_shader, shader_group.name);
+                        check_if_dirty(shader_group.ao_any_hit, shaderc_anyhit_shader, shader_group.name);
                     }
 
                     marl::WaitGroup compile_shaders(static_cast<unsigned int>(m_recompile_info.size()));
@@ -259,6 +262,8 @@ void Shader_system::cleanup(Scene& scene)
             m_device.destroyShaderModule(shader_group.primary_closest_hit.module);
         if (shader_group.shadow_any_hit.module)
             m_device.destroyShaderModule(shader_group.shadow_any_hit.module);
+        if (shader_group.ao_any_hit.module)
+            m_device.destroyShaderModule(shader_group.ao_any_hit.module);
     }
     m_scheduler.unbind();
 }

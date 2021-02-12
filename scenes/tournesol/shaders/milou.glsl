@@ -2,10 +2,11 @@
 #define ADVANCE_RATIO 1.0
 
 #define WHITE_ID 1
-#define RED_ID 2
-#define BLUE_ID 3
-#define GREY_ID 4
-#define BEIGE_ID 5
+#define ORANGE_ID 2
+#define RED_ID 3
+#define BLUE_ID 4
+#define GREY_ID 5
+#define BEIGE_ID 6
 
 mat2 rotate(float angle)
 {
@@ -48,11 +49,13 @@ float sdbox(in vec3 position, in vec3 half_sides)
 
 Hit bottle(in vec3 pos) {
     float dist = length(pos - vec3(0.0, 0.0, clamp(pos.z, -0.1, 0.1))) - 0.07;
+    dist = min(dist, length(pos - vec3(0.0, 0.0, clamp(pos.z, 0.0, 0.19))) - 0.015);
+    dist = min(dist, sdDisk(pos - vec3(0.0, 0.0, 0.19), 0.025, 0.006) - 0.003);
     Hit hit = Hit(dist, BLUE_ID);
  
 	pos.z = abs(pos.z);
 	pos.z -= 0.07;
-	dist = sdDisk(pos - vec3(0.0, 0.0, 0.0), 0.075, 0.01);
+	dist = sdDisk(pos, 0.075, 0.01);
 
     return min_hit(hit, Hit(dist, RED_ID));
 }
@@ -102,7 +105,7 @@ Hit map(in vec3 pos)
         float tail = length(q - vec3(0.0, 0.00, clamp(q.z, -0.05, +0.1))) - 0.055;
         dist = min(dist, tail);
     }
-    Hit hit = Hit(dist, RED_ID);
+    Hit hit = Hit(dist, ORANGE_ID);
 
     {
         float dist_head = length(pos - vec3(0.0, 0.12, 0.2)) - 0.18;
@@ -130,6 +133,16 @@ Hit map(in vec3 pos)
 		float inv = sdbox(pos - vec3(0.0, 0.3, 0.0), vec3(0.5, 0.045, 0.17));
 		dist = max(dist, -inv) - 0.01;
         hit = min_hit(hit, Hit(dist, BEIGE_ID));
+        vec3 q = pos - vec3(0.0, 0.3, -0.235);
+        dist = sdDisk(q.xzy, 0.045, 0.01) - 0.007;
+        hit = min_hit(hit, Hit(dist, RED_ID));
+        dist = length(q - vec3(0.06, clamp(q.y, -0.05, +0.2), 0.06)) - 0.0035;
+        dist = min(
+	        dist, 
+	        length(q - vec3(0.06, clamp(q.y, -0.05, +0.11), 0.06)) - 0.006);
+        hit = min_hit(hit, Hit(dist, GREY_ID));
+        dist = sdbox(pos - vec3(0.0, 0.235, -0.09), vec3(0.06, 0.035, 0.035)) - 0.003;
+        hit = min_hit(hit, Hit(dist, WHITE_ID));        
 	}
 
     return hit;
@@ -139,3 +152,6 @@ vec3 get_color(in vec3 pos)
 {
     return vec3(1.0, 0.0, 0.0);
 }
+
+
+

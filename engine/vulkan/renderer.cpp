@@ -131,7 +131,7 @@ void Renderer::trace(vk::CommandBuffer command_buffer, Scene& scene, size_t comm
     vk::StridedDeviceAddressRegionKHR hit_shader_entry{
         .deviceAddress = table_address + m_pipeline.offset_hit_group,
         .stride = m_pipeline.shader_binding_table_stride,
-        .size = m_pipeline.shader_binding_table_stride * vk::DeviceSize(2 * m_pipeline.nb_group_primary)
+        .size = m_pipeline.shader_binding_table_stride * vk::DeviceSize(3 * m_pipeline.nb_group_primary)
     };
 
     vk::StridedDeviceAddressRegionKHR callable_shader_entry{};
