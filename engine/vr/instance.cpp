@@ -21,7 +21,11 @@ constexpr bool verbose = true;
 Instance::Instance()
 {
     std::vector<const char*> required_extensions{
-        XR_KHR_VULKAN_ENABLE_EXTENSION_NAME,
+#ifdef VR_USE_VULKAN2
+        XR_KHR_VULKAN_ENABLE2_EXTENSION_NAME
+#else
+        XR_KHR_VULKAN_ENABLE_EXTENSION_NAME
+#endif
         //XR_KHR_CONVERT_TIMESPEC_TIME_EXTENSION_NAME
     };
 
@@ -65,7 +69,7 @@ Instance::Instance()
         .next = nullptr,
         //.next = &dumci,
         .applicationInfo = {
-            .applicationName = "trace",
+            .applicationName = "sdf_editor",
             .applicationVersion = 0,
             .engineName = {},
             .engineVersion = 0,
@@ -107,9 +111,14 @@ Instance::Instance()
         throw std::runtime_error("Failed to find a HMD with opaque blend mode.");
     }
 
+#ifdef VR_USE_VULKAN2
+    xr::GraphicsRequirementsVulkanKHR vulkan_requirements = instance.getVulkanGraphicsRequirements2KHR(system_id);
+
+#else
     xr::GraphicsRequirementsVulkanKHR vulkan_requirements = instance.getVulkanGraphicsRequirementsKHR(system_id);
+#endif
     if (vulkan_requirements.minApiVersionSupported.major() == 1 && vulkan_requirements.minApiVersionSupported.minor() > 2) {
-        throw std::runtime_error("Vulkan version is too old for OpenXR.");
+    throw std::runtime_error("Vulkan version is too old for OpenXR.");
     }
     if (vulkan_requirements.maxApiVersionSupported.major() == 1 && vulkan_requirements.maxApiVersionSupported.minor() < 2) {
         fmt::print("Max supported: \n\t{}.{}\n", vulkan_requirements.maxApiVersionSupported.major(), vulkan_requirements.maxApiVersionSupported.minor());
@@ -148,6 +157,39 @@ float Instance::mirror_recommended_ratio() const
 {
     auto view_configuration_views = instance.enumerateViewConfigurationViewsToVector(system_id, xr::ViewConfigurationType::PrimaryStereo);
     return static_cast<float>(view_configuration_views[0].recommendedImageRectWidth) / view_configuration_views[0].recommendedImageRectHeight;
+}
+
+void Instance::create_vulkan_instance(vk::Instance& vk_instance, vk::InstanceCreateInfo create_info, PFN_vkGetInstanceProcAddr instance_proc_addr)
+{
+    vk::Result result;
+    instance.createVulkanInstanceKHR(xr::VulkanInstanceCreateInfoKHR{
+            .pfnGetInstanceProcAddr = instance_proc_addr,
+            .vulkanCreateInfo = reinterpret_cast<const VkInstanceCreateInfo*>(&create_info)
+        },
+        reinterpret_cast<VkInstance*>(&vk_instance),
+        reinterpret_cast<VkResult*>(&result)
+     );
+    if (result != vk::Result::eSuccess) {
+        throw std::runtime_error("Could not create Vulkan instance.");
+    }
+}
+
+
+void Instance::create_vulkan_device(vk::Device& vk_device, vk::PhysicalDevice physical_device, vk::DeviceCreateInfo create_info, PFN_vkGetInstanceProcAddr instance_proc_addr)
+{
+    vk::Result result;
+    instance.createVulkanDeviceKHR(xr::VulkanDeviceCreateInfoKHR{
+            .systemId = system_id,
+            .pfnGetInstanceProcAddr = instance_proc_addr,
+            .vulkanPhysicalDevice = physical_device,
+            .vulkanCreateInfo = reinterpret_cast<const VkDeviceCreateInfo*>(&create_info)
+        },
+        reinterpret_cast<VkDevice*>(&vk_device),
+        reinterpret_cast<VkResult*>(&result)
+    );
+    if (result != vk::Result::eSuccess) {
+        throw std::runtime_error("Could not create Vulkan instance.");
+    }
 }
 
 }

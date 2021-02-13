@@ -107,8 +107,8 @@ vec3 background_miss(in vec3 direction)
 {
     Light light = lights.l[0];
     vec3 light_dir = normalize(vec3(scene_global.transform * vec4(light.position, 1.0f)));
-    float sun = 0.000001 / pow(1.0 - dot(light_dir, direction), 2);
-	//sun = smoothstep(0.1, 1.0, sun);
+    float sun = 0.0000005 / pow(1.0 - dot(light_dir, direction), 2);
+	sun = min(sun, 1.0);
 
     vec2 proj = direction.yz * 1000.0 / (-direction.x);
     proj = (proj + vec2(-200.0, 16.0)) / 32.0;
@@ -122,6 +122,7 @@ vec3 background_miss(in vec3 direction)
     }
     return col;
 }
+
 
 
 

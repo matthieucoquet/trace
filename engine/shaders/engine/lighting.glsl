@@ -22,7 +22,7 @@ float soft_shadow_miss(in Ray ray, in float factor)
 {
     float res = 1.0;
     float len = length(ray.direction);
-    float t = 0.05;
+    float t = 0.03;
     for (int i = 0; i < 16; i++)
     {
         float distance = map_miss(ray.origin + t * ray.direction).dist;
@@ -98,6 +98,9 @@ vec3 lighting(
     }
     return color * ao;
 }
+
+
+
 
 
 

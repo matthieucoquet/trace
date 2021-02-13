@@ -5,6 +5,6 @@ layout(location = 0) rayPayloadInEXT float shadow_payload;
 
 void main()
 {
-    shadow_payload = 1.0;
 }
+
 
