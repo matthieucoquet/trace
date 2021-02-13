@@ -14,7 +14,8 @@ class Instance;
 class Swapchain
 {
 public:
-    static constexpr vk::Format required_format = vk::Format::eR8G8B8A8Unorm;
+    //static constexpr vk::Format required_format = vk::Format::eR8G8B8A8Srgb;
+    static constexpr vk::Format required_format = vk::Format::eR16G16B16A16Sfloat;
 
     xr::Swapchain swapchain;
     std::vector<xr::SwapchainImageVulkanKHR> images;

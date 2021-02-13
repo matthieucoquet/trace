@@ -27,6 +27,8 @@ struct Per_frame
 class Renderer
 {
 public:
+    //static constexpr vk::Format storage_format = vk::Format::eR8G8B8A8Unorm;
+    static constexpr vk::Format storage_format = vk::Format::eR16G16B16A16Sfloat;
     std::vector<Per_frame> per_frame;
 
     Renderer(Context& context, Scene& scene, size_t command_pool_size);
@@ -44,7 +46,7 @@ public:
     void copy_to_vr_swapchain(vk::CommandBuffer command_buffer, vk::Image swapchain_image, size_t command_pool_id, vk::Extent2D extent);
     void end_recording(vk::CommandBuffer command_buffer, size_t command_pool_id);
 
-    void create_per_frame_data(Context& context, Scene& scene, vk::Extent2D extent, vk::Format format, size_t command_pool_size);
+    void create_per_frame_data(Context& context, Scene& scene, vk::Extent2D extent, size_t command_pool_size);
     // OpenXR doesn't expose Storage bit so we have to first render to another image and copy
     void create_descriptor_sets(vk::DescriptorPool descriptor_pool, size_t command_pool_size);
 private:

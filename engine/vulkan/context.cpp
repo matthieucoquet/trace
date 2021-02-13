@@ -130,6 +130,9 @@ void Context::init_device(vr::Instance* vr_instance)
         if (!vr_required_extensions.empty()) {
             vr_instance->split_and_append(vr_required_extensions.data(), required_device_extensions);
         }
+        if (strcmp(required_device_extensions.back(), "VK_EXT_debug_marker") == 0) {
+            required_device_extensions.pop_back();
+        }
         potential_physical_devices.push_back(vr_instance->instance.getVulkanGraphicsDeviceKHR(vr_instance->system_id, instance));
     }
     else

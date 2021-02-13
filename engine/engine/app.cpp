@@ -72,7 +72,7 @@ Desktop_app::Desktop_app(Scene scene, std::filesystem::path scene_json_path, std
     m_mirror(m_context, size_command_buffers, false),
     m_command_pools(m_context.device, m_context.queue_family, size_command_buffers)
 {
-    m_renderer.create_per_frame_data(m_context, m_scene, m_trace_extent, vk::Format::eR8G8B8A8Unorm, size_command_buffers);
+    m_renderer.create_per_frame_data(m_context, m_scene, m_trace_extent, size_command_buffers);
     m_renderer.create_descriptor_sets(m_context.descriptor_pool, size_command_buffers);
 }
 

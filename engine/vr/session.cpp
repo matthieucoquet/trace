@@ -35,7 +35,7 @@ Session::Session(xr::Session new_session, Instance& instance, vulkan::Context& c
     //uint32_t size_swapchain = m_ray_swapchain.size();
     auto extent = m_swapchain.vk_view_extent();
     extent.width *= 2;
-    m_renderer.create_per_frame_data(context, scene, extent, m_swapchain.required_format, size_command_buffers);
+    m_renderer.create_per_frame_data(context, scene, extent, size_command_buffers);
     m_renderer.create_descriptor_sets(context.descriptor_pool, size_command_buffers);
 
     for(size_t eye_id = 0u; eye_id < 2u; eye_id++)
@@ -171,7 +171,7 @@ void Session::draw_frame(Scene& scene, std::vector<std::unique_ptr<System>>& sys
                     );
             for (size_t eye_id = 0u; eye_id < 2u; eye_id++)
             {
-                views[eye_id].pose.position.y += Scene::vr_offset_y;
+                //views[eye_id].pose.position.y += Scene::vr_offset_y;
                 scene.scene_global.eyes[eye_id].pose = views[eye_id].pose;
                 scene.scene_global.eyes[eye_id].fov = views[eye_id].fov;
                 composition_layer_views[eye_id].pose = views[eye_id].pose;

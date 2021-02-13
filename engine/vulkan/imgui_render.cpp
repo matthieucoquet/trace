@@ -15,11 +15,14 @@ Imgui_render::Imgui_render(Context& context, vk::Extent2D extent, size_t command
     m_allocator(context.allocator),
     m_extent(extent)
 {
+    One_time_command_buffer command_buffer(m_device, context.command_pool, context.graphics_queue);
     result_textures.reserve(command_pool_size);
     for (uint32_t i = 0; i < command_pool_size; i++)
     {
-        result_textures.emplace_back(context, extent);
+        result_textures.emplace_back(context, extent, command_buffer.command_buffer);
+
     }
+    command_buffer.submit_and_wait_idle();
 
     ImGuiIO& io = ImGui::GetIO();
     io.BackendRendererName = "imgui_impl_vulkan_hpp";

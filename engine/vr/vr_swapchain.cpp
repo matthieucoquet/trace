@@ -15,16 +15,16 @@ Swapchain::Swapchain(Instance& instance, xr::Session& session, vulkan::Context& 
     m_device(context.device)
 {
     std::vector<int64_t> supported_formats = session.enumerateSwapchainFormatsToVector();
-    if (std::none_of(supported_formats.cbegin(), supported_formats.cend(), [](const auto& format) {
-        return static_cast<int64_t>(required_format) == format;
-    })) {
-        throw std::runtime_error("Required format not supported by OpenXR runtime.");
-    }
     if constexpr (verbose) {
         fmt::print("Supported Vulkan format in the XR runtime:\n");
         for (auto format : supported_formats) {
             fmt::print("\t{}\n", vk::to_string(static_cast<vk::Format>(format)));
         }
+    }
+    if (std::none_of(supported_formats.cbegin(), supported_formats.cend(), [](const auto& format) {
+        return static_cast<int64_t>(required_format) == format;
+    })) {
+        throw std::runtime_error("Required format not supported by OpenXR runtime.");
     }
 
     auto view_configuration_views = instance.instance.enumerateViewConfigurationViewsToVector(instance.system_id, xr::ViewConfigurationType::PrimaryStereo);

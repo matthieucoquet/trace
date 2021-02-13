@@ -16,7 +16,7 @@ public:
     vk::ImageView image_view;
 
     Texture(Context& context, std::string_view filename);
-    Texture(Context& context, vk::Extent2D extent);
+    Texture(Context& context, vk::Extent2D extent, vk::CommandBuffer command_buffer);
     Texture(const Texture& other) = delete;
     Texture(Texture&& other) noexcept;
     Texture& operator=(const Texture& other) = delete;

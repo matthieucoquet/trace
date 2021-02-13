@@ -99,7 +99,7 @@ Hit map_miss(in vec3 pos)
 
 vec3 get_color_miss(in vec3 pos)
 {
-	vec3 color = vec3(0.35 + noise(pos.xz * 105.0) * 0.1);
+	vec3 color = vec3(0.45 + noise(pos.xz * 105.0) * 0.1);
 	return color;
 }
 
@@ -107,8 +107,8 @@ vec3 background_miss(in vec3 direction)
 {
     Light light = lights.l[0];
     vec3 light_dir = normalize(vec3(scene_global.transform * vec4(light.position, 1.0f)));
-    float sun = 0.000003 / pow(1.0 - dot(light_dir, direction), 2);
-	sun = smoothstep(0.1, 1.0, sun);
+    float sun = 0.000001 / pow(1.0 - dot(light_dir, direction), 2);
+	//sun = smoothstep(0.1, 1.0, sun);
 
     vec2 proj = direction.yz * 1000.0 / (-direction.x);
     proj = (proj + vec2(-200.0, 16.0)) / 32.0;
@@ -122,5 +122,8 @@ vec3 background_miss(in vec3 direction)
     }
     return col;
 }
+
+
+
 
 

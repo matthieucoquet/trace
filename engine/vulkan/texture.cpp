@@ -74,7 +74,7 @@ Texture::Texture(Context& context, std::string_view filename) :
 }
 
 
-Texture::Texture(Context& context, vk::Extent2D extent) :
+Texture::Texture(Context& context, vk::Extent2D extent, vk::CommandBuffer command_buffer) :
     height(extent.height),
     width(extent.width),
     m_device(context.device)
@@ -107,7 +107,7 @@ Texture::Texture(Context& context, vk::Extent2D extent) :
                .levelCount = 1u,
                .baseArrayLayer = 0u,
                .layerCount = 1u} });
-    /*command_buffer.command_buffer.pipelineBarrier(
+    command_buffer.pipelineBarrier(
         vk::PipelineStageFlagBits::eTopOfPipe,
         vk::PipelineStageFlagBits::eRayTracingShaderKHR,
         {}, {}, {},
@@ -115,7 +115,7 @@ Texture::Texture(Context& context, vk::Extent2D extent) :
             .srcAccessMask = {},
             .dstAccessMask = {},
             .oldLayout = vk::ImageLayout::eUndefined,
-            .newLayout = vk::ImageLayout::eGeneral,
+            .newLayout = vk::ImageLayout::eShaderReadOnlyOptimal,
             .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
             .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
             .image = image.image,
@@ -125,7 +125,7 @@ Texture::Texture(Context& context, vk::Extent2D extent) :
                 .levelCount = 1u,
                 .baseArrayLayer = 0,
                 .layerCount = 1
-            } });*/
+            } });
 }
 
 Texture::~Texture()

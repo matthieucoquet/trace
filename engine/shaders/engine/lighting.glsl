@@ -70,10 +70,10 @@ vec3 lighting(
         vec3 light_dir = normalize(transform * vec4(light.position, 1.0f) - local_position);
             
         vec3 diffuse = max(dot(normal, light_dir), 0.0) * light.color;
-        vec3 ambient = 0.1 * light.color;
+        vec3 ambient = 0.05 * light.color;
 
         vec3 halfway = normalize(light_dir + view_dir);
-        vec3 spec = pow(max(dot(normal, halfway), 0.0), 32.0) * light.color;
+        vec3 spec = pow(max(dot(normal, halfway), 0.0), 64.0) * light.color;
 
         shadow_payload = 0.0;
         if (dot(normal, light_dir) > 0)
@@ -98,6 +98,10 @@ vec3 lighting(
     }
     return color * ao;
 }
+
+
+
+
 
 
 

@@ -22,7 +22,7 @@ Instance::Instance()
 {
     std::vector<const char*> required_extensions{
         XR_KHR_VULKAN_ENABLE_EXTENSION_NAME,
-        XR_KHR_CONVERT_TIMESPEC_TIME_EXTENSION_NAME
+        //XR_KHR_CONVERT_TIMESPEC_TIME_EXTENSION_NAME
     };
 
 #ifdef TRACE_USE_DYNAMIC_LOADER

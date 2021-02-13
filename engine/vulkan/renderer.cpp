@@ -1,6 +1,7 @@
 #include "renderer.hpp"
 #include "context.hpp"
 #include "command_buffer.hpp"
+#include "vr/vr_swapchain.hpp"
 
 #include <iostream>
 #undef MemoryBarrier
@@ -93,7 +94,9 @@ void Renderer::barrier_vr_swapchain(vk::CommandBuffer command_buffer, vk::Image 
 void Renderer::trace(vk::CommandBuffer command_buffer, Scene& scene, size_t command_pool_id, vk::Extent2D extent)
 {
     ImDrawData* draw_data = ImGui::GetDrawData();
-    m_imgui_render.draw(draw_data, command_buffer, command_pool_id);
+    if (draw_data) {
+        m_imgui_render.draw(draw_data, command_buffer, command_pool_id);
+    }
 
     per_frame[command_pool_id].tlas.update(command_buffer, scene, false);
     command_buffer.pipelineBarrier(
@@ -180,27 +183,81 @@ void Renderer::trace(vk::CommandBuffer command_buffer, Scene& scene, size_t comm
 
 void Renderer::copy_to_vr_swapchain(vk::CommandBuffer command_buffer, vk::Image swapchain_image, size_t command_pool_id, vk::Extent2D extent)
 {
-    command_buffer.copyImage(
-        per_frame[command_pool_id].storage_image.image, vk::ImageLayout::eTransferSrcOptimal,
-        swapchain_image, vk::ImageLayout::eTransferDstOptimal,
-        vk::ImageCopy{
-            .srcSubresource = {
-                .aspectMask = vk::ImageAspectFlagBits::eColor,
-                .mipLevel = 0u,
-                .baseArrayLayer = 0u,
-                .layerCount = 1u
+    if constexpr (storage_format == vr::Swapchain::required_format) {
+        command_buffer.copyImage(
+            per_frame[command_pool_id].storage_image.image, vk::ImageLayout::eTransferSrcOptimal,
+            swapchain_image, vk::ImageLayout::eTransferDstOptimal,
+            vk::ImageCopy{
+                .srcSubresource = {
+                    .aspectMask = vk::ImageAspectFlagBits::eColor,
+                    .mipLevel = 0u,
+                    .baseArrayLayer = 0u,
+                    .layerCount = 1u
+                },
+                .srcOffset = { 0, 0, 0 },
+                .dstSubresource = {
+                    .aspectMask = vk::ImageAspectFlagBits::eColor,
+                    .mipLevel = 0u,
+                    .baseArrayLayer = 0u,
+                    .layerCount = 1u
+                },
+                .dstOffset = { 0, 0, 0 },
+                .extent = { extent.width, extent.height, 1u }
+            }
+        );
+    }
+    else
+    {
+        command_buffer.blitImage(
+            per_frame[command_pool_id].storage_image.image,
+            vk::ImageLayout::eTransferSrcOptimal,
+            swapchain_image,
+            vk::ImageLayout::eTransferDstOptimal,
+            vk::ImageBlit{
+                .srcSubresource = {
+                    .aspectMask = vk::ImageAspectFlagBits::eColor,
+                    .mipLevel = 0u,
+                    .baseArrayLayer = 0u,
+                    .layerCount = 1u
+                },
+                .srcOffsets = std::array{
+                    vk::Offset3D{ 0, 0, 0 },
+                    vk::Offset3D{ static_cast<int32_t>(extent.width), static_cast<int32_t>(extent.height), 1 }
+                },
+                .dstSubresource = {
+                    .aspectMask = vk::ImageAspectFlagBits::eColor,
+                    .mipLevel = 0u,
+                    .baseArrayLayer = 0u,
+                    .layerCount = 1u
+                },
+                .dstOffsets = std::array{
+                    vk::Offset3D{ 0, 0, 0 },
+                    vk::Offset3D{ static_cast<int32_t>(extent.width), static_cast<int32_t>(extent.height), 1 }
+                }
             },
-            .srcOffset = { 0, 0, 0 },
-            .dstSubresource = {
+            vk::Filter::eLinear
+        );
+    }
+    command_buffer.pipelineBarrier(
+        vk::PipelineStageFlagBits::eTransfer,
+        vk::PipelineStageFlagBits::eBottomOfPipe,
+        {}, {}, {},
+        vk::ImageMemoryBarrier{
+            .srcAccessMask = vk::AccessFlagBits::eTransferWrite,
+            .dstAccessMask = {},
+            .oldLayout = vk::ImageLayout::eTransferDstOptimal,
+            .newLayout = vk::ImageLayout::eColorAttachmentOptimal,
+            .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .image = swapchain_image,
+            .subresourceRange = {
                 .aspectMask = vk::ImageAspectFlagBits::eColor,
-                .mipLevel = 0u,
-                .baseArrayLayer = 0u,
-                .layerCount = 1u
-            },
-            .dstOffset = { 0, 0, 0 },
-            .extent = { extent.width, extent.height, 1u }
-        }
-    );
+                .baseMipLevel = 0,
+                .levelCount = 1u,
+                .baseArrayLayer = 0,
+                .layerCount = 1
+            }
+        });
 }
 
 void Renderer::end_recording(vk::CommandBuffer command_buffer, size_t command_pool_id)
@@ -228,7 +285,7 @@ void Renderer::end_recording(vk::CommandBuffer command_buffer, size_t command_po
         });
 }
 
-void Renderer::create_per_frame_data(Context& context, Scene& scene, vk::Extent2D extent, vk::Format format, size_t command_pool_size)
+void Renderer::create_per_frame_data(Context& context, Scene& scene, vk::Extent2D extent, size_t command_pool_size)
 {
     per_frame.reserve(command_pool_size);
     //One_time_command_buffer command_buffer(m_device, context.command_pool, context.graphics_queue);
@@ -241,7 +298,7 @@ void Renderer::create_per_frame_data(Context& context, Scene& scene, vk::Extent2
             m_device, context.allocator,
             vk::ImageCreateInfo{
                 .imageType = vk::ImageType::e2D,
-                .format = format,
+                .format = storage_format,
                 .extent = {extent.width, extent.height, 1},
                 .mipLevels = 1u,
                 .arrayLayers = 1u,
@@ -256,7 +313,7 @@ void Renderer::create_per_frame_data(Context& context, Scene& scene, vk::Extent2
             vk::ImageViewCreateInfo{
                .image = image.image,
                .viewType = vk::ImageViewType::e2D,
-               .format = format,
+               .format = storage_format,
                .subresourceRange = {
                    .aspectMask = vk::ImageAspectFlagBits::eColor,
                    .baseMipLevel = 0u,
