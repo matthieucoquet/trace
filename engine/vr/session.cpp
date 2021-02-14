@@ -171,7 +171,7 @@ void Session::draw_frame(Scene& scene, std::vector<std::unique_ptr<System>>& sys
                     );
             for (size_t eye_id = 0u; eye_id < 2u; eye_id++)
             {
-                //views[eye_id].pose.position.y += Scene::vr_offset_y;
+                views[eye_id].pose.position.y += Scene::vr_offset_y;
                 scene.scene_global.eyes[eye_id].pose = views[eye_id].pose;
                 scene.scene_global.eyes[eye_id].fov = views[eye_id].fov;
                 composition_layer_views[eye_id].pose = views[eye_id].pose;

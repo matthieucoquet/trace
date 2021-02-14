@@ -54,7 +54,7 @@ void Blas::build(vk::CommandBuffer command_buffer)
         m_device, m_allocator,
         vk::BufferCreateInfo{
             .size = sizeof(vk::AabbPositionsKHR) * 1,
-            .usage = vk::BufferUsageFlagBits::eAccelerationStructureBuildInputReadOnlyKHR | vk::BufferUsageFlagBits::eShaderDeviceAddress
+            .usage = vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eAccelerationStructureBuildInputReadOnlyKHR | vk::BufferUsageFlagBits::eShaderDeviceAddress
         },
         VmaAllocationCreateInfo{
             .flags = VMA_ALLOCATION_CREATE_MAPPED_BIT,
@@ -87,17 +87,17 @@ void Blas::build(vk::CommandBuffer command_buffer)
         m_device, m_allocator,
         vk::BufferCreateInfo{
             .size = build_size.accelerationStructureSize,
-            .usage = vk::BufferUsageFlagBits::eAccelerationStructureStorageKHR | vk::BufferUsageFlagBits::eShaderDeviceAddress,
+            .usage = vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eAccelerationStructureStorageKHR | vk::BufferUsageFlagBits::eShaderDeviceAddress,
             .sharingMode = vk::SharingMode::eExclusive },
             VmaAllocationCreateInfo{ .usage = VMA_MEMORY_USAGE_GPU_ONLY });
-    Vma_buffer scratch_buffer(
+    m_scratch_buffer = Vma_buffer(
         m_device, m_allocator,
         vk::BufferCreateInfo{
             .size = std::max(build_size.buildScratchSize, build_size.updateScratchSize),
             .usage = vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
             .sharingMode = vk::SharingMode::eExclusive },
             VmaAllocationCreateInfo{ .usage = VMA_MEMORY_USAGE_GPU_ONLY });
-    vk::DeviceAddress scratch_address = m_device.getBufferAddress(vk::BufferDeviceAddressInfo{ .buffer = scratch_buffer.buffer });
+    vk::DeviceAddress scratch_address = m_device.getBufferAddress(vk::BufferDeviceAddressInfo{ .buffer = m_scratch_buffer.buffer });
 
     acceleration_structure = m_device.createAccelerationStructureKHR(vk::AccelerationStructureCreateInfoKHR{
         .createFlags = {},

@@ -66,12 +66,12 @@ Hit map(in vec3 position)
 	return rocket(position);
 }
 
-vec3 get_color(in vec3 pos)
+Material get_color(in vec3 pos)
 {
 	float pattern = atan(pos.z, pos.x) / 6.2831 * 3.0;
 	pattern = fract(pattern) - 0.5;
 	float height = 8. * pos.y;
 	pattern *= fract(height) - 0.5;
 
-	return abs(height-0.75) < 1.25 && pattern < 0.0 ? vec3(1.0) : vec3(0.9, 0.02, 0.02);
+	return Material(abs(height-0.75) < 1.25 && pattern < 0.0 ? vec3(1.0) : vec3(0.9, 0.02, 0.02), 128.0);
 }

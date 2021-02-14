@@ -27,16 +27,17 @@ void main()
     vec3 local_position = vec3(gl_WorldToObjectEXT * vec4(global_position, 1.0f));
     vec3 local_normal = normal(local_position);
     vec3 global_normal = normalize(vec3(gl_ObjectToWorldEXT * vec4(local_normal, 0.0f)));
-    vec3 color = lighting(global_position, local_position, vec3(scene_global.transform * vec4(global_position, 1.0)), 
-        global_normal, local_normal, gl_WorldToObjectEXT, scale);
     
+    Material material;
     if (gl_HitKindEXT < UNKNOW) {
-        Material material = materials.m[nonuniformEXT(gl_HitKindEXT)];
-        hit_value = color * material.color;
+        material = materials.m[nonuniformEXT(gl_HitKindEXT)];
     }
     else {
-        hit_value = color * get_color(local_position);
+        material = get_color(local_position);
     }
+    
+    hit_value = lighting(global_position, local_position, vec3(scene_global.transform * vec4(global_position, 1.0)), 
+        global_normal, local_normal, gl_WorldToObjectEXT, scale, material);
 #endif
 }
 

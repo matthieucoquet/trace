@@ -14,10 +14,10 @@ Hit map(in vec3 position)
     return Hit(d, UNKNOW);
 }
 
-vec3 get_color(in vec3 position)
+Material get_color(in vec3 position)
 {
     vec2 uv = position.xy;
     uv = uv + 0.5;
     uv.y *= -1;
-    return textureLod(ui, nonuniformEXT(uv), 0.0).xyz;
+    return Material(textureLod(ui, nonuniformEXT(uv), 0.0).xyz, 4);
 }

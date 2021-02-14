@@ -32,6 +32,7 @@ struct Scene_global
 struct Material
 {
     glm::vec3 color;
+    float spec;
 };
 
 struct Light

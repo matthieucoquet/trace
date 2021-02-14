@@ -43,7 +43,8 @@ vec3 lighting(
     vec3 global_normal,
     vec3 normal,
     mat4x3 transform,
-    float scale
+    float scale,
+    Material mat
 )
 {
     vec3 view_dir = normalize(transform * vec4(gl_WorldRayOriginEXT, 1.0f) - local_position);
@@ -73,7 +74,7 @@ vec3 lighting(
         vec3 ambient = 0.05 * light.color;
 
         vec3 halfway = normalize(light_dir + view_dir);
-        vec3 spec = pow(max(dot(normal, halfway), 0.0), 64.0) * light.color;
+        vec3 spec = pow(max(dot(normal, halfway), 0.0), mat.spec) * light.color;
 
         shadow_payload = 0.0;
         if (dot(normal, light_dir) > 0)
@@ -96,8 +97,9 @@ vec3 lighting(
         }
         color = color + ambient + shadow_payload * (spec + diffuse);
     }
-    return color * ao;
+    return color * ao * mat.color;
 }
+
 
 
 

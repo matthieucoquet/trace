@@ -148,9 +148,9 @@ Hit map(in vec3 pos)
     return hit;
 }
 
-vec3 get_color(in vec3 pos)
+Material get_color(in vec3 position)
 {
-    return vec3(1.0, 0.0, 0.0);
+    return Material(vec3(0.0), 64.0);
 }
 
 

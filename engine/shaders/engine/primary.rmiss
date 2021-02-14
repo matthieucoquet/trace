@@ -50,17 +50,17 @@ void main()
         vec3 global_normal = normalize(vec3(inverse(scene_global.transform) * vec4(local_normal, 0.0f)));
 
         vec3 global_position = gl_WorldRayOriginEXT + gl_WorldRayDirectionEXT * hit.dist;
-        vec3 color = lighting(global_position, local_position, local_position, 
-            global_normal, local_normal, mat4x3(scene_global.transform), scale);
-                
+
+        Material material;
         if (hit.material_id < UNKNOW) {
-            Material material = materials.m[nonuniformEXT(hit.material_id)];
-            hit_value = vec3(color * material.color);
+            material = materials.m[nonuniformEXT(hit.material_id)];
         }
         else {
-            hit_value = color * get_color_miss(local_position);
+            material = get_color_miss(local_position);
         }
-
+    
+        hit_value = lighting(global_position, local_position, local_position, 
+            global_normal, local_normal, mat4x3(scene_global.transform), scale, material);
     }
     else
     {

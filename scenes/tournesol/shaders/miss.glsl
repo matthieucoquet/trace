@@ -97,10 +97,10 @@ Hit map_miss(in vec3 pos)
     return Hit(pos.y - height, UNKNOW);
 }
 
-vec3 get_color_miss(in vec3 pos)
+Material get_color_miss(in vec3 pos)
 {
-	vec3 color = vec3(0.45 + noise(pos.xz * 105.0) * 0.1);
-	return color;
+	vec3 color = vec3(0.2 + noise(pos.xz * 105.0) * 0.1);
+	return Material(color, 6.0);
 }
 
 vec3 background_miss(in vec3 direction)
@@ -122,6 +122,7 @@ vec3 background_miss(in vec3 direction)
     }
     return col;
 }
+
 
 
 

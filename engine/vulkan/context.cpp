@@ -112,7 +112,7 @@ void Context::init_instance(Window& window, vr::Instance* vr_instance)
 #endif 
 
     VULKAN_HPP_DEFAULT_DISPATCHER.init(instance);
-    m_debug_messenger = instance.createDebugUtilsMessengerEXT(debug_create_info);
+    //m_debug_messenger = instance.createDebugUtilsMessengerEXT(debug_create_info);
 }
 
 void Context::init_device(vr::Instance* vr_instance)

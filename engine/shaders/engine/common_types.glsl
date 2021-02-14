@@ -42,6 +42,7 @@ struct Light
 struct Material
 {
     vec3 color;
+    float spec;
 };
 
 struct Hit
