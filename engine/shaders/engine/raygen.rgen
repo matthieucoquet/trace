@@ -43,6 +43,11 @@ void main()
     const vec2 center = vec2(gl_LaunchIDEXT.xy) + vec2(0.5);
 
     vec3 direction = get_direction(center, eye, is_right);
-    shoot_ray(direction, eye);
-    imageStore(image, nonuniformEXT(ivec2(gl_LaunchIDEXT.xy)), vec4(hit_value, 1.0));
+    if (length(direction.xy) < 1.25) {
+    	shoot_ray(direction, eye);
+    	imageStore(image, nonuniformEXT(ivec2(gl_LaunchIDEXT.xy)), vec4(hit_value, 1.0));
+	}
+	else {
+		imageStore(image, nonuniformEXT(ivec2(gl_LaunchIDEXT.xy)), vec4(0.0));
+	}
 }

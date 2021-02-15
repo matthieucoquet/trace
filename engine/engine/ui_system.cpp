@@ -116,7 +116,7 @@ void Ui_system::step(Scene& scene)
             if (ImGui::IsItemClicked()) {
                 m_selected = Selected::material;
                 m_selected_id = id;
-                m_selected_scene_group = Entity::empty_id;
+                //m_selected_scene_group = Entity::empty_id;
             }
         }
         ImGui::TreePop();
@@ -133,7 +133,7 @@ void Ui_system::step(Scene& scene)
             if (ImGui::IsItemClicked()) {
                 m_selected = Selected::light;
                 m_selected_id = id;
-                m_selected_scene_group = Entity::empty_id;
+                //m_selected_scene_group = Entity::empty_id;
             }
         }
         ImGui::TreePop();
@@ -293,6 +293,7 @@ void Ui_system::record_selected(Scene& scene)
     {
         Material& material = scene.materials[m_selected_id];
         ImGui::ColorPicker3("Color", glm::value_ptr(material.color));
+        ImGui::InputFloat("Spec", &material.spec);
         break;
     }
     case Selected::light:

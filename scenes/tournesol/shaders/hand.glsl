@@ -1,7 +1,15 @@
-#define ADVANCE_RATIO 1.0
+#define ADVANCE_RATIO 0.9
 
 #define BLACK_ID 0
 #define RED_ID 2
+
+float disk(in vec3 pos, float rad, in float h)
+{
+    vec2 q = pos.xy;
+    float dist = length(q) - rad;
+    vec2 w = vec2(dist, abs(pos.z) - h);
+    return min(max(w.x,w.y),0.0) + length(max(w,0.0));
+}
 
 float capsule(vec3 position, float height, float radius)
 {
@@ -35,6 +43,11 @@ Hit map(in vec3 position)
     float hold = capsule(holder_pos, 0.4, 0.1) - 0.08 * smoothstep(0.4, -0.2, position.z);
 
     hold = max(hold, position.y);
+    
+    hold = min(hold, disk(position.xzy - vec3(-0.04, 0.07, 0.0), 0.04, 0.02) - 0.01);
+    hold = min(hold, disk(position.xzy - vec3(-0.08, -0.05, 0.0), 0.04, 0.02) - 0.01);
+    hold = min(hold, disk(position.xzy - vec3(0.06, -0.05, 0.0), 0.01, 0.03) - 0.01);
+    hold = min(hold, disk(position.xzy - vec3(0.06, -0.05, 0.04), 0.05, 0.005) - 0.01);
 
     uint material_id = hold - 0.01 < ring ? BLACK_ID : RED_ID;
     float d = op_union(hold, ring, 0.08);

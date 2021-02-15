@@ -15,9 +15,13 @@ Hit raymarch_miss(in Ray ray)
 {
     float len = length(ray.direction);
     float t = 0.0f;
-    for (int i = 0; i < 512 && t < 500.0; i++)
+    for (int i = 0; i < 512 && t < 1000.0; i++)
     {
-        Hit hit = map_miss(ray.origin + t * ray.direction);
+        vec3 p = ray.origin + t * ray.direction;
+        if (p.y > 10.0) {
+            continue;
+        }
+        Hit hit = map_miss(p);
         if(hit.dist < 0.01) {
             return Hit(t, hit.material_id);
         }
@@ -67,3 +71,6 @@ void main()
         hit_value = background_miss(ray.direction);
     }
 }
+
+
+
