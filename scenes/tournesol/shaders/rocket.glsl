@@ -1,6 +1,8 @@
 //#define DEBUG_SDF
 #define ADVANCE_RATIO 1.0
 
+#define GREY_ID 5
+
 float feet(in vec3 pos)
 {
     pos.x = abs(pos.x);
@@ -55,6 +57,23 @@ Hit rocket(in vec3 position)
         q = q - vec3(0.19, 0.0, 0.0);
         distance = min(feet(q), distance);
     }
+    // Ladder
+    {
+    	q = position;
+    	float angle = 0.78;
+    	q.xz = mat2(cos(angle), -sin(angle), sin(angle), cos(angle)) * q.xz;
+    	q.z = abs(q.z); 
+    	float lader = length(q - vec3(0.054, clamp(q.y, -0.48, 0.0), 0.006)) - 0.001;
+    	
+    	vec3 c = vec3(1.0, 0.005, 1.0);
+        q = q - c * clamp(round(q / c), vec3(0., -95., 0.), vec3(0., 0., 0.));
+    	float step = length(q - vec3(0.054, 0.0, clamp(q.z, 0.0, 0.006))) - 0.0005;
+    	lader = min(step, lader);
+    	
+    	if (lader < distance){
+    		return Hit(lader, GREY_ID);
+    	}
+    }
     return Hit(distance, UNKNOW);
 }
 
@@ -72,3 +91,5 @@ Material get_color(in vec3 pos)
 
     return Material(abs(height-0.75) < 1.25 && pattern < 0.0 ? vec3(1.0) : vec3(0.9, 0.02, 0.02), 128.0);
 }
+
+

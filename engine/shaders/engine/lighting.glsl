@@ -23,7 +23,7 @@ float soft_shadow_miss(in Ray ray, in float factor)
     float res = 1.0;
     float len = length(ray.direction);
     float t = 0.03;
-    for (int i = 0; i < 16; i++)
+    for (int i = 0; i < 4; i++)
     {
         float distance = map_miss(ray.origin + t * ray.direction).dist;
         if(distance < 0.001) {
@@ -80,7 +80,7 @@ vec3 lighting(
         if (dot(normal, light_dir) > 0)
         {                
             light_dir = normalize(light.position - global_position);
-            shadow_payload = 1.0;//soft_shadow_miss(Ray(miss_position, vec3(scene_global.transform * vec4(light_dir, 0.0))), 128.0);
+            shadow_payload = 1.0; //soft_shadow_miss(Ray(miss_position, vec3(scene_global.transform * vec4(light_dir, 0.0))), 128.0);
 
             traceRayEXT(topLevelAS,  // acceleration structure
                         gl_RayFlagsSkipClosestHitShaderEXT,
@@ -95,10 +95,11 @@ vec3 lighting(
                         1            // payload (location = 1)
                         );
         }
-        color = color + ambient + shadow_payload * (spec + diffuse);
+        color = color + ambient + shadow_payload * (0.5 * spec + diffuse);
     }
     return color * ao * mat.color;
 }
+
 
 
 

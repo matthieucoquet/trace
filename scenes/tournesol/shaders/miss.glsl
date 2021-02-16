@@ -56,12 +56,12 @@ float voronoi2(in vec2 position){
 
 float crater(vec2 position)
 {
-    float scale = 0.05;
+    float scale = 0.04;
     vec4 v = voronoi(scale * position);
     float q = v.x / scale;
     float radius = 0.5 + 1.5 * v.z;
     float distance = smoothstep(0.0, radius, q);
-    distance = 0.2 * (pow(distance, 2) - 1.0) + 0.06 * smoothstep(radius * 1.4, radius, q);
+    distance = 0.2 * (pow(distance, 2) - 1.0) + 0.03 * smoothstep(radius * 1.4, radius, q);
     return distance * radius;
 }
 
@@ -69,17 +69,19 @@ Hit map_miss(in vec3 position)
 {
     // Curvature of moon
     float height = (0.0008 * length(position.xz));
-    height = height * height + 0.3;
+    height = height * height + 5.13;
 
     // Use to discard some elements
     float dist2 = dot(position.xz, position.xz);
 
-    height -= noise((position.xz - vec2(100.0, -20.0)) * 0.011) * 13.1045;
-    height += noise(position.xz * 0.03) * 3.20;
-    height += noise(position.xz * 0.313) * 0.4045;
-    height += noise(position.xz * 0.63) * 0.2055;
+	vec2 q = position.xz - vec2(-630.0, -535.0);
+    height -= noise(q * 0.011) * 20.1045;
+    
+    height += noise(q * 0.03) * 7.20;
+    height += noise(q * 0.113) * 1.18045;
+    height += noise(q * 0.283) * 0.6055;
     if (dist2 < 1000) {
-        height += noise(position.xz * 1.8) * 0.04821;
+        height += noise(q * 1.) * 0.094821;
     }
     if (dist2 < 100000)
     {
@@ -97,8 +99,8 @@ Hit map_miss(in vec3 position)
 
 Material get_color_miss(in vec3 position)
 {
-    vec3 color = vec3(0.2 + noise(position.xz * 105.0) * 0.1);
-    return Material(color, 6.0);
+    vec3 color = vec3(0.1 + noise(position.xz * 105.0) * 0.02);
+    return Material(color, 4.0);
 }
 
 vec3 background_miss(in vec3 direction)
@@ -120,6 +122,12 @@ vec3 background_miss(in vec3 direction)
     }
     return col;
 }
+
+
+
+
+
+
 
 
 
