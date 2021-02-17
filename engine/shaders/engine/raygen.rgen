@@ -5,6 +5,8 @@
 #extension GL_GOOGLE_include_directive : enable
 #include "common_types.glsl"
 
+#define SAMPLE_2 
+
 layout(binding = 0, set = 0) uniform accelerationStructureEXT topLevelAS;
 layout(binding = 1, set = 0, rgba16) uniform image2D image;
 
@@ -39,15 +41,30 @@ void main()
     if (is_right) {
         eye = scene_global.right;
     }
-    
+#ifdef SAMPLE_2
+    const vec2 center = vec2(gl_LaunchIDEXT.xy) + vec2(0.25);
+#else
     const vec2 center = vec2(gl_LaunchIDEXT.xy) + vec2(0.5);
+#endif
 
     vec3 direction = get_direction(center, eye, is_right);
     if (length(direction.xy) < 1.25) {
-    	shoot_ray(direction, eye);
-    	imageStore(image, nonuniformEXT(ivec2(gl_LaunchIDEXT.xy)), vec4(hit_value, 1.0));
-	}
-	else {
-		imageStore(image, nonuniformEXT(ivec2(gl_LaunchIDEXT.xy)), vec4(0.0));
-	}
+        shoot_ray(direction, eye);
+        vec3 color = hit_value;
+#ifdef SAMPLE_2
+		if (length(direction.xy) < 0.4) {
+        	const vec2 center = vec2(gl_LaunchIDEXT.xy) + vec2(0.75);
+        	vec3 direction = get_direction(center, eye, is_right);
+        	shoot_ray(direction, eye);
+        	color = 0.5 * (color + hit_value);
+        }
+ #endif
+
+        imageStore(image, nonuniformEXT(ivec2(gl_LaunchIDEXT.xy)), vec4(color, 1.0));
+    }
+    else {
+        imageStore(image, nonuniformEXT(ivec2(gl_LaunchIDEXT.xy)), vec4(0.0));
+    }
 }
+
+
