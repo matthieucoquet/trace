@@ -27,4 +27,4 @@ namespace xr {
 extern DispatchLoaderDynamic default_dispatch_loader_dynamic;
 }
 
-//#define VR_USE_VULKAN2
+#define VR_USE_VULKAN2

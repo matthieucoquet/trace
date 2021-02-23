@@ -32,6 +32,7 @@ static json to_json(const Entity& e) {
 			{ "position", to_json(e.local_transform.position) },
 			{ "rotation", to_json(e.local_transform.rotation) },
 			{ "scale", e.local_transform.scale },
+			{ "flip_axis", to_json(e.local_transform.flip_axis) },
 			{ "group_id", e.group_id },
 	};
 	json children;
@@ -49,7 +50,8 @@ static Entity to_entity(const json& j) {
 			.local_transform = Transform{
 				.position = to_vec3(j["position"]),
 				.rotation = to_quat(j["rotation"]),
-				.scale = j["scale"].get<float>()
+				.scale = j["scale"].get<float>(),
+				.flip_axis = to_vec3(j["flip_axis"])
 			},
 			.group_id = j["group_id"].get<size_t>()
 	};

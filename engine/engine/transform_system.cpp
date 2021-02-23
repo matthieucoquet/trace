@@ -41,7 +41,7 @@ static size_t update_entity(Scene& scene, Entity& entity, size_t id = 0, const E
     }
     else
     {
-        glm::mat4 inv = glm::translate(entity.global_transform.position) * glm::toMat4(entity.global_transform.rotation) * glm::scale(glm::vec3(entity.global_transform.scale));
+        glm::mat4 inv = glm::translate(entity.global_transform.position) * glm::toMat4(entity.global_transform.rotation) * glm::scale(glm::vec3(entity.local_transform.flip_axis)) * glm::scale(glm::vec3(entity.global_transform.scale));
         if (scene.entities_instances.size() > id) {
             scene.entities_instances[id].transform.matrix = std::array<std::array<float, 4>, 3>{
                 std::array<float, 4>{ inv[0].x, inv[1].x, inv[2].x, inv[3].x },

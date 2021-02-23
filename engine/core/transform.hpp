@@ -10,6 +10,7 @@ struct Transform
     glm::vec3 position{};
     glm::quat rotation{1.0, 0.0, 0.0, 0.0};
     float scale{ 1.0f };
+    glm::vec3 flip_axis{ 1.0 };
 
     Transform operator*(const Transform& rhs) const
     {

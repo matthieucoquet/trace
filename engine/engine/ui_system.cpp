@@ -256,6 +256,7 @@ void Ui_system::record_selected(Scene& scene)
             bool dirty = ImGui::InputFloat3("Position", glm::value_ptr(selected->local_transform.position));
             dirty = dirty | ImGui::InputFloat4("Rotation", glm::value_ptr(selected->local_transform.rotation));
             dirty = dirty | ImGui::SliderFloat("Scale", &selected->local_transform.scale, 0.03f, 5.0f, "%.3f");
+            dirty = dirty | ImGui::InputFloat3("Flip", glm::value_ptr(selected->local_transform.flip_axis));
             if (dirty)
             {
                 selected->dirty_global = true;
