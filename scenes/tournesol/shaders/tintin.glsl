@@ -21,13 +21,6 @@ float disk(in vec3 position, float radius, in float height)
     return min(max(w.x, w.y), 0.0) + length(max(w, 0.0));
 }
 
-float disk_v(in vec3 position, float radius, in float height)
-{
-    float distance = length(position.xy) - radius;
-    vec2 w = vec2(distance, abs(position.z) - height);
-    return min(max(w.x, w.y), 0.0) + length(max(w, 0.0));
-}
-
 float torus(vec3 position, vec2 t)
 {
   vec2 q = vec2(length(position.xz) - t.x, position.y);
@@ -62,9 +55,12 @@ Hit map(in vec3 position)
     distance = min(distance, belly);
     {
     	vec3 q = position;
-        distance = min(distance, disk_v(q - vec3(0.0, 0.08, 0.2), 0.04, 0.012) - 0.01);
+        distance = min(distance, disk(q.xzy - vec3(0.0, 0.2, 0.08), 0.04, 0.012) - 0.01);
         distance = min(distance, length(q - vec3(0.0, -0.02, 0.21)) - 0.015);
-    	
+        
+        q = position;
+        q.x = abs(q.x);
+        distance = min(distance, disk(q.zxy - vec3(0.0, 0.2, 0.12), 0.06, 0.012) - 0.02);
     }
     Hit hit = Hit(distance, ORANGE_ID);
     {   // Head
@@ -86,9 +82,9 @@ Hit map(in vec3 position)
     }
     {
         vec3 q = position;
-        distance = disk_v(q - vec3(0.0, -0.1, 0.21), 0.018, 0.01) - 0.004;
+        distance = disk(q.xzy - vec3(0.0, 0.21, -0.1), 0.018, 0.01) - 0.004;
         q.x = abs(q.x);
-        distance = min(distance, disk_v(q - vec3(0.07, -0.1, 0.20), 0.018, 0.01) - 0.004);
+        distance = min(distance, disk(q.xzy - vec3(0.07, 0.2, -0.1), 0.018, 0.01) - 0.004);
         hit = min_hit(hit, Hit(distance, LIGHT_ID));
     
     }
@@ -120,6 +116,7 @@ Material get_color(in vec3 position)
 {
     return Material(vec3(0.0), 64.0);
 }
+
 
 
 

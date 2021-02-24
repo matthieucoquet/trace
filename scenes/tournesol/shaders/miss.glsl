@@ -1,6 +1,7 @@
 #define ADVANCE_RATIO_MISS 0.95
 
 #define ROCK_ID 3
+//#define GO_FAST 
 
 layout(binding = 3, set = 0, scalar) buffer Lights { Light l[]; } lights;
 layout(binding = 4, set = 0) uniform sampler2D noise_lut;
@@ -80,6 +81,7 @@ Hit map_miss(in vec3 position)
     height += noise(q * 0.03) * 7.20;
     height += noise(q * 0.113) * 1.18045;
     height += noise(q * 0.283) * 0.6055;
+#ifndef GO_FAST
     if (dist2 < 1000) {
         height += noise(q * 1.) * 0.094821;
     }
@@ -94,6 +96,7 @@ Hit map_miss(in vec3 position)
         rock = voronoi2(0.8 * position.xz);
         height += max(0, 0.8 * rock - 0.8);
     }
+#endif
     return Hit(position.y - height, UNKNOW);
 }
 
@@ -122,6 +125,12 @@ vec3 background_miss(in vec3 direction)
     }
     return col;
 }
+
+
+
+
+
+
 
 
 

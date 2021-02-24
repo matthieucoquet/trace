@@ -23,6 +23,7 @@ struct Transform
         position += glm::rotate(rotation, scale * rhs.position);
         rotation = rotation * rhs.rotation;
         scale = scale * rhs.scale;
+        flip_axis = rhs.flip_axis;
         return *this;
     }
 
