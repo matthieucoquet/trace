@@ -66,8 +66,7 @@ private:
     using Duration = std::chrono::duration<float>;
 
     vk::Extent2D m_window_extent{ 1400, 900 };
-    //vk::Extent2D m_trace_extent{ 2800, 1800 };
-    vk::Extent2D m_trace_extent{ 11200, 7200 };
+    vk::Extent2D m_trace_extent{ 2800, 1800 };
     Scene m_scene;
     Json_system m_json_system;
     Window m_window;

@@ -45,7 +45,6 @@ Vr_app::~Vr_app()
     m_context.device.waitIdle();
     std::ranges::for_each(m_systems, [this](auto& system) { system->cleanup(m_scene); });
     ImGui::DestroyContext();
-    //m_json.write_to_file(m_scene);
 }
 
 void Vr_app::run()
@@ -79,8 +78,6 @@ Desktop_app::Desktop_app(Scene scene, std::filesystem::path scene_json_path, std
 Desktop_app::~Desktop_app()
 {
     m_context.device.waitIdle();
-    //auto checkpoints = m_context.graphics_queue.getCheckpointDataNV();
-
     m_shader_system.cleanup(m_scene);
 }
 
@@ -94,6 +91,7 @@ void Desktop_app::run()
 
         m_json_system.step(m_scene);
         m_shader_system.step(m_scene);
+        m_transform_system.step(m_scene);
 
         for (size_t eye_id = 0u; eye_id < 2u; eye_id++)
         {

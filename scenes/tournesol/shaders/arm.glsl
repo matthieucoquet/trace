@@ -26,16 +26,16 @@ float finger(in vec3 position, float angle, float len, float radius)
 	vec3 q = position;
 	q.x -= 0.08;
 	q.xz = rotate(angle) * q.xz;
-	float distance = length(q - vec3(clamp(q.x, 0.0, 0.05 * len), 0.0, 0.0)) - 0.014 * radius;
+	float distance = length(q - vec3(clamp(q.x, 0.0, 0.05 * len), 0.0, 0.0)) - 0.016 * radius;
 	q.x -= 0.05 * len;
 	q.xz = rotate(angle) * q.xz;
 	distance = op_union(distance, 
-		length(q - vec3(clamp(q.x, 0.0, 0.04 * len), 0.0, 0.0)) - 0.013 * radius,
+		length(q - vec3(clamp(q.x, 0.0, 0.04 * len), 0.0, 0.0)) - 0.0145 * radius,
 		0.003);
 	q.x -= 0.04 * len;
 	q.xz = rotate(angle) * q.xz;
 	distance = op_union(distance, 
-		length(q - vec3(clamp(q.x, 0.0, 0.03 * len), 0.0, 0.0)) - 0.013 * radius,
+		length(q - vec3(clamp(q.x, 0.0, 0.03 * len), 0.0, 0.0)) - 0.0145 * radius,
 		0.003);
 	return distance;
 }
@@ -99,6 +99,7 @@ Material get_color(in vec3 position)
 {
     return Material(vec3(0.0), 64.0);
 }
+
 
 
 

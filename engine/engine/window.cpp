@@ -6,7 +6,7 @@ namespace sdf_editor
 {
 
 constexpr bool verbose = false;
-constexpr unsigned int initial_height = 900;
+constexpr unsigned int initial_height = 1000;
 
 Window::Window(float recommended_ratio)
 {

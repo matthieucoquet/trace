@@ -62,7 +62,7 @@ void Scene_vr_input::suggest_interaction_profile(xr::Instance instance, Suggeste
     suggested_bindings.suggested_binding_oculus.push_back(xr::ActionSuggestedBinding{ m_scale_action, instance.stringToPath("/user/hand/right/input/thumbstick/y") });
 }
 
-void Scene_vr_input::step(Scene& scene, xr::Session session, xr::Time display_time, xr::Space base_space, float /*offset_space_y*/)
+void Scene_vr_input::step(Scene& scene, xr::Session session, xr::Time display_time, xr::Space base_space, float offset_space_y)
 {
     for (int i = 0; i < 2; i++)
     {
@@ -71,7 +71,7 @@ void Scene_vr_input::step(Scene& scene, xr::Session session, xr::Time display_ti
             xr::SpaceLocationFlags{ xr::SpaceLocationFlagBits::PositionValid } | 
             xr::SpaceLocationFlags{ xr::SpaceLocationFlagBits::OrientationValid };
         if ((space_location.locationFlags & required_flags) == required_flags) {
-            //space_location.pose.position.y += offset_space_y;
+            space_location.pose.position.y += offset_space_y;
             auto& entity = scene.entities[i];
             to_glm(space_location.pose, entity);
         }

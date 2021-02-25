@@ -102,7 +102,7 @@ Hit map_miss(in vec3 position)
 
 Material get_color_miss(in vec3 position)
 {
-    vec3 color = vec3(0.1 + noise(position.xz * 105.0) * 0.02);
+    vec3 color = vec3(0.05 + noise(position.xz * 105.0) * 0.015);
     return Material(color, 4.0);
 }
 
@@ -113,18 +113,26 @@ vec3 background_miss(in vec3 direction)
     float sun = 0.0000005 / pow(1.0 - dot(light_dir, direction), 2);
     sun = min(sun, 1.0);
 
+	float angle = -0.4;
+	float s = sin(angle);
+    float c = cos(angle);
+    mat2 r = mat2( c, -s, s, c );
+	direction.xz = r * direction.xz;
     vec2 proj = direction.yz * 1000.0 / (-direction.x);
     proj = (proj + vec2(-200.0, 16.0)) / 32.0;
     proj = clamp(proj, 0.0, 1.0);
     vec4 earth = texture(earth_sampler, proj);
     proj = proj - 0.5;
     vec3 norm = vec3(sqrt(max(0.0, 0.25 - proj.x * proj.x - proj.y * proj.y)), proj.xy);
+	norm.xz = transpose(r) * norm.xz;
     vec3 col = sun * vec3(1.0);
     if (dot(norm, light_dir) > 0.0){
         col = mix(col, earth.rgb, earth.a);
     }
     return col;
 }
+
+
 
 
 

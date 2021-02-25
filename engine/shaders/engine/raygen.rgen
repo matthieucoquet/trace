@@ -5,7 +5,11 @@
 #extension GL_GOOGLE_include_directive : enable
 #include "common_types.glsl"
 
-#define SAMPLE_2 
+//#define ANGLE_BLACK 2.0
+//#define ANGLE_MS 2.0
+#define ANGLE_BLACK 1.25
+#define ANGLE_MS 0.4
+#define SAMPLE_2
 
 layout(binding = 0, set = 0) uniform accelerationStructureEXT topLevelAS;
 layout(binding = 1, set = 0, rgba16) uniform image2D image;
@@ -48,11 +52,11 @@ void main()
 #endif
 
     vec3 direction = get_direction(center, eye, is_right);
-    if (length(direction.xy) < 1.25) {
+    if (length(direction.xy) < ANGLE_BLACK) {
         shoot_ray(direction, eye);
         vec3 color = hit_value;
 #ifdef SAMPLE_2
-		if (length(direction.xy) < 0.4) {
+		if (length(direction.xy) < ANGLE_MS) {
         	const vec2 center = vec2(gl_LaunchIDEXT.xy) + vec2(0.75);
         	vec3 direction = get_direction(center, eye, is_right);
         	shoot_ray(direction, eye);
@@ -66,5 +70,6 @@ void main()
         imageStore(image, nonuniformEXT(ivec2(gl_LaunchIDEXT.xy)), vec4(0.0));
     }
 }
+
 
 
