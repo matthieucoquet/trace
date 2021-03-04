@@ -38,6 +38,7 @@ void Context::init_instance(Window& window, vr::Instance* vr_instance)
 {
     auto required_extensions = window.required_extensions();
     required_extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    //required_extensions.push_back(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
 
 #ifndef VR_USE_VULKAN2
     // Warning: vr_required_extensions hold the memory to the string, should not be destroyed until createInstance
@@ -51,7 +52,7 @@ void Context::init_instance(Window& window, vr::Instance* vr_instance)
     }
 #endif
 
-    std::array required_instance_layers{ "VK_LAYER_KHRONOS_validation" };
+    std::array required_instance_layers{ "VK_LAYER_KHRONOS_validation"/*, "VK_LAYER_KHRONOS_synchronization2"*/ };
 
     // Find Vulkan dynamic lib and fetch needed functions to create instance
     PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr = m_dynamic_loader.getProcAddress<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr");
@@ -181,10 +182,13 @@ void Context::init_device(vr::Instance* vr_instance)
         // Checking features
         {
             auto vulkan_12_features = vk::PhysicalDeviceVulkan12Features();
+            //auto sync_features = vk::PhysicalDeviceSynchronization2FeaturesKHR{ .pNext = &vulkan_12_features };
             auto as_features = vk::PhysicalDeviceAccelerationStructureFeaturesKHR{ .pNext = &vulkan_12_features };
             auto pipeline_features = vk::PhysicalDeviceRayTracingPipelineFeaturesKHR{ .pNext = &as_features };
             auto features = vk::PhysicalDeviceFeatures2{ .pNext = &pipeline_features };
             potential_physical_device.getFeatures2(&features);
+            //if (!sync_features.synchronization2)
+            //    continue;
             if (!pipeline_features.rayTracingPipeline || !pipeline_features.rayTraversalPrimitiveCulling)
                 continue;
             if (!as_features.accelerationStructure /*|| !as_features.descriptorBindingAccelerationStructureUpdateAfterBind*/)
@@ -244,7 +248,10 @@ void Context::init_device(vr::Instance* vr_instance)
         };
         vulkan_12_features.pNext = &aftermath_features;
 #endif
-
+        /*vk::PhysicalDeviceSynchronization2FeaturesKHR sync_features{
+            .pNext = &vulkan_12_features,
+            .synchronization2 = true
+        };*/
         vk::PhysicalDeviceAccelerationStructureFeaturesKHR raytracing_as_features{
             .pNext = &vulkan_12_features,
             .accelerationStructure = true

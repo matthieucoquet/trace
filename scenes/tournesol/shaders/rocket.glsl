@@ -89,7 +89,8 @@ Material get_color(in vec3 pos)
     float height = 8. * pos.y;
     pattern *= fract(height) - 0.5;
 
-    return Material(abs(height-0.75) < 1.25 && pattern < 0.0 ? vec3(1.0) : vec3(0.9, 0.02, 0.02), 128.0);
+    return Material(abs(height-0.75) < 1.25 && pattern < 0.0 ? vec3(1.0) : vec3(0.9, 0.02, 0.02), 0.5, 64.0, 0.2);
 }
+
 
 

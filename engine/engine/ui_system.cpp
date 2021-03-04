@@ -294,7 +294,9 @@ void Ui_system::record_selected(Scene& scene)
     {
         Material& material = scene.materials[m_selected_id];
         ImGui::ColorPicker3("Color", glm::value_ptr(material.color));
-        ImGui::InputFloat("Spec", &material.spec);
+        ImGui::InputFloat("Ks", &material.ks);
+        ImGui::InputFloat("Shininess", &material.shininess);
+        ImGui::InputFloat("f0", &material.f0);
         break;
     }
     case Selected::light:

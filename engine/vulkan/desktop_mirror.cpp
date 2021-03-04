@@ -109,7 +109,6 @@ void Desktop_mirror::copy(vk::CommandBuffer& command_buffer, vk::Image vr_image,
 
 void Desktop_mirror::present(vk::CommandBuffer& command_buffer, vk::Fence fence, size_t command_pool_id)
 {
-    //m_queue.waitIdle();
     vk::PipelineStageFlags wait_stages = vk::PipelineStageFlagBits::eTransfer;
     m_queue.submit(
         vk::SubmitInfo{
@@ -122,7 +121,26 @@ void Desktop_mirror::present(vk::CommandBuffer& command_buffer, vk::Fence fence,
             .pSignalSemaphores = &m_semaphore_finished[command_pool_id]
         },
         fence);
-    //m_queue.waitIdle();
+
+    /*vk::SemaphoreSubmitInfoKHR wait_semaphore_submit_info{
+        .semaphore = m_semaphore_available[command_pool_id],
+        .stageMask = vk::PipelineStageFlagBits2KHR::e2Transfer
+    };
+    vk::SemaphoreSubmitInfoKHR signal_semaphore_submit_info{
+        .semaphore = m_semaphore_finished[command_pool_id]
+    };
+    vk::CommandBufferSubmitInfoKHR command_buffer_submit_info{
+        .commandBuffer = command_buffer
+    };
+    m_queue.submit2KHR(vk::SubmitInfo2KHR{
+        .waitSemaphoreInfoCount = 1,
+        .pWaitSemaphoreInfos = &wait_semaphore_submit_info,
+        .commandBufferInfoCount = 1,
+        .pCommandBufferInfos = &command_buffer_submit_info,
+        .signalSemaphoreInfoCount = 1,
+        .pSignalSemaphoreInfos = &signal_semaphore_submit_info
+        },
+        fence);*/
     auto present_result = m_queue.presentKHR(vk::PresentInfoKHR{
         .waitSemaphoreCount = 1,
         .pWaitSemaphores = &m_semaphore_finished[command_pool_id],

@@ -26,7 +26,7 @@ Material get_color(in vec3 position)
     vec2 uv = position.xy;
     uv = uv + 0.5;
     uv.y *= -1;
-    return Material(textureLod(ui, nonuniformEXT(uv), 0.0).xyz, 4);
+    return Material(textureLod(ui, nonuniformEXT(uv), 0.0).xyz, 0, 4, 0.01);
 }
 
 

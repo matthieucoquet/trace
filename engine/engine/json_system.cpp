@@ -93,7 +93,11 @@ void Json_system::parse(Scene& scene)
 	scene.materials.reserve(materials.size());
 	for (const auto& material : materials)
 	{
-		scene.materials.push_back(Material{ .color = to_vec3(material["color"]), .spec = material["spec"] });
+		scene.materials.push_back(Material{ 
+			.color = to_vec3(material["color"]), 
+			.ks = material["ks"],
+			.shininess = material["shininess"],
+			.f0 = material["f0"] });
 	}
 
 	const json& lights = j["lights"];
@@ -124,7 +128,10 @@ void Json_system::write_to_file(const Scene& scene)
 	json materials;
 	for (const auto& material : scene.materials)
 	{
-		materials.push_back(json{ { "color", to_json(material.color) }, { "spec", material.spec } });
+		materials.push_back(json{ { "color", to_json(material.color) },
+			{ "ks", material.ks },
+			{ "shininess", material.shininess },
+			{ "f0", material.f0 } });
 	}
 
 	json lights;

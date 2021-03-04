@@ -9,6 +9,7 @@
 //#define ANGLE_MS 2.0
 #define ANGLE_BLACK 1.25
 #define ANGLE_MS 0.4
+//#define ANGLE_MS 1.25
 #define SAMPLE_2
 
 layout(binding = 0, set = 0) uniform accelerationStructureEXT topLevelAS;

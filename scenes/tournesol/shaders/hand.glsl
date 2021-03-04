@@ -56,5 +56,5 @@ Hit map(in vec3 position)
 
 Material get_color(in vec3 position)
 {
-    return Material(vec3(0.0), 64.0);
+    return Material(vec3(0.0), 0.5, 64.0, 0.02);
 }

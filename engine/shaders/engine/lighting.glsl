@@ -74,7 +74,9 @@ vec3 lighting(
         vec3 ambient = 0.05 * light.color;
 
         vec3 halfway = normalize(light_dir + view_dir);
-        vec3 spec = pow(max(dot(normal, halfway), 0.0), mat.spec) * light.color;
+        vec3 spec = pow(max(dot(normal, halfway), 0.0), mat.shininess) * light.color;
+        float f = mat.f0 + (1.0 - mat.f0) * pow(1.0 - clamp(dot(halfway, view_dir), 0.0, 1.0), 5.0);
+		spec = f * spec;
 
         shadow_payload = 0.0;
         if (dot(normal, light_dir) > 0)
@@ -95,10 +97,12 @@ vec3 lighting(
                         1            // payload (location = 1)
                         );
         }
-        color = color + ambient + shadow_payload * (0.5 * spec + diffuse);
+        color = color + mat.color * (ambient  + shadow_payload * diffuse) + shadow_payload * mat.ks * spec;
     }
-    return color * ao * mat.color;
+    return color * ao;
 }
+
+
 
 
 

@@ -63,6 +63,18 @@ void Renderer::start_recording(vk::CommandBuffer command_buffer, Scene& scene)
                 .offset = 0u,
                 .size = VK_WHOLE_SIZE
             }, {});
+
+        /*vk::BufferMemoryBarrier2KHR memory_barrier{
+            .srcStageMask = vk::PipelineStageFlagBits2KHR::e2Transfer,
+            .srcAccessMask = vk::AccessFlagBits2KHR::e2TransferWrite,
+            .dstStageMask = vk::PipelineStageFlagBits2KHR::e2RayTracingShader,
+            .dstAccessMask = vk::AccessFlagBits2KHR::e2ShaderRead,
+            .buffer = m_pipeline.shader_binding_table.buffer
+        };
+        command_buffer.pipelineBarrier2KHR(vk::DependencyInfoKHR{
+            .bufferMemoryBarrierCount = 1,
+            .pBufferMemoryBarriers = &memory_barrier
+            });*/
     }
 }
 
@@ -89,6 +101,27 @@ void Renderer::barrier_vr_swapchain(vk::CommandBuffer command_buffer, vk::Image 
                 .layerCount = 1
             }
         });
+    /*
+    vk::ImageMemoryBarrier2KHR memory_barrier{
+    .srcStageMask = vk::PipelineStageFlagBits2KHR::e2TopOfPipe,
+    .srcAccessMask = {},
+    .dstStageMask = vk::PipelineStageFlagBits2KHR::e2Transfer,
+    .dstAccessMask = vk::AccessFlagBits2KHR::e2TransferWrite,
+    .oldLayout = vk::ImageLayout::eUndefined,
+    .newLayout = vk::ImageLayout::eTransferDstOptimal,
+    .image = swapchain_image,
+    .subresourceRange = {
+            .aspectMask = vk::ImageAspectFlagBits::eColor,
+            .baseMipLevel = 0,
+            .levelCount = 1u,
+            .baseArrayLayer = 0,
+            .layerCount = 1
+        }
+    };
+    command_buffer.pipelineBarrier2KHR(vk::DependencyInfoKHR{
+        .imageMemoryBarrierCount = 1,
+        .pImageMemoryBarriers = &memory_barrier
+        });*/
 }
 
 void Renderer::trace(vk::CommandBuffer command_buffer, Scene& scene, size_t command_pool_id, vk::Extent2D extent)
@@ -117,6 +150,29 @@ void Renderer::trace(vk::CommandBuffer command_buffer, Scene& scene, size_t comm
             .dstAccessMask = vk::AccessFlagBits::eShaderRead,
         },
         {}, {});
+
+    /*{
+        std::array barriers{
+            vk::BufferMemoryBarrier2KHR{
+                .srcStageMask = vk::PipelineStageFlagBits2KHR::e2AccelerationStructureBuild,
+                .srcAccessMask = vk::AccessFlagBits2KHR::e2AccelerationStructureWrite,
+                .dstStageMask = vk::PipelineStageFlagBits2KHR::e2RayTracingShader,
+                .dstAccessMask = vk::AccessFlagBits2KHR::e2AccelerationStructureRead,
+                .buffer = m_pipeline.shader_binding_table.buffer
+            },
+            vk::BufferMemoryBarrier2KHR{
+                .srcStageMask = vk::PipelineStageFlagBits2KHR::e2ColorAttachmentOutput,
+                .srcAccessMask = vk::AccessFlagBits2KHR::e2ColorAttachmentWrite,
+                .dstStageMask = vk::PipelineStageFlagBits2KHR::e2RayTracingShader,
+                .dstAccessMask = vk::AccessFlagBits2KHR::e2ShaderRead,
+                .buffer = m_pipeline.shader_binding_table.buffer
+            }
+        };
+        command_buffer.pipelineBarrier2KHR(vk::DependencyInfoKHR{
+            .bufferMemoryBarrierCount = static_cast<uint32_t>(barriers.size()),
+            .pBufferMemoryBarriers = barriers.data()
+            });
+    }*/
 
     vk::DeviceAddress table_address = m_device.getBufferAddress(vk::BufferDeviceAddressInfo{ .buffer = m_pipeline.shader_binding_table.buffer });
     vk::StridedDeviceAddressRegionKHR raygen_shader_entry{
@@ -164,21 +220,42 @@ void Renderer::trace(vk::CommandBuffer command_buffer, Scene& scene, size_t comm
         vk::PipelineStageFlagBits::eTransfer,
         {}, {}, {},
         vk::ImageMemoryBarrier{
-            .srcAccessMask = vk::AccessFlagBits::eShaderWrite,
-            .dstAccessMask = vk::AccessFlagBits::eTransferRead,
-            .oldLayout = vk::ImageLayout::eGeneral,
-            .newLayout = vk::ImageLayout::eTransferSrcOptimal,
-            .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-            .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-            .image = per_frame[command_pool_id].storage_image.image,
-            .subresourceRange = {
+        .srcAccessMask = vk::AccessFlagBits::eShaderWrite,
+        .dstAccessMask = vk::AccessFlagBits::eTransferRead,
+        .oldLayout = vk::ImageLayout::eGeneral,
+        .newLayout = vk::ImageLayout::eTransferSrcOptimal,
+        .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+        .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+        .image = per_frame[command_pool_id].storage_image.image,
+        .subresourceRange = {
                 .aspectMask = vk::ImageAspectFlagBits::eColor,
                 .baseMipLevel = 0,
                 .levelCount = 1u,
                 .baseArrayLayer = 0,
                 .layerCount = 1
             }
-        });
+         });
+
+    /*vk::ImageMemoryBarrier2KHR memory_barrier{
+        .srcStageMask = vk::PipelineStageFlagBits2KHR::e2RayTracingShader,
+        .srcAccessMask = vk::AccessFlagBits2KHR::e2ShaderWrite,
+        .dstStageMask = vk::PipelineStageFlagBits2KHR::e2Transfer,
+        .dstAccessMask = vk::AccessFlagBits2KHR::e2TransferRead,
+        .oldLayout = vk::ImageLayout::eGeneral,
+        .newLayout = vk::ImageLayout::eTransferSrcOptimal,
+        .image = per_frame[command_pool_id].storage_image.image,
+        .subresourceRange = {
+                .aspectMask = vk::ImageAspectFlagBits::eColor,
+                .baseMipLevel = 0,
+                .levelCount = 1u,
+                .baseArrayLayer = 0,
+                .layerCount = 1
+            }
+    };
+    command_buffer.pipelineBarrier2KHR(vk::DependencyInfoKHR{
+        .imageMemoryBarrierCount = 1,
+        .pImageMemoryBarriers = &memory_barrier
+        });*/
 }
 
 void Renderer::copy_to_vr_swapchain(vk::CommandBuffer command_buffer, vk::Image swapchain_image, size_t command_pool_id, vk::Extent2D extent)
@@ -238,26 +315,48 @@ void Renderer::copy_to_vr_swapchain(vk::CommandBuffer command_buffer, vk::Image 
             vk::Filter::eLinear
         );
     }
+
     command_buffer.pipelineBarrier(
         vk::PipelineStageFlagBits::eTransfer,
         vk::PipelineStageFlagBits::eBottomOfPipe,
         {}, {}, {},
         vk::ImageMemoryBarrier{
-            .srcAccessMask = vk::AccessFlagBits::eTransferWrite,
-            .dstAccessMask = {},
-            .oldLayout = vk::ImageLayout::eTransferDstOptimal,
-            .newLayout = vk::ImageLayout::eColorAttachmentOptimal,
-            .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-            .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-            .image = swapchain_image,
-            .subresourceRange = {
+        .srcAccessMask = vk::AccessFlagBits::eTransferWrite,
+        .dstAccessMask = {},
+        .oldLayout = vk::ImageLayout::eTransferDstOptimal,
+        .newLayout = vk::ImageLayout::eColorAttachmentOptimal,
+        .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+        .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+        .image = swapchain_image,
+        .subresourceRange = {
+                    .aspectMask = vk::ImageAspectFlagBits::eColor,
+                    .baseMipLevel = 0,
+                    .levelCount = 1u,
+                    .baseArrayLayer = 0,
+                    .layerCount = 1
+            }
+         });
+
+    /*vk::ImageMemoryBarrier2KHR memory_barrier{
+        .srcStageMask = vk::PipelineStageFlagBits2KHR::e2Transfer,
+        .srcAccessMask = vk::AccessFlagBits2KHR::e2TransferWrite,
+        .dstStageMask = vk::PipelineStageFlagBits2KHR::e2BottomOfPipe,
+        .dstAccessMask = {},
+        .oldLayout = vk::ImageLayout::eTransferDstOptimal,
+        .newLayout = vk::ImageLayout::eColorAttachmentOptimal,
+        .image = swapchain_image,
+        .subresourceRange = {
                 .aspectMask = vk::ImageAspectFlagBits::eColor,
                 .baseMipLevel = 0,
                 .levelCount = 1u,
                 .baseArrayLayer = 0,
                 .layerCount = 1
             }
-        });
+    };
+    command_buffer.pipelineBarrier2KHR(vk::DependencyInfoKHR{
+        .imageMemoryBarrierCount = 1,
+        .pImageMemoryBarriers = &memory_barrier
+        });*/
 }
 
 void Renderer::end_recording(vk::CommandBuffer command_buffer, size_t command_pool_id)
@@ -268,21 +367,42 @@ void Renderer::end_recording(vk::CommandBuffer command_buffer, size_t command_po
         vk::PipelineStageFlagBits::eRayTracingShaderKHR,
         {}, {}, {},
         vk::ImageMemoryBarrier{
-            .srcAccessMask = vk::AccessFlagBits::eTransferRead,
-            .dstAccessMask = vk::AccessFlagBits::eShaderWrite,
-            .oldLayout = vk::ImageLayout::eTransferSrcOptimal,
-            .newLayout = vk::ImageLayout::eGeneral,
-            .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-            .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-            .image = per_frame[command_pool_id].storage_image.image,
-            .subresourceRange = {
+        .srcAccessMask = vk::AccessFlagBits::eTransferRead,
+        .dstAccessMask = vk::AccessFlagBits::eShaderWrite,
+        .oldLayout = vk::ImageLayout::eTransferSrcOptimal,
+        .newLayout = vk::ImageLayout::eGeneral,
+        .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+        .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+        .image = per_frame[command_pool_id].storage_image.image,
+        .subresourceRange = {       
                 .aspectMask = vk::ImageAspectFlagBits::eColor,
                 .baseMipLevel = 0,
                 .levelCount = 1u,
                 .baseArrayLayer = 0,
                 .layerCount = 1
             }
-        });
+         });
+
+    /*vk::ImageMemoryBarrier2KHR memory_barrier{
+        .srcStageMask = vk::PipelineStageFlagBits2KHR::e2Transfer,
+        .srcAccessMask = vk::AccessFlagBits2KHR::e2TransferRead,
+        .dstStageMask = vk::PipelineStageFlagBits2KHR::e2RayTracingShader,
+        .dstAccessMask = vk::AccessFlagBits2KHR::e2ShaderWrite,
+        .oldLayout = vk::ImageLayout::eTransferSrcOptimal,
+        .newLayout = vk::ImageLayout::eGeneral,
+        .image = per_frame[command_pool_id].storage_image.image,
+        .subresourceRange = {
+                .aspectMask = vk::ImageAspectFlagBits::eColor,
+                .baseMipLevel = 0,
+                .levelCount = 1u,
+                .baseArrayLayer = 0,
+                .layerCount = 1
+            }
+    };
+    command_buffer.pipelineBarrier2KHR(vk::DependencyInfoKHR{
+        .imageMemoryBarrierCount = 1,
+        .pImageMemoryBarriers = &memory_barrier
+        });*/
 }
 
 void Renderer::create_per_frame_data(Context& context, Scene& scene, vk::Extent2D extent, size_t command_pool_size)

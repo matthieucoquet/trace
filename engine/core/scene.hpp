@@ -32,7 +32,9 @@ struct Scene_global
 struct Material
 {
     glm::vec3 color;
-    float spec;
+    float ks;
+    float shininess;
+    float f0;
 };
 
 struct Light
@@ -76,7 +78,7 @@ struct Entity
 struct Scene
 {
     // Should probably be a runtime setting in the future
-    static constexpr bool standing = false;
+    static constexpr bool standing = true;
     static constexpr float vr_offset_y = standing ? 0.0f : 1.7f;
     static constexpr unsigned int max_entities = 20u;
     static constexpr unsigned int max_lights = 10u;
