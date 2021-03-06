@@ -1,12 +1,27 @@
 //#define DEBUG_SDF
 #define ADVANCE_RATIO 1.0
 
+#define BLACK_ID 0
 #define WHITE_ID 1
 #define ORANGE_ID 2
 #define RED_ID 3
 #define BLUE_ID 4
 #define GREY_ID 5
 #define BEIGE_ID 6
+#define GLASS_ID 8
+
+layout(binding = 4, set = 0) uniform sampler2D noise_lu;
+
+// See https://www.shadertoy.com/view/4sfGzS and iq website for more info about noise
+float noise(in vec3 x)
+{
+    vec3 i = floor(x);
+    vec3 f = fract(x);
+    f = f * f * (3.0 - 2.0 * f);
+    vec2 uv = (i.xy + vec2(37.0, 17.0) * i.z) + f.xy;
+    vec2 rg = textureLod(noise_lu, (uv + 0.5) / 512.0, 0.0).yx;
+    return mix(rg.x, rg.y, f.z);
+}
 
 mat2 rotate(float angle)
 {
@@ -50,13 +65,13 @@ Hit bottle(in vec3 position) {
     float distance = length(position - vec3(0.0, 0.0, clamp(position.z, -0.1, 0.1))) - 0.07;
     distance = min(distance, length(position - vec3(0.0, 0.0, clamp(position.z, 0.0, 0.19))) - 0.015);
     distance = min(distance, disk(position - vec3(0.0, 0.0, 0.19), 0.025, 0.006) - 0.003);
-    Hit hit = Hit(distance, BLUE_ID);
+    Hit hit = make_hit(distance, BLUE_ID);
  
     // Red disk
     position.z = abs(position.z);
     position.z -= 0.07;
     distance = disk(position, 0.075, 0.01);
-    return min_hit(hit, Hit(distance, RED_ID));
+    return min_hit(hit, make_hit(distance, RED_ID));
 }
 
 float leg(in vec3 position)
@@ -84,6 +99,28 @@ float leg(in vec3 position)
     return distance;
 }
 
+Hit head(in vec3 position)
+{
+    float disp = 0.005 * noise(50.0 * position)+0.001 * noise(250.0 * position);
+    position.x = abs(position.x);
+    float distance = length(position - vec3(0.0, 0.03, -0.05)) - 0.08;
+    distance = op_union(
+        distance, length(position - vec3(0.02, -0.04, 0.04)) - 0.07,
+        0.06);
+    distance = op_union(
+        distance, length(position - vec3(0.05, 0.14, -0.03)) - 0.02,
+        0.07);    	
+    distance = op_union(
+        distance, length(position - vec3(0.0, -0.03, -0.15)) - 0.05,
+        0.06);
+    distance += disp;
+    Hit hit = make_hit(distance, WHITE_ID);
+    
+    distance = length(position - vec3(0.0, 0.00, 0.1)) - 0.01;
+    distance = min(distance, length(position - vec3(0.02, 0.055, 0.03)) - 0.005);
+    return min_hit(hit, make_hit(distance, BLACK_ID));;
+}
+
 Hit map(in vec3 position)
 {
     // Draw orange stuff first
@@ -103,23 +140,25 @@ Hit map(in vec3 position)
         float tail = length(q - vec3(0.0, 0.00, clamp(q.z, -0.05, +0.1))) - 0.055;
         distance = min(distance, tail);
     }
-    Hit hit = Hit(distance, ORANGE_ID);
+    Hit hit = make_hit(distance, ORANGE_ID);
     {   // Head
-        float head = length(position - vec3(0.0, 0.12, 0.2)) - 0.18;
-        hit = min_hit(hit, Hit(head, WHITE_ID));
+        float helmet = length(position - vec3(0.0, 0.12, 0.2)) - 0.18;
+        helmet = abs(helmet) - 0.0001;
+        hit = min_hit(hit, Hit(helmet, GLASS_ID, 0.95));
+        hit = min_hit(hit, head(position - vec3(0.0, 0.12, 0.2)));
     }
     {
         // Grey disk on belly
         distance = disk(position - vec3(0.0, 0.05, -0.15), 0.155, 0.012) - 0.005;
-        hit = min_hit(hit, Hit(distance, GREY_ID));
+        hit = min_hit(hit, make_hit(distance, GREY_ID));
 
         // Neck
         vec3 q = position - vec3(0.0, 0.08, 0.06);
         q.yz = rotate(-0.25) * q.yz;
         distance = torus(q, vec2(0.12, 0.025));
-        hit = min_hit(hit, Hit(distance, RED_ID));
+        hit = min_hit(hit, make_hit(distance, RED_ID));
         distance = disk(q, 0.15, 0.008);
-        hit = min_hit(hit, Hit(distance, GREY_ID));
+        hit = min_hit(hit, make_hit(distance, GREY_ID));
     }
     {   // Bottles
         vec3 q = position;
@@ -130,22 +169,27 @@ Hit map(in vec3 position)
         distance = box(position - vec3(0.0, 0.24, -0.17), vec3(0.07, 0.044, 0.14));
         float inv = box(position - vec3(0.0, 0.3, 0.0), vec3(0.5, 0.045, 0.17));
         distance = max(distance, -inv) - 0.01;
-        hit = min_hit(hit, Hit(distance, BEIGE_ID));
+        hit = min_hit(hit, make_hit(distance, BEIGE_ID));
         vec3 q = position - vec3(0.0, 0.3, -0.235);
         distance = disk(q.xzy, 0.045, 0.01) - 0.007;
-        hit = min_hit(hit, Hit(distance, RED_ID));
+        hit = min_hit(hit, make_hit(distance, RED_ID));
         distance = length(q - vec3(0.06, clamp(q.y, -0.05, +0.2), 0.06)) - 0.0035;
         distance = min(
             distance, 
             length(q - vec3(0.06, clamp(q.y, -0.05, +0.11), 0.06)) - 0.006);
-        hit = min_hit(hit, Hit(distance, GREY_ID));
+        hit = min_hit(hit, make_hit(distance, GREY_ID));
         distance = box(position - vec3(0.0, 0.235, -0.09), vec3(0.06, 0.035, 0.035)) - 0.003;
-        hit = min_hit(hit, Hit(distance, WHITE_ID));        
+        hit = min_hit(hit, make_hit(distance, WHITE_ID));
     }
     return hit;
 }
 
 Material get_color(in vec3 position)
 {
-    return Material(vec3(0.0), 0.5, 64.0, 0.02);
+    return Material(vec4(0.0), 0.5, 64.0, 0.02);
 }
+
+
+
+
+

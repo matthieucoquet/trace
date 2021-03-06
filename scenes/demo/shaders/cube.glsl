@@ -13,7 +13,7 @@ Hit map(in vec3 position)
     //float coeff = sin(2 * (position.y  + scene_global.time));
     //float soft = 0.1 + 0.02 * coeff * coeff;
     float d = sdbox(position, vec3(0.3));// - soft;
-    return Hit(d, BLUE_ID);
+    return make_hit(d, BLUE_ID);
 }
 
 vec3 get_color(in vec3 position)

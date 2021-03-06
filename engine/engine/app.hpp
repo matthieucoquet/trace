@@ -61,12 +61,23 @@ public:
 
     void run();
 private:
+    struct Imgui_context {
+        Imgui_context() {
+            IMGUI_CHECKVERSION();
+            ImGui::CreateContext();
+        }
+        ~Imgui_context() {
+            ImGui::DestroyContext();
+        }
+    };
+    Imgui_context m_ingui_context{}; // Need to be create before everything else
+
     using Clock = std::chrono::steady_clock;
     using Time_point = std::chrono::time_point<std::chrono::steady_clock>;
     using Duration = std::chrono::duration<float>;
 
     vk::Extent2D m_window_extent{ 1400, 900 };
-    vk::Extent2D m_trace_extent{ 2800, 1800 };
+    vk::Extent2D m_trace_extent{ 1400, 900 };
     Scene m_scene;
     Json_system m_json_system;
     Window m_window;
@@ -75,6 +86,7 @@ private:
     Time_point m_start_clock = Clock::now();
 
     Shader_system m_shader_system;
+    Ui_system m_ui_system{};
     Transform_system m_transform_system;
 
     vulkan::Renderer m_renderer;

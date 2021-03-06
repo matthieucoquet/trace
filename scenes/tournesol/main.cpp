@@ -4,8 +4,10 @@
 #include <stdexcept>
 #include <functional>
 #include <cstdlib>
+#include <Windows.h>
 
 int main() {
+    timeBeginPeriod(1);
     tournesol::Tournesol tournesol{};
     try {
         tournesol.run();

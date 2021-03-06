@@ -23,11 +23,11 @@ Hit raymarch_miss(in Ray ray)
         }
         Hit hit = map_miss(p);
         if(hit.dist < 0.01) {
-            return Hit(t, hit.material_id);
+            return Hit(t, hit.material_id, hit.transparency);
         }
         t += ADVANCE_RATIO_MISS * hit.dist / len;
     }
-    return Hit(-1.0, 0);
+    return Hit(-1.0, 0, 0.0);
 }
 
 vec3 normal(in vec3 position)
@@ -64,7 +64,7 @@ void main()
         }
     
         hit_value = lighting(global_position, local_position, local_position, 
-            global_normal, local_normal, mat4x3(scene_global.transform), scale, material);
+            global_normal, local_normal, mat4x3(scene_global.transform), scale, material, vec3(0.0));
     }
     else
     {

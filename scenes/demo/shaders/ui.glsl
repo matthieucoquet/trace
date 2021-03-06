@@ -11,7 +11,7 @@ float sdbox(in vec3 position, in vec3 half_sides)
 Hit map(in vec3 position)
 {
     float d = sdbox(position, vec3(0.49, 0.49, 0.001)) - 0.01;
-    return Hit(d, UNKNOW);
+    return make_hit(d, UNKNOW);
 }
 
 vec3 get_color(in vec3 position)

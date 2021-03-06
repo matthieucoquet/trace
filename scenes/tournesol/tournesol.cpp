@@ -59,6 +59,10 @@ Scene make_scene()
 
     scene.texture_path = TEXTURE;
 
+    scene.camera_position = glm::vec3(0.0, 1.5, 0.0);
+    scene.camera_rot_y = 2.2;
+    scene.camera_rot_z = 0.5;
+
     return scene;
 }
 

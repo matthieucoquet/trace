@@ -6,6 +6,8 @@
 #include <ranges>
 #include <algorithm>
 #include <imgui.h>
+#include <glm/gtc/quaternion.hpp>
+#include <cmath>
 
 namespace sdf_editor
 {
@@ -65,7 +67,7 @@ Desktop_app::Desktop_app(Scene scene, std::filesystem::path scene_json_path, std
     m_json_system(m_scene, std::move(scene_json_path)),
     m_window(m_window_extent.width, m_window_extent.height),
     m_context(m_window, nullptr),
-    m_shader_system(m_context, m_scene, std::move(scene_shader_path)),
+    m_shader_system(m_context, m_scene, std::move(scene_shader_path), true),
     m_transform_system(m_scene),
     m_renderer(m_context, m_scene, size_command_buffers),
     m_mirror(m_context, size_command_buffers, false),
@@ -91,18 +93,23 @@ void Desktop_app::run()
 
         m_json_system.step(m_scene);
         m_shader_system.step(m_scene);
+        m_ui_system.step(m_scene);
         m_transform_system.step(m_scene);
 
         for (size_t eye_id = 0u; eye_id < 2u; eye_id++)
         {
-            m_scene.scene_global.eyes[eye_id].pose.position.x = 0.0f;
-            m_scene.scene_global.eyes[eye_id].pose.position.y = 1.5f;
-            m_scene.scene_global.eyes[eye_id].pose.position.z = 0.0f;
-            m_scene.scene_global.eyes[eye_id].pose.orientation = xr::Quaternionf();
-            m_scene.scene_global.eyes[eye_id].fov.angleUp = 0.78f;
-            m_scene.scene_global.eyes[eye_id].fov.angleDown = -0.78f;
-            m_scene.scene_global.eyes[eye_id].fov.angleRight = 0.78f;
-            m_scene.scene_global.eyes[eye_id].fov.angleLeft = -0.78f;
+            m_scene.scene_global.eyes[eye_id].pose.position.x = m_scene.camera_position.x;
+            m_scene.scene_global.eyes[eye_id].pose.position.y = m_scene.camera_position.y;
+            m_scene.scene_global.eyes[eye_id].pose.position.z = m_scene.camera_position.z;
+            //glm::quat rot = glm::angleAxis(m_scene.camera_rot_y, glm::vec3(0.0f, 1.0f, 0.0f)) * glm::angleAxis(m_scene.camera_rot_z, glm::vec3(0.0f, 0.0f, 1.0f));
+            glm::quat rot(glm::vec3(0.0, m_scene.camera_rot_y, 0.0));
+            m_scene.scene_global.eyes[eye_id].pose.orientation = xr::Quaternionf{ .x = rot.x, .y = rot.y, .z = rot.z, .w = rot.w };
+            float wfov = 1.04;
+            float hfov = std::atan((std::tan(wfov) * m_trace_extent.height) / m_trace_extent.width);
+            m_scene.scene_global.eyes[eye_id].fov.angleUp = hfov;
+            m_scene.scene_global.eyes[eye_id].fov.angleDown = -hfov;
+            m_scene.scene_global.eyes[eye_id].fov.angleRight = wfov;
+            m_scene.scene_global.eyes[eye_id].fov.angleLeft = -wfov;
         }
 
         size_t command_pool_id = m_command_pools.find_next();

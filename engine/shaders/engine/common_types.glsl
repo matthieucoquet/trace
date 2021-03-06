@@ -41,7 +41,7 @@ struct Light
 
 struct Material
 {
-    vec3 color;
+    vec4 color;
     float ks;
     float shininess;
     float f0;
@@ -51,6 +51,12 @@ struct Hit
 {
     float dist;
     uint material_id;
+    float transparency;
 };
+
+Hit make_hit(in float dist, in uint material_id)
+{
+    return Hit(dist, material_id, 0.0);
+}
 
 #define UNKNOW 10

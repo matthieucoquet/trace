@@ -38,13 +38,13 @@ Hit bottle(in vec3 position) {
     float distance = length(position - vec3(0.0, clamp(position.y, -0.14, 0.14), 0.0)) - 0.06;
     distance = min(distance, length(position - vec3(0.0, clamp(position.y, 0.0, 0.22), 0.00)) - 0.0141);
     distance = min(distance, disk(position - vec3(0.0, 0.22, 0.0), 0.025, 0.006) - 0.003);
-    Hit hit = Hit(distance, BLUE_ID);
+    Hit hit = make_hit(distance, BLUE_ID);
  
     // Red disk
     position.y = abs(position.y);
     position.y -= 0.1;
     distance = disk(position, 0.065, 0.01);
-    return min_hit(hit, Hit(distance, RED_ID));
+    return min_hit(hit, make_hit(distance, RED_ID));
 }
 
 Hit map(in vec3 position)
@@ -62,11 +62,11 @@ Hit map(in vec3 position)
         q.x = abs(q.x);
         distance = min(distance, disk(q.zxy - vec3(0.0, 0.2, 0.12), 0.06, 0.012) - 0.02);
     }
-    Hit hit = Hit(distance, ORANGE_ID);
+    Hit hit = make_hit(distance, ORANGE_ID);
     {   // Head
         float head = length(position - vec3(0.0, 0.32, 0.0)) - 0.18;
         head = min(head, length(position - vec3(0.0, 0.08, 0.188)) - 0.05);
-        hit = min_hit(hit, Hit(head, WHITE_ID));
+        hit = min_hit(hit, make_hit(head, WHITE_ID));
     }
     {
         // Neck and belt
@@ -75,17 +75,17 @@ Hit map(in vec3 position)
         q.y = abs(q.y);
         q = q - vec3(0.0, 0.21, 0.0);
         distance = torus(q, vec2(0.19, 0.03));
-        hit = min_hit(hit, Hit(distance, ORANGE_ID));
+        hit = min_hit(hit, make_hit(distance, ORANGE_ID));
         q.z = q.z > 0.21 ? 0.99 * q.z : q.z;
         distance = disk(q, 0.22, 0.008);
-        hit = min_hit(hit, Hit(distance, GREY_ID));
+        hit = min_hit(hit, make_hit(distance, GREY_ID));
     }
     {
         vec3 q = position;
         distance = disk(q.xzy - vec3(0.0, 0.21, -0.1), 0.018, 0.01) - 0.004;
         q.x = abs(q.x);
         distance = min(distance, disk(q.xzy - vec3(0.07, 0.2, -0.1), 0.018, 0.01) - 0.004);
-        hit = min_hit(hit, Hit(distance, LIGHT_ID));
+        hit = min_hit(hit, make_hit(distance, LIGHT_ID));
     
     }
     {   // Bottles
@@ -97,24 +97,24 @@ Hit map(in vec3 position)
         distance = box(position - vec3(0.0, 0.01, -0.25), vec3(0.08, 0.18, 0.05));
         float inv = box(position - vec3(0.0, 0.15, -0.3), vec3(0.5, 0.17, 0.045));
         distance = max(distance, -inv) - 0.01;
-        hit = min_hit(hit, Hit(distance, BEIGE_ID));
+        hit = min_hit(hit, make_hit(distance, BEIGE_ID));
         vec3 q = position - vec3(0.0, -0.09, -0.3);
         distance = disk(q.xzy, 0.03, 0.01) - 0.006;
-        hit = min_hit(hit, Hit(distance, RED_ID));
+        hit = min_hit(hit, make_hit(distance, RED_ID));
         distance = length(q - vec3(0.0, clamp(q.y, 0.05, 0.51), 0.06)) - 0.002;
         distance = min(
             distance, 
             length(q - vec3(0.0, clamp(q.y, 0.05, 0.4), 0.06)) - 0.0035);
-        hit = min_hit(hit, Hit(distance, GREY_ID));
+        hit = min_hit(hit, make_hit(distance, GREY_ID));
         distance = box(position - vec3(0.0, 0.13, -0.23), vec3(0.06, 0.025, 0.035)) - 0.005;
-        hit = min_hit(hit, Hit(distance, WHITE_ID));       
+        hit = min_hit(hit, make_hit(distance, WHITE_ID));
     }
     return hit;
 }
 
 Material get_color(in vec3 position)
 {
-    return Material(vec3(0.0), 0.5, 64.0, 0.02);
+    return Material(vec4(0.0), 0.5, 64.0, 0.02);
 }
 
 

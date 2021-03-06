@@ -108,10 +108,12 @@ void Context::init_instance(Window& window, vr::Instance* vr_instance)
     if (vr_instance) {
         vr_instance->create_vulkan_instance(instance, create_info, vk::defaultDispatchLoaderDynamic.vkGetInstanceProcAddr);
     }
+    else {
+        instance = vk::createInstance(create_info);
+    }
 #else
     instance = vk::createInstance(create_info);
 #endif 
-
     VULKAN_HPP_DEFAULT_DISPATCHER.init(instance);
     //m_debug_messenger = instance.createDebugUtilsMessengerEXT(debug_create_info);
 }
@@ -278,6 +280,9 @@ void Context::init_device(vr::Instance* vr_instance)
 #ifdef VR_USE_VULKAN2
         if (vr_instance) {
             vr_instance->create_vulkan_device(device, physical_device, create_info, vk::defaultDispatchLoaderDynamic.vkGetInstanceProcAddr);
+        }
+        else {
+            device = physical_device.createDevice(create_info);
         }
 #else
         device = physical_device.createDevice(create_info);

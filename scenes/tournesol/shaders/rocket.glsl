@@ -71,10 +71,10 @@ Hit rocket(in vec3 position)
     	lader = min(step, lader);
     	
     	if (lader < distance){
-    		return Hit(lader, GREY_ID);
+    		return make_hit(lader, GREY_ID);
     	}
     }
-    return Hit(distance, UNKNOW);
+    return make_hit(distance, UNKNOW);
 }
 
 Hit map(in vec3 position)
@@ -89,7 +89,7 @@ Material get_color(in vec3 pos)
     float height = 8. * pos.y;
     pattern *= fract(height) - 0.5;
 
-    return Material(abs(height-0.75) < 1.25 && pattern < 0.0 ? vec3(1.0) : vec3(0.9, 0.02, 0.02), 0.5, 64.0, 0.2);
+    return Material(abs(height-0.75) < 1.25 && pattern < 0.0 ? vec4(1.0) : vec4(0.9, 0.02, 0.02, 1.0), 0.5, 64.0, 0.2);
 }
 
 

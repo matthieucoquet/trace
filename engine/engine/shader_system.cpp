@@ -64,7 +64,7 @@ private:
     const std::string& m_group_name;
 };
 
-Shader_system::Shader_system(vulkan::Context& context, Scene& scene, std::filesystem::path scene_shader_path) :
+Shader_system::Shader_system(vulkan::Context& context, Scene& scene, std::filesystem::path scene_shader_path, bool desktop_mode) :
     m_device(context.device),
     m_engine_directory(SHADER_SOURCE),
     m_scene_directory(std::move(scene_shader_path))
@@ -115,7 +115,7 @@ Shader_system::Shader_system(vulkan::Context& context, Scene& scene, std::filesy
         assert(file_it != scene.shaders.engine_files.cend());
         return static_cast<int>(std::distance(scene.shaders.engine_files.cbegin(), file_it));
     };
-    scene.shaders.raygen.file_id = find_file("raygen.rgen");
+    scene.shaders.raygen.file_id = find_file(desktop_mode ? "raygen_desktop.rgen" : "raygen.rgen");
     scene.shaders.primary_miss.file_id = find_file("primary.rmiss");
     scene.shaders.shadow_miss.file_id = find_file("shadow.rmiss");
     scene.shaders.shadow_intersection.file_id = find_file("shadow.rint");

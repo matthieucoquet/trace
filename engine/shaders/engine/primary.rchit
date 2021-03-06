@@ -36,10 +36,22 @@ void main()
         material = get_color(local_position);
     }
     
+
+    if (material.color.a < 0.95) {
+	    float min_t = scale * 0.01;
+        traceRayEXT(topLevelAS, gl_RayFlagsOpaqueEXT, 0xFF, 0, 0, 0, global_position, min_t, gl_WorldRayDirectionEXT, 120, 0);
+        hit_value = hit_value * (1.0 - material.color.a);
+    }
+
     hit_value = lighting(global_position, local_position, vec3(scene_global.transform * vec4(global_position, 1.0)), 
-        global_normal, local_normal, gl_WorldToObjectEXT, scale, material);
+        global_normal, local_normal, gl_WorldToObjectEXT, scale, material, hit_value);
 #endif
 }
+
+
+
+
+
 
 
 

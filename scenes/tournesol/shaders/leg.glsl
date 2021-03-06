@@ -30,12 +30,12 @@ Hit map(in vec3 position)
     }
     distance = max(distance, position.y - 0.45);
 
-    return Hit(distance, ORANGE_ID);
+    return make_hit(distance, ORANGE_ID);
 }
 
 Material get_color(in vec3 position)
 {
-    return Material(vec3(0.0), 0.5, 64.0, 0.02);
+    return Material(vec4(0.0), 0.5, 64.0, 0.02);
 }
 
 

@@ -18,7 +18,7 @@ class Context;
 class Shader_system final : public System
 {
 public:
-    Shader_system(vulkan::Context& context, Scene& scene, std::filesystem::path scene_shader_path);
+    Shader_system(vulkan::Context& context, Scene& scene, std::filesystem::path scene_shader_path, bool desktop_mode = false);
     Shader_system(const Shader_system& other) = delete;
     Shader_system(Shader_system&& other) = delete;
     Shader_system& operator=(const Shader_system& other) = delete;

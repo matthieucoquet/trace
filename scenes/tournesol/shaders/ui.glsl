@@ -18,7 +18,7 @@ Hit map(in vec3 position)
     distance = min(max(w.x, w.y), 0.0) + length(max(w, 0.0));
     distance = max(distance, position.z - 0.5);
     distance = max(distance, abs(position.x) - 0.5) - 0.001;
-    return Hit(distance, UNKNOW);
+    return make_hit(distance, UNKNOW);
 }
 
 Material get_color(in vec3 position)
@@ -26,7 +26,7 @@ Material get_color(in vec3 position)
     vec2 uv = position.xy;
     uv = uv + 0.5;
     uv.y *= -1;
-    return Material(textureLod(ui, nonuniformEXT(uv), 0.0).xyz, 0, 4, 0.01);
+    return Material(vec4(textureLod(ui, nonuniformEXT(uv), 0.0).xyz, 1.0), 0, 4, 0.01);
 }
 
 

@@ -5,12 +5,6 @@
 #extension GL_GOOGLE_include_directive : enable
 #include "common_types.glsl"
 
-//#define ANGLE_BLACK 2.0
-//#define ANGLE_MS 2.0
-#define ANGLE_BLACK 1.25
-#define ANGLE_MS 0.4
-#define SAMPLE_2
-
 layout(binding = 0, set = 0) uniform accelerationStructureEXT topLevelAS;
 layout(binding = 1, set = 0, rgba16) uniform image2D image;
 
@@ -34,41 +28,24 @@ void shoot_ray(in vec3 direction, in Eye eye)
     float tmin = 0.2;
     float tmax = 120.0;
 
-    hit_value = vec3(0.0, 0.0, 0.0);
+    hit_value = vec3(0.0, 0.2, 0.0);
     traceRayEXT(topLevelAS, gl_RayFlagsOpaqueEXT, 0xFF, 0, 0, 0, eye.pose.position, tmin, direction.xyz, tmax, 0);
+}
+
+vec3 shoot_ray(in vec2 center)
+{
+    vec3 direction = get_direction(center, scene_global.left, false);
+    shoot_ray(direction, scene_global.left);
+    return hit_value;
 }
 
 void main()
 {
-    bool is_right = gl_LaunchIDEXT.x >= gl_LaunchSizeEXT.x / 2;
-    Eye eye = scene_global.left;
-    if (is_right) {
-        eye = scene_global.right;
-    }
-#ifdef SAMPLE_2
-    const vec2 center = vec2(gl_LaunchIDEXT.xy) + vec2(0.25);
-#else
-    const vec2 center = vec2(gl_LaunchIDEXT.xy) + vec2(0.5);
-#endif
-
-    vec3 direction = get_direction(center, eye, is_right);
-    if (length(direction.xy) < ANGLE_BLACK) {
-        shoot_ray(direction, eye);
-        vec3 color = hit_value;
-#ifdef SAMPLE_2
-        if (length(direction.xy) < ANGLE_MS) {
-            const vec2 center = vec2(gl_LaunchIDEXT.xy) + vec2(0.75);
-            vec3 direction = get_direction(center, eye, is_right);
-            shoot_ray(direction, eye);
-            color = 0.5 * (color + hit_value);
-        }
- #endif
-
-        imageStore(image, nonuniformEXT(ivec2(gl_LaunchIDEXT.xy)), vec4(color, 1.0));
-    }
-    else {
-        imageStore(image, nonuniformEXT(ivec2(gl_LaunchIDEXT.xy)), vec4(0.0));
-    }
+    vec3 color = 0.25 * shoot_ray(vec2(gl_LaunchIDEXT.xy) + vec2(0.25, 0.25));
+    color += 0.25 * shoot_ray(vec2(gl_LaunchIDEXT.xy) + vec2(0.25, 0.75));
+    color += 0.25 * shoot_ray(vec2(gl_LaunchIDEXT.xy) + vec2(0.75, 0.25));
+    color += 0.25 * shoot_ray(vec2(gl_LaunchIDEXT.xy) + vec2(0.75, 0.75));
+    imageStore(image, nonuniformEXT(ivec2(gl_LaunchIDEXT.xy)), vec4(color, 1.0));
 }
 
 

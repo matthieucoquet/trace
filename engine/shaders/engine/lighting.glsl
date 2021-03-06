@@ -44,11 +44,11 @@ vec3 lighting(
     vec3 normal,
     mat4x3 transform,
     float scale,
-    Material mat
+    Material mat,
+    vec3 color
 )
 {
     vec3 view_dir = normalize(transform * vec4(gl_WorldRayOriginEXT, 1.0f) - local_position);
-    vec3 color = vec3(0.0);
 
     shadow_payload = ambient_occlusion_miss(Ray(miss_position, vec3(scene_global.transform * vec4(global_normal, 0.0))));
     traceRayEXT(topLevelAS,  // acceleration structure
@@ -63,6 +63,7 @@ vec3 lighting(
         0.5,         // ray max range
         1            // payload (location = 1)
         );
+    shadow_payload = 1;
     float ao = shadow_payload;
 
     for (int i = 0; i < scene_global.nb_lights; i++)
@@ -97,10 +98,12 @@ vec3 lighting(
                         1            // payload (location = 1)
                         );
         }
-        color = color + mat.color * (ambient  + shadow_payload * diffuse) + shadow_payload * mat.ks * spec;
+        color = color + ao * (mat.color.a * mat.color.xyz * (ambient  + shadow_payload * diffuse) + shadow_payload * mat.ks * spec);
     }
-    return color * ao;
+    return color;
 }
+
+
 
 
 

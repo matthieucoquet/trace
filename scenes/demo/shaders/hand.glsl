@@ -38,7 +38,7 @@ Hit map(in vec3 position)
 
     uint material_id = hold - 0.01 < ring ? BLACK_ID : RED_ID;
     float d = op_union(hold, ring, 0.08);
-    return Hit(d, material_id);
+    return make_hit(d, material_id);
 }
 
 vec3 get_color(in vec3 position)

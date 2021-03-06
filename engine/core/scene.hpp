@@ -31,7 +31,7 @@ struct Scene_global
 
 struct Material
 {
-    glm::vec3 color;
+    glm::vec4 color;
     float ks;
     float shininess;
     float f0;
@@ -95,6 +95,10 @@ struct Scene
     std::filesystem::path texture_path{};
 
     Shaders shaders;
+
+    glm::vec3 camera_position{}; // For desktop mode
+    float camera_rot_y{};
+    float camera_rot_z{};
 
     bool saving{ false };
     bool resetting{ false };

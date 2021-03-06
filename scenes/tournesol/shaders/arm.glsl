@@ -92,12 +92,12 @@ Hit map(in vec3 position)
     q.xy = rotate(angle) * q.xy;
     distance = min(distance, length(q - vec3(clamp(q.x, 0.0, 0.1), 0.0, 0.0)) - radius);
     distance = op_union(distance, hand(q - vec3(0.2, 0.0, 0.0)), 0.03);
-    return Hit(distance, ORANGE_ID);
+    return make_hit(distance, ORANGE_ID);
 }
 
 Material get_color(in vec3 position)
 {
-    return Material(vec3(0.0), 0.5, 64.0, 0.02);
+    return Material(vec4(0.0), 0.5, 64.0, 0.02);
 }
 
 

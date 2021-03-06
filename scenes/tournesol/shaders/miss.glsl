@@ -1,7 +1,7 @@
 #define ADVANCE_RATIO_MISS 0.95
 
 #define ROCK_ID 3
-//#define GO_FAST 
+#define GO_FAST 
 
 layout(binding = 3, set = 0, scalar) buffer Lights { Light l[]; } lights;
 layout(binding = 4, set = 0) uniform sampler2D noise_lut;
@@ -97,13 +97,13 @@ Hit map_miss(in vec3 position)
         height += max(0, 0.8 * rock - 0.8);
     }
 #endif
-    return Hit(position.y - height, UNKNOW);
+    return make_hit(position.y - height, UNKNOW);
 }
 
 Material get_color_miss(in vec3 position)
 {
     vec3 color = vec3(0.05 + noise(position.xz * 105.0) * 0.015);
-    return Material(color, 0.1, 4.0, 0.02);
+    return Material(vec4(color, 1.0), 0.1, 4.0, 0.02);
 }
 
 vec3 background_miss(in vec3 direction)

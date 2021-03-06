@@ -13,7 +13,7 @@ Hit map(in vec3 position)
 {
     float d = sd_sphere(position, 0.2);
     //d -= 0.01 * sin(10 * (2*scene_global.time + position.x + position.y));
-    return Hit(d, RED_ID);
+    return make_hit(d, RED_ID);
 }
 
 vec3 get_color(in vec3 position)
