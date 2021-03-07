@@ -101,23 +101,35 @@ float leg(in vec3 position)
 
 Hit head(in vec3 position)
 {
-    float disp = 0.005 * noise(50.0 * position)+0.001 * noise(250.0 * position);
+    float disp = 0.004 * noise(50.0 * position)
+    	+ 0.0017 * noise(2500.0 * position);
     position.x = abs(position.x);
-    float distance = length(position - vec3(0.0, 0.03, -0.05)) - 0.08;
+    float distance = length(position - vec3(0.0, 0.015, -0.04)) - 0.08;
+	float nose = length(position - vec3(clamp(position.x, -0.02, 0.02), -0.04, 0.05)) - 0.055;
     distance = op_union(
-        distance, length(position - vec3(0.02, -0.04, 0.04)) - 0.07,
+        distance, nose,
         0.06);
     distance = op_union(
-        distance, length(position - vec3(0.05, 0.14, -0.03)) - 0.02,
-        0.07);    	
+        distance, length(position - vec3(0.0, -0.02, 0.06)) - 0.045,
+        0.03);
+    vec3 q = position - vec3(0.05, 0.135, -0.07);
+    q.xz = rotate(0.2) * q.xz;
+    q.yz = rotate(-1.1) * q.yz;
+    float hear = disk(q, 0.01, 0.0) - 0.02;
+	distance = op_union(
+        distance, hear,
+        0.08);
     distance = op_union(
         distance, length(position - vec3(0.0, -0.03, -0.15)) - 0.05,
         0.06);
     distance += disp;
     Hit hit = make_hit(distance, WHITE_ID);
     
-    distance = length(position - vec3(0.0, 0.00, 0.1)) - 0.01;
-    distance = min(distance, length(position - vec3(0.02, 0.055, 0.03)) - 0.005);
+    distance = length(position - vec3(0.0, 0.01, 0.092)) - 0.016;
+    distance = min(distance, length(position - vec3(0.02, 0.055, 0.02)) - 0.006);
+    q = position;
+    q.yz = rotate(-0.52) * q.yz;
+    distance = min(distance, torus(q - vec3(0.02, 0.057, 0.038), vec2(0.0112, 0.002)));
     return min_hit(hit, make_hit(distance, BLACK_ID));;
 }
 
@@ -142,9 +154,9 @@ Hit map(in vec3 position)
     }
     Hit hit = make_hit(distance, ORANGE_ID);
     {   // Head
-        float helmet = length(position - vec3(0.0, 0.12, 0.2)) - 0.18;
+        float helmet = length(position - vec3(0.0, 0.12, 0.2)) - 0.19;
         helmet = abs(helmet) - 0.0001;
-        hit = min_hit(hit, Hit(helmet, GLASS_ID, 0.95));
+        hit = min_hit(hit, Hit(helmet, GLASS_ID, 0.4));
         hit = min_hit(hit, head(position - vec3(0.0, 0.12, 0.2)));
     }
     {
@@ -188,6 +200,15 @@ Material get_color(in vec3 position)
 {
     return Material(vec4(0.0), 0.5, 64.0, 0.02);
 }
+
+
+
+
+
+
+
+
+
 
 
 

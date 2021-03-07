@@ -37,10 +37,11 @@ void main()
 {
     Ray ray = Ray(gl_WorldToObjectEXT * vec4(gl_WorldRayOriginEXT, 1.0f),
                   gl_WorldToObjectEXT * vec4(gl_WorldRayDirectionEXT, 0.0f));
-    shadow_payload = min(shadow_payload, soft_shadow(ray, 128.0));
+    shadow_payload = min(shadow_payload, soft_shadow(ray, 256.0));
     if (shadow_payload == 0.0)
     {
         terminateRayEXT;
     }
 }
+
 

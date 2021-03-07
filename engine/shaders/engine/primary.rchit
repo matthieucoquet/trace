@@ -38,7 +38,7 @@ void main()
     
 
     if (material.color.a < 0.95) {
-	    float min_t = scale * 0.01;
+	    float min_t = scale * 0.2;
         traceRayEXT(topLevelAS, gl_RayFlagsOpaqueEXT, 0xFF, 0, 0, 0, global_position, min_t, gl_WorldRayDirectionEXT, 120, 0);
         hit_value = hit_value * (1.0 - material.color.a);
     }
@@ -47,6 +47,7 @@ void main()
         global_normal, local_normal, gl_WorldToObjectEXT, scale, material, hit_value);
 #endif
 }
+
 
 
 

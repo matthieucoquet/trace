@@ -4,7 +4,19 @@
 #define BLACK_ID 0
 #define GLASS_ID 8
 #define SKIN_ID 9
-#define HAIR_ID 10
+#define HAIR_ID 0
+
+layout(binding = 4, set = 0) uniform sampler2D noise_lu;
+// See https://www.shadertoy.com/view/4sfGzS and iq website for more info about noise
+float noise(in vec3 x)
+{
+    vec3 i = floor(x);
+    vec3 f = fract(x);
+    f = f * f * (3.0 - 2.0 * f);
+    vec2 uv = (i.xy + vec2(37.0, 17.0) * i.z) + f.xy;
+    vec2 rg = textureLod(noise_lu, (uv + 0.5) / 512.0, 0.0).yx;
+    return mix(rg.x, rg.y, f.z);
+}
 
 Hit min_hit(Hit a, Hit b)
 {
@@ -59,7 +71,7 @@ Hit map(in vec3 position)
 {
     float helmet = length(position) - 0.45;
     helmet = abs(helmet) - 0.0001;
-    Hit hit = Hit(10000.0, GLASS_ID, 0.4);
+    Hit hit = Hit(helmet, GLASS_ID, 0.4);
 
     float distance = ellipsoid(position - vec3(0.0, 0.02, 0.0), vec3(0.23, 0.28, 0.25));
     distance = op_union(
@@ -74,11 +86,9 @@ Hit map(in vec3 position)
     distance = op_union(
         distance, hear(q - vec3(0.228, -0.012, 0.02)),
         0.005);
-    
     // Nose
-    distance = min(distance, length(position - vec3(0.0, 0., clamp(position.z, 0.0, 0.27))) - 0.04);
+    distance = min(distance, length(position - vec3(0.0, 0., clamp(position.z, 0.0, 0.27))) - 0.06);
     hit = min_hit(hit, make_hit(distance, SKIN_ID));
-
     // Eyes
     distance = length(q - vec3(0.09, 0.08, 0.225)) - 0.01;    
     q.xz = rotate(-0.3) * q.xz;
@@ -87,11 +97,11 @@ Hit map(in vec3 position)
     hit = min_hit(hit, make_hit(distance, BLACK_ID));
     
     // Hair
-    distance = ellipsoid(position - vec3(0.0, 0.042, -0.01), vec3(0.23, 0.28, 0.25));
-    float hair = length(position - vec3(clamp(position.x, -0.015, 0.015), 0.35, 0.07)) - 0.055;
-    hair = max(hair, -length(position - vec3(clamp(position.x, -0.05, 0.05), 0.36, 0.03)) + 0.055);
-    distance = op_union(distance, hair, 0.03);    
-    hit = min_hit(hit, make_hit(distance, HAIR_ID));
+    float disp = 0.02 * noise(50.0 * position);
+    distance = ellipsoid(position - vec3(0.0, 0.05, -0.02), vec3(0.25, 0.3, 0.26));
+    distance = min(distance, 
+        ellipsoid(position - vec3(0.0, -0.12, 0.195), vec3(0.13, 0.13, 0.06)));    
+    hit = min_hit(hit, make_hit(distance + disp, HAIR_ID));
     return hit;
 }
 
@@ -99,6 +109,8 @@ Material get_color(in vec3 position)
 {
     return Material(vec4(0.0), 0.5, 64.0, 0.02);
 }
+
+
 
 
 

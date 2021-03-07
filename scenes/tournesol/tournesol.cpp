@@ -16,9 +16,11 @@ Scene make_scene()
     scene.shaders.groups.push_back(Shader_group{ .name = "ui" });
     scene.shaders.groups.push_back(Shader_group{ .name = "rocket" });
     scene.shaders.groups.push_back(Shader_group{ .name = "milou" });
-    scene.shaders.groups.push_back(Shader_group{ .name = "tintin" });
+    scene.shaders.groups.push_back(Shader_group{ .name = "body" });
     scene.shaders.groups.push_back(Shader_group{ .name = "arm" });
     scene.shaders.groups.push_back(Shader_group{ .name = "leg" });
+    scene.shaders.groups.push_back(Shader_group{ .name = "tintin" });
+    scene.shaders.groups.push_back(Shader_group{ .name = "haddock" });
 
     size_t hand_id = 0u;
     size_t ui_id = 1u;

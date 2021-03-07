@@ -59,4 +59,4 @@ Hit make_hit(in float dist, in uint material_id)
     return Hit(dist, material_id, 0.0);
 }
 
-#define UNKNOW 10
+#define UNKNOW 15

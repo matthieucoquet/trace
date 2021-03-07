@@ -1,7 +1,6 @@
 #define ADVANCE_RATIO_MISS 0.95
 
-#define ROCK_ID 3
-#define GO_FAST 
+#define ROCK_ID 3#define GO_FAST 
 
 layout(binding = 3, set = 0, scalar) buffer Lights { Light l[]; } lights;
 layout(binding = 4, set = 0) uniform sampler2D noise_lut;
@@ -131,6 +130,8 @@ vec3 background_miss(in vec3 direction)
     }
     return col;
 }
+
+
 
 
 
