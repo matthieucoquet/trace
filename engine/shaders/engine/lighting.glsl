@@ -63,7 +63,6 @@ vec3 lighting(
         0.5,         // ray max range
         1            // payload (location = 1)
         );
-    shadow_payload = 1;
     float ao = shadow_payload;
 
     for (int i = 0; i < scene_global.nb_lights; i++)
@@ -72,7 +71,7 @@ vec3 lighting(
         vec3 light_dir = normalize(transform * vec4(light.position, 1.0f) - local_position);
             
         vec3 diffuse = max(dot(normal, light_dir), 0.0) * light.color;
-        vec3 ambient = 0.05 * light.color;
+        vec3 ambient = 0.015 * light.color;
 
         vec3 halfway = normalize(light_dir + view_dir);
         vec3 spec = pow(max(dot(normal, halfway), 0.0), mat.shininess) * light.color;
@@ -81,9 +80,12 @@ vec3 lighting(
 
         shadow_payload = 0.0;
         if (dot(normal, light_dir) > 0)
-        {                
+        {
             light_dir = normalize(light.position - global_position);
-            shadow_payload = 1.0; //soft_shadow_miss(Ray(miss_position, vec3(scene_global.transform * vec4(light_dir, 0.0))), 128.0);
+            shadow_payload = 1.0;
+            if (i == 0)
+            {
+            shadow_payload = soft_shadow_miss(Ray(miss_position, vec3(scene_global.transform * vec4(light_dir, 0.0))), 128.0);
 
             traceRayEXT(topLevelAS,  // acceleration structure
                         gl_RayFlagsSkipClosestHitShaderEXT,
@@ -97,11 +99,17 @@ vec3 lighting(
                         100.0,        // ray max range
                         1            // payload (location = 1)
                         );
+              }
         }
         color = color + ao * (mat.color.a * mat.color.xyz * (ambient  + shadow_payload * diffuse) + shadow_payload * mat.ks * spec);
     }
     return color;
 }
+
+
+
+
+
 
 
 

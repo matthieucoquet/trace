@@ -303,7 +303,7 @@ void Ui_system::record_selected(Scene& scene)
     {
         Light& light = scene.lights[m_selected_id];
         bool dirty = ImGui::InputFloat3("Position", glm::value_ptr(light.local));
-        dirty = dirty | ImGui::InputFloat3("Color", glm::value_ptr(light.color));
+        dirty = dirty | ImGui::ColorPicker3("Color", glm::value_ptr(light.color));
         if (dirty) {
             light.update(scene.entities[3].global_transform);
         }

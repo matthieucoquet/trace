@@ -59,7 +59,7 @@ Hit map(in vec3 position)
 {
     float helmet = length(position) - 0.45;
     helmet = abs(helmet) - 0.0001;
-    Hit hit = Hit(10000.0, GLASS_ID, 0.4);
+    Hit hit = Hit(helmet, GLASS_ID, 0.4);
 
     float distance = ellipsoid(position - vec3(0.0, 0.02, 0.0), vec3(0.23, 0.28, 0.25));
     distance = op_union(
@@ -99,6 +99,7 @@ Material get_color(in vec3 position)
 {
     return Material(vec4(0.0), 0.5, 64.0, 0.02);
 }
+
 
 
 
